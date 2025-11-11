@@ -10,6 +10,9 @@ interface SendMessageResult {
   warning?: string;
   reason?: string;
   error?: string;
+  optimistic?: boolean;
+  isLoading?: boolean;
+  hasError?: boolean;
 }
 
 export function useSendMessage() {
@@ -42,12 +45,13 @@ export function useSendMessage() {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
+          // Don't set Content-Type - let the browser/RN set it automatically with boundary
         },
-        body: formData,
+        body: formData as any,
       });
 
       if (!uploadResponse.ok) {
-        const error = await uploadResponse.json();
+        const error = await uploadResponse.json() as { message?: string };
         throw new Error(error.message || 'Upload failed');
       }
 
@@ -140,7 +144,7 @@ export function useSendMessage() {
         }
       );
 
-      const result = await response.json();
+      const result = await response.json() as SendMessageResult;
       
       if (!response.ok) {
         console.error('Edge Function error:', result);

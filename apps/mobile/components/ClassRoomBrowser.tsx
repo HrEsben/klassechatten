@@ -133,8 +133,10 @@ export default function ClassRoomBrowser() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: '100%',
     backgroundColor: '#fff',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   centerContainer: {
     flex: 1,

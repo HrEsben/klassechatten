@@ -30,18 +30,26 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
   const [showSuggestion, setShowSuggestion] = useState<string | null>(null);
   const [roomName, setRoomName] = useState<string>('Chat Room');
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
-  const [optimisticMessages, setOptimisticMessages] = useState<any[]>([]);
+  const [isNearBottom, setIsNearBottom] = useState(true);
+  const [showJumpToBottom, setShowJumpToBottom] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [previousMessageCount, setPreviousMessageCount] = useState(0);
   const flatListRef = useRef<FlatList>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | number | null>(null);
 
   const { user } = useAuth();
-  const { messages, loading, error, isConnected } = useRoomMessages({
+  const { 
+    messages, 
+    loading, 
+    error, 
+    isConnected, 
+    addOptimisticMessage, 
+    updateOptimisticMessage, 
+    removeOptimisticMessage 
+  } = useRoomMessages({
     roomId,
     limit: 50,
   });
-
-  // Combine real messages with optimistic messages
-  const allMessages = [...messages, ...optimisticMessages];
 
   const { sendMessage, pickImage, uploadImage, sending, uploading } = useSendMessage();
 
@@ -57,7 +65,7 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
   useReadReceipts({
     roomId,
     userId: user?.id || '',
-    messages: allMessages.map(m => ({ id: m.id, user_id: m.user_id })),
+    messages: messages.map(m => ({ id: m.id, user_id: m.user_id })),
     enabled: !!user,
   });
 
@@ -98,14 +106,54 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
     }
   };
 
+  // Smart scroll detection
+  const handleScroll = (event: any) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const isAtBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 100;
+    
+    setIsNearBottom(isAtBottom);
+    setShowJumpToBottom(!isAtBottom && messages.length > 0);
+    
+    // Clear unread count when user scrolls to bottom
+    if (isAtBottom) {
+      setUnreadCount(0);
+    }
+  };
+
+  // Jump to bottom function
+  const jumpToBottom = () => {
+    flatListRef.current?.scrollToEnd({ animated: true });
+    setUnreadCount(0);
+    setShowJumpToBottom(false);
+  };
+
+  // Update unread count when new messages arrive and user is not at bottom
+  useEffect(() => {
+    // Only count new messages that arrive after initial load
+    if (previousMessageCount > 0 && messages.length > previousMessageCount && !isNearBottom) {
+      const newMessageCount = messages.length - previousMessageCount;
+      setUnreadCount(prev => prev + newMessageCount);
+    }
+    
+    // Update the previous message count
+    setPreviousMessageCount(messages.length);
+  }, [messages.length, isNearBottom, previousMessageCount]);
+
+  // Reset unread count on initial load
+  useEffect(() => {
+    if (!loading && messages.length > 0 && previousMessageCount === 0) {
+      setUnreadCount(0);
+    }
+  }, [loading, messages.length, previousMessageCount]);
+
   // Auto-scroll to bottom when new messages arrive or on initial load
   useEffect(() => {
-    if (allMessages.length > 0 && !loading) {
+    if (messages.length > 0 && !loading && isNearBottom) {
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: false });
       }, 100);
     }
-  }, [allMessages.length, loading]);
+  }, [messages.length, loading, isNearBottom]);
 
   const handleImagePick = () => {
     Alert.alert(
@@ -147,63 +195,71 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
       clearTimeout(typingTimeoutRef.current);
     }
 
-    const optimisticId = Date.now();
     const messageBody = messageText.trim();
-    const imageUrlTemp = selectedImageUri;
+    const imageUriTemp = selectedImageUri;
 
-    // Add optimistic message immediately
-    const optimisticMessage = {
-      id: optimisticId,
-      room_id: roomId,
-      class_id: '',
+    // Add optimistic message immediately with loading state
+    const tempId = addOptimisticMessage({
       user_id: user?.id || '',
-      body: messageBody || null,
-      image_url: imageUrlTemp,
-      reply_to: null,
-      created_at: new Date().toISOString(),
-      edited_at: null,
-      deleted_at: null,
-      meta: {},
+      body: messageBody || '',
+      image_url: imageUriTemp || undefined,
       profiles: {
         display_name: user?.user_metadata?.display_name || user?.email || 'You',
       },
-      read_receipts: [],
-      optimistic: true,
-    };
-
-    setOptimisticMessages(prev => [...prev, optimisticMessage]);
+      isLoading: true,
+      hasError: false,
+    });
     
     // Clear input immediately for instant feel
     setMessageText('');
-    handleRemoveImage();
+    setSelectedImageUri(null);
 
     let imageUrl: string | null = null;
 
-    // Upload image if selected
-    if (imageUrlTemp) {
-      imageUrl = await uploadImage(imageUrlTemp);
-      if (!imageUrl) {
-        Alert.alert('Fejl', 'Kunne ikke uploade billede. Prøv igen.');
-        // Remove optimistic message on upload failure
-        setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticId));
+    try {
+      // Upload image if selected
+      if (imageUriTemp) {
+        imageUrl = await uploadImage(imageUriTemp);
+        if (!imageUrl) {
+          // Mark optimistic message as failed
+          updateOptimisticMessage(tempId, {
+            isLoading: false,
+            hasError: true,
+          });
+          Alert.alert('Fejl', 'Kunne ikke uploade billede. Prøv igen.');
+          return;
+        }
+      }
+
+      // Send message
+      const result = await sendMessage(roomId, messageBody || undefined, imageUrl || undefined);
+
+      if (result.status === 'block' || result.status === 'blocked') {
+        // Remove optimistic message on block
+        removeOptimisticMessage(tempId);
         return;
       }
-    }
 
-    const result = await sendMessage(roomId, messageBody || undefined, imageUrl || undefined);
+      if (result.status === 'flag' && result.suggested) {
+        // Remove optimistic message and show suggestion
+        removeOptimisticMessage(tempId);
+        setShowSuggestion(result.suggested);
+        return;
+      }
 
-    // Remove optimistic message after real message arrives (or on error)
-    setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticId));
-
-    if (result.status === 'block' || result.status === 'blocked') {
-      // Alert is shown by useSendMessage hook
-      return;
-    }
-
-    if (result.status === 'flag' && result.suggested) {
-      // Show suggestion modal - message was NOT sent
-      setShowSuggestion(result.suggested);
-      return;
+      // Success - mark as sent and it will be removed when real message arrives
+      updateOptimisticMessage(tempId, {
+        isLoading: false,
+        hasError: false,
+      });
+      
+    } catch (error) {
+      // Mark optimistic message as failed
+      updateOptimisticMessage(tempId, {
+        isLoading: false,
+        hasError: true,
+      });
+      console.error('Error sending message:', error);
     }
   };
 
@@ -246,6 +302,9 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
 
   const renderMessage = ({ item }: { item: any }) => {
     const isOwnMessage = item.user_id === user?.id;
+    const isOptimistic = item.isOptimistic;
+    const isLoading = item.isLoading;
+    const hasError = item.hasError;
     
     // Debug logging for images
     if (item.image_url) {
@@ -255,20 +314,55 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
     return (
       <View style={[
         styles.messageContainer,
-        isOwnMessage ? styles.ownMessage : styles.otherMessage
+        isOwnMessage ? styles.ownMessage : styles.otherMessage,
+        isOptimistic && styles.optimisticMessage,
+        hasError && styles.errorMessage
       ]}>
-        <Text style={[
-          styles.messageSender,
-          isOwnMessage && styles.ownMessageText
-        ]}>
-          {isOwnMessage ? 'Dig' : (item.profiles?.display_name || 'Ukendt bruger')}
-        </Text>
-        <Text style={[
-          styles.messageTime,
-          isOwnMessage && styles.ownMessageText
-        ]}>
-          {getRelativeTime(item.created_at)}
-        </Text>
+        <View style={styles.messageHeader}>
+          <Text style={[
+            styles.messageSender,
+            isOwnMessage && styles.ownMessageText
+          ]}>
+            {isOwnMessage ? 'Dig' : (item.profiles?.display_name || 'Ukendt bruger')}
+          </Text>
+          <Text style={[
+            styles.messageTime,
+            isOwnMessage && styles.ownMessageText
+          ]}>
+            {getRelativeTime(item.created_at)}
+          </Text>
+          {/* Loading/Error indicators */}
+          {isLoading && (
+            <ActivityIndicator 
+              size="small" 
+              color={isOwnMessage ? '#fff' : '#007bff'} 
+              style={styles.messageStatus}
+            />
+          )}
+          {hasError && (
+            <TouchableOpacity 
+              onPress={() => {
+                Alert.alert(
+                  'Besked fejlet',
+                  'Beskeden kunne ikke sendes. Prøv igen.',
+                  [
+                    { text: 'OK' },
+                    { text: 'Prøv igen', onPress: () => {
+                      // Remove failed optimistic message
+                      removeOptimisticMessage(item.id);
+                      // Set message text back for retry
+                      if (item.body) setMessageText(item.body);
+                      if (item.image_url) setSelectedImageUri(item.image_url);
+                    }}
+                  ]
+                );
+              }}
+              style={styles.messageStatus}
+            >
+              <Text style={styles.errorIcon}>❌</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         {item.image_url && (
           <Image 
             source={{ uri: item.image_url }}
@@ -329,17 +423,19 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
       {/* Messages */}
       <FlatList
         ref={flatListRef}
-        data={allMessages}
+        data={messages}
         renderItem={renderMessage}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.messagesList}
+        onScroll={handleScroll}
+        scrollEventThrottle={100}
         onContentSizeChange={() => {
-          if (!loading && allMessages.length > 0) {
+          if (!loading && messages.length > 0 && isNearBottom) {
             flatListRef.current?.scrollToEnd({ animated: false });
           }
         }}
         onLayout={() => {
-          if (!loading && allMessages.length > 0) {
+          if (!loading && messages.length > 0) {
             flatListRef.current?.scrollToEnd({ animated: false });
           }
         }}
@@ -435,14 +531,31 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
               ((!messageText.trim() && !selectedImageUri) || sending || uploading) && styles.sendButtonDisabled,
             ]}
             onPress={handleSend}
-            disabled={(!messageText.trim() && !selectedImageUri) || sending || uploading}
+            disabled={(!messageText.trim() && !selectedImageUri) || uploading}
           >
             <Text style={styles.sendButtonText}>
-              {uploading ? '⏳' : sending ? '⏳' : '➤'}
+              {uploading ? '⏳' : '➤'}
             </Text>
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Jump to Bottom Button */}
+      {showJumpToBottom && (
+        <TouchableOpacity 
+          style={styles.jumpToBottomButton} 
+          onPress={jumpToBottom}
+        >
+          <Text style={styles.jumpToBottomText}>↓</Text>
+          {unreadCount > 0 && (
+            <View style={styles.unreadBadge}>
+              <Text style={styles.unreadText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -685,5 +798,62 @@ const styles = StyleSheet.create({
   },
   imageButtonText: {
     fontSize: 24,
+  },
+  // Optimistic UI styles
+  optimisticMessage: {
+    opacity: 0.7,
+  },
+  errorMessage: {
+    borderWidth: 1,
+    borderColor: '#dc3545',
+    backgroundColor: '#f8d7da',
+  },
+  messageHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  messageStatus: {
+    marginLeft: 8,
+  },
+  errorIcon: {
+    fontSize: 14,
+  },
+  // Jump to bottom button
+  jumpToBottomButton: {
+    position: 'absolute',
+    bottom: 100,
+    right: 20,
+    backgroundColor: '#007bff',
+    borderRadius: 25,
+    width: 50,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
+  jumpToBottomText: {
+    color: '#fff',
+    fontSize: 20,
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#dc3545',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unreadText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

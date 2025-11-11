@@ -1,10 +1,11 @@
 import { Slot, Stack } from 'expo-router';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '../contexts/AuthContext';
 import { View, Text } from 'react-native';
 import { Component, ErrorInfo, ReactNode } from 'react';
 
 // Temporarily disable auth to debug
-const DEBUG_MODE = true;
+const DEBUG_MODE = false;
 
 class ErrorBoundary extends Component<
   { children: ReactNode; fallback?: ReactNode },
@@ -48,19 +49,13 @@ class ErrorBoundary extends Component<
 export default function RootLayout() {
   console.log('RootLayout rendering...', { DEBUG_MODE });
   
-  if (DEBUG_MODE) {
-    return (
-      <ErrorBoundary>
-        <Slot />
-      </ErrorBoundary>
-    );
-  }
-  
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <Slot />
-      </AuthProvider>
-    </ErrorBoundary>
+    <SafeAreaProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <Slot />
+        </AuthProvider>
+      </ErrorBoundary>
+    </SafeAreaProvider>
   );
 }

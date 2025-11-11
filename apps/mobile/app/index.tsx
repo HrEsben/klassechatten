@@ -2,8 +2,13 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 
+// Imports for the real app
+import { useAuth } from '../contexts/AuthContext';
+import ProtectedRoute from '../components/ProtectedRoute';
+import ClassRoomBrowser from '../components/ClassRoomBrowser';
+
 // Debug mode - simple screen without auth
-const DEBUG_MODE = true;
+const DEBUG_MODE = false;
 
 function DebugScreen() {
   console.log('DebugScreen rendering...');
@@ -37,12 +42,7 @@ function DebugScreen() {
   );
 }
 
-// Original home screen (commented out for debugging)
-/*
-import { useAuth } from '../contexts/AuthContext';
-import ProtectedRoute from '../components/ProtectedRoute';
-import ClassRoomBrowser from '../components/ClassRoomBrowser';
-
+// Original home screen (enabled for real app)
 function HomeScreen() {
   const { user, signOut } = useAuth();
   const router = useRouter();
@@ -74,7 +74,6 @@ function HomeScreen() {
     </View>
   );
 }
-*/
 
 export default function Index() {
   console.log('Index component rendering...');
@@ -82,17 +81,13 @@ export default function Index() {
   if (DEBUG_MODE) {
     return <DebugScreen />;
   }
-  
-  // Original protected route (disabled for debugging)
-  /*
+
+  // Original protected route (enabled for real app)
   return (
     <ProtectedRoute>
       <HomeScreen />
     </ProtectedRoute>
   );
-  */
-  
-  return <DebugScreen />;
 }
 
 const styles = StyleSheet.create({
@@ -100,9 +95,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     paddingTop: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
   },
   title: {
     fontSize: 24,
@@ -131,6 +123,7 @@ const styles = StyleSheet.create({
   },
   // Original styles (kept for reference)
   header: {
+    width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -156,6 +149,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 16,
+    width: '100%',
+    paddingHorizontal: 16,
   },
 });

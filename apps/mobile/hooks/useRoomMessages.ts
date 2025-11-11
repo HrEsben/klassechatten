@@ -23,6 +23,10 @@ interface Message {
     user_id: string;
     read_at: string;
   }>;
+  // Optimistic UI states
+  isOptimistic?: boolean;
+  isLoading?: boolean;
+  hasError?: boolean;
 }
 
 interface UseRoomMessagesOptions {
@@ -37,9 +41,54 @@ export function useRoomMessages({
   enabled = true 
 }: UseRoomMessagesOptions) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [optimisticMessages, setOptimisticMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+
+  // Combine real and optimistic messages
+  const allMessages = [...messages, ...optimisticMessages];
+
+  // Add optimistic message
+  const addOptimisticMessage = useCallback((message: Partial<Message>) => {
+    const optimisticMessage: Message = {
+      id: Date.now(), // temporary ID
+      room_id: roomId,
+      class_id: '',
+      user_id: message.user_id || '',
+      body: message.body || '',
+      image_url: message.image_url,
+      reply_to: null,
+      created_at: new Date().toISOString(),
+      edited_at: null,
+      deleted_at: null,
+      meta: {},
+      profiles: message.profiles,
+      read_receipts: [],
+      isOptimistic: true,
+      isLoading: true,
+      hasError: false,
+      ...message
+    };
+    
+    setOptimisticMessages(prev => [...prev, optimisticMessage]);
+    return optimisticMessage.id;
+  }, [roomId]);
+
+  // Update optimistic message state
+  const updateOptimisticMessage = useCallback((tempId: number, updates: Partial<Message>) => {
+    setOptimisticMessages(prev => 
+      prev.map(msg => 
+        msg.id === tempId ? { ...msg, ...updates } : msg
+      )
+    );
+  }, []);
+
+  // Remove optimistic message (usually when real one arrives or on error)
+  const removeOptimisticMessage = useCallback((tempId: number) => {
+    setOptimisticMessages(prev => prev.filter(msg => msg.id !== tempId));
+  }, []);
 
   // Backfill: Load initial messages
   const loadMessages = useCallback(async () => {
@@ -89,6 +138,15 @@ export function useRoomMessages({
     const channelName = `realtime:room.${roomId}`;
     const realtimeChannel = supabase
       .channel(channelName)
+      .on('presence', { event: 'sync' }, () => {
+        setIsConnected(true);
+      })
+      .on('presence', { event: 'join' }, () => {
+        setIsConnected(true);
+      })
+      .on('presence', { event: 'leave' }, () => {
+        setIsConnected(true);
+      })
       .on(
         'postgres_changes',
         {
@@ -117,7 +175,24 @@ export function useRoomMessages({
               profiles: profileData ? { display_name: profileData.display_name } : undefined
             };
             
+            // Add real message
             setMessages((prev) => [...prev, messageWithProfile]);
+            
+            // Remove any matching optimistic messages
+            setOptimisticMessages(prev => 
+              prev.filter(optMsg => {
+                // Remove optimistic messages that match content and user
+                const sameUser = optMsg.user_id === newMessage.user_id;
+                const sameContent = optMsg.body === newMessage.body;
+                const sameImage = optMsg.image_url === newMessage.image_url;
+                
+                if (sameUser && (sameContent || sameImage)) {
+                  console.log('Removing optimistic message that matches real message:', optMsg.id);
+                  return false; // Remove this optimistic message
+                }
+                return true; // Keep this optimistic message
+              })
+            );
           }
         }
       )
@@ -208,10 +283,13 @@ export function useRoomMessages({
   }, [loadMessages]);
 
   return {
-    messages,
+    messages: allMessages,
     loading,
     error,
     refresh,
-    isConnected: channel?.state === 'joined',
+    isConnected,
+    addOptimisticMessage,
+    updateOptimisticMessage,
+    removeOptimisticMessage,
   };
 }

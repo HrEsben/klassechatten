@@ -10,9 +10,10 @@ import { getRelativeTime } from '@/lib/time';
 
 interface ChatRoomProps {
   roomId: string;
+  onBack?: () => void;
 }
 
-export default function ChatRoom({ roomId }: ChatRoomProps) {
+export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   const [messageText, setMessageText] = useState('');
   const [showSuggestion, setShowSuggestion] = useState<string | null>(null);
   const [roomName, setRoomName] = useState<string>('Chat Room');
@@ -283,26 +284,67 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Header */}
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100%',
+      overflow: 'hidden'
+    }}>
+      {/* Consolidated Header */}
       <div style={{ 
         padding: '1rem', 
         borderBottom: '1px solid #eee',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        flexShrink: 0,
+        background: 'white'
       }}>
-        <div>
-          <h2 style={{ margin: 0, marginBottom: '0.25rem' }}>{roomName}</h2>
-          <div style={{ fontSize: '0.75rem', color: '#666' }}>
-            {onlineCount > 0 && `${onlineCount} online`}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {onBack && (
+            <button
+              onClick={onBack}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '1.5rem',
+                cursor: 'pointer',
+                color: '#007bff',
+                padding: '0.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              title="Tilbage til klasseliste"
+            >
+              ←
+            </button>
+          )}
+          <div>
+            <h2 style={{ margin: 0, fontSize: '1.1rem' }}>#{roomName}</h2>
           </div>
         </div>
-        <div style={{ 
-          fontSize: '0.875rem', 
-          color: isConnected ? 'green' : 'orange' 
-        }}>
-          {isConnected ? '🟢 Connected' : '🟠 Connecting...'}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {onlineCount > 0 && (
+            <>
+              <span style={{ fontSize: '0.875rem', color: '#666' }}>
+                {onlineCount} online
+              </span>
+              <div style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#28a745'
+              }} />
+            </>
+          )}
+          <div style={{ 
+            fontSize: '0.875rem', 
+            color: isConnected ? 'green' : 'orange',
+            marginLeft: '0.5rem'
+          }}>
+            {isConnected ? '🟢' : '🟠'}
+          </div>
         </div>
       </div>
 
@@ -455,7 +497,9 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
           fontSize: '0.875rem',
           color: '#666',
           fontStyle: 'italic',
-          borderTop: '1px solid #f0f0f0'
+          borderTop: '1px solid #f0f0f0',
+          background: 'white',
+          flexShrink: 0
         }}>
           {typingUsers.length === 1
             ? `${typingUsers[0]?.display_name || 'Nogen'} skriver...`
@@ -470,7 +514,8 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
         <div style={{
           padding: '1rem',
           background: '#fff3cd',
-          borderTop: '1px solid #ffc107'
+          borderTop: '1px solid #ffc107',
+          flexShrink: 0
         }}>
           <p style={{ marginBottom: '0.5rem', fontWeight: 'bold' }}>
             Din besked blev blokeret
@@ -516,6 +561,8 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
       <div style={{ 
         padding: '1rem', 
         borderTop: '1px solid #eee',
+        background: 'white',
+        flexShrink: 0
       }}>
         {/* Image Preview */}
         {imagePreview && (

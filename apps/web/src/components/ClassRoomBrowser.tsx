@@ -39,31 +39,12 @@ export default function ClassRoomBrowser() {
   // If a room is selected, show the chat
   if (selectedRoomId) {
     return (
-      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ 
-          padding: '1rem', 
-          borderBottom: '1px solid #eee',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '1rem'
-        }}>
-          <button
-            onClick={() => setSelectedRoomId(null)}
-            style={{
-              padding: '0.5rem 1rem',
-              background: '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
-          >
-            ← Tilbage
-          </button>
-          <h3 style={{ margin: 0 }}>Chat</h3>
-        </div>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <div style={{ flex: 1, overflow: 'hidden' }}>
-          <ChatRoom roomId={selectedRoomId} />
+          <ChatRoom 
+            roomId={selectedRoomId}
+            onBack={() => setSelectedRoomId(null)}
+          />
         </div>
       </div>
     );

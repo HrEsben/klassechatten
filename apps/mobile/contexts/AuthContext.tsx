@@ -21,33 +21,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    // Delay initialization slightly to ensure React Native is ready
-    const initTimeout = setTimeout(() => {
-      // Get initial session
-      supabase.auth.getSession().then(({ data: { session } }) => {
+    let mounted = true;
+    
+    const initializeAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        if (error) {
+          console.error('Error getting session:', error);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
+      } catch (error) {
+        console.error('Failed to initialize auth:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+          setInitialized(true);
+        }
+      }
+    };
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) {
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
-        setInitialized(true);
-      }).catch((error) => {
-        console.error('Error getting session:', error);
-        setLoading(false);
-        setInitialized(true);
-      });
+        if (initialized) {
+          setLoading(false);
+        }
+      }
+    });
 
-      // Listen for auth changes
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange((_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      });
+    // Initialize with a small delay
+    const timeout = setTimeout(initializeAuth, 100);
 
-      return () => subscription.unsubscribe();
-    }, 100);
-
-    return () => clearTimeout(initTimeout);
+    return () => {
+      mounted = false;
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, metadata?: { display_name?: string }) => {

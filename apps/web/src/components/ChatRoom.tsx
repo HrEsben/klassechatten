@@ -18,11 +18,24 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
   const [roomName, setRoomName] = useState<string>('Chat Room');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const previousMessageCountRef = useRef(0);
   
   const { user } = useAuth();
-  const { messages, loading, error, isConnected } = useRoomMessages({ 
+  const { 
+    messages, 
+    loading, 
+    error, 
+    isConnected, 
+    addOptimisticMessage, 
+    updateOptimisticMessage 
+  } = useRoomMessages({ 
     roomId,
     limit: 50 
   });
@@ -30,20 +43,80 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
   const { sendMessage, uploadImage, sending, uploading } = useSendMessage();
   
   // Presence and typing indicators
-  const { onlineUsers, typingUsers, setTyping, onlineCount } = useRoomPresence({
+  const { typingUsers, setTyping, onlineCount } = useRoomPresence({
     roomId,
     userId: user?.id || '',
     displayName: user?.user_metadata?.display_name || user?.email || 'Anonymous',
     enabled: !!user,
   });
 
-  // Read receipts
+    // Read receipts
   useReadReceipts({
-    roomId,
     userId: user?.id || '',
-    messages: messages.map(m => ({ id: m.id, user_id: m.user_id })),
-    enabled: !!user,
+    messages: messages
+      .filter(msg => !msg.isOptimistic)
+      .map(msg => ({ id: msg.id as number, user_id: msg.user_id }))
   });
+
+  // Scroll detection and management
+  const checkIfAtBottom = () => {
+    const container = messagesContainerRef.current;
+    if (!container) return false;
+    
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const threshold = 50; // pixels from bottom
+    const atBottom = scrollHeight - scrollTop - clientHeight < threshold;
+    
+    setIsAtBottom(atBottom);
+    return atBottom;
+  };
+
+  const scrollToBottom = (smooth = false) => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: smooth ? 'smooth' : 'auto'
+      });
+      setIsAtBottom(true);
+      setUnreadCount(0);
+      setShowScrollToBottom(false);
+    }
+  };
+
+  const handleScroll = () => {
+    const atBottom = checkIfAtBottom();
+    if (atBottom) {
+      setUnreadCount(0);
+      setShowScrollToBottom(false);
+    }
+  };
+
+  // Auto-scroll logic when new messages arrive
+  useEffect(() => {
+    const newMessageCount = messages.length;
+    const hadNewMessages = newMessageCount > previousMessageCountRef.current;
+    
+    if (hadNewMessages) {
+      if (isAtBottom) {
+        // Auto-scroll if user is at bottom
+        setTimeout(() => scrollToBottom(false), 100);
+      } else {
+        // Show notification if user is scrolled up
+        const newMessagesAdded = newMessageCount - previousMessageCountRef.current;
+        setUnreadCount(prev => prev + newMessagesAdded);
+        setShowScrollToBottom(true);
+      }
+    }
+    
+    previousMessageCountRef.current = newMessageCount;
+  }, [messages.length, isAtBottom]);
+
+  // Initial scroll to bottom when messages first load
+  useEffect(() => {
+    if (messages.length > 0 && previousMessageCountRef.current === 0) {
+      setTimeout(() => scrollToBottom(false), 100);
+    }
+  }, [messages.length]);
 
   // Fetch room details
   useEffect(() => {
@@ -87,13 +160,29 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      setSelectedImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (file) {
+      // Check if it's a supported image format
+      const isImage = file.type.startsWith('image/');
+      const isHEIC = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
+      
+      if (isImage || isHEIC) {
+        setSelectedImage(file);
+        
+        // For HEIC files, we'll show a placeholder since browsers can't preview them
+        if (isHEIC) {
+          // Create a placeholder preview for HEIC files
+          setImagePreview('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y1ZjVmNSIvPjx0ZXh0IHg9IjUwJSIgeT0iNDAlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iMC4zZW0iIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNHB4IiBmaWxsPSIjNjY2Ij5IRUlDIEJpbGxlZGU8L3RleHQ+PHRleHQgeD0iNTAlIiB5PSI2MCUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIwLjNlbSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEycHgiIGZpbGw9IiM5OTkiPvCfk7ggS2xhciB0aWwgdXBsb2FkPC90ZXh0Pjwvc3ZnPg==');
+        } else {
+          // For regular images, show preview
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setImagePreview(reader.result as string);
+          };
+          reader.readAsDataURL(file);
+        }
+      } else {
+        alert('Kun billedfiler er tilladt (JPG, PNG, HEIC, etc.)');
+      }
     }
   };
 
@@ -125,12 +214,24 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
       }
     }
 
-    const result = await sendMessage(roomId, messageText.trim() || undefined, imageUrl || undefined);
+    const result = await sendMessage(
+      roomId, 
+      messageText.trim() || undefined, 
+      imageUrl || undefined,
+      undefined, // replyTo
+      (message) => { 
+        addOptimisticMessage(message);
+        // Clear input immediately after optimistic message is added
+        setMessageText('');
+        handleRemoveImage();
+        // Always scroll to bottom when sending a message
+        setTimeout(() => scrollToBottom(false), 50);
+      },
+      updateOptimisticMessage
+    );
 
     if (result.status === 'block' || result.status === 'blocked') {
       alert(result.reason || 'Din besked blev blokeret på grund af upassende indhold (fx stødende sprog, hadefulde udtryk eller vold).');
-      setMessageText('');
-      handleRemoveImage();
       return;
     }
 
@@ -139,11 +240,9 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
       return;
     }
 
-    // Clear input on success
+    // Clear suggestion if message was successful
     if (result.message_id) {
-      setMessageText('');
       setShowSuggestion(null);
-      handleRemoveImage();
     }
   };
 
@@ -151,13 +250,21 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
     if (!showSuggestion) return;
     
     // Send the suggested text
-    const result = await sendMessage(roomId, showSuggestion);
-    
-    if (result.message_id) {
-      setMessageText('');
-      setShowSuggestion(null);
-      handleRemoveImage();
-    }
+    await sendMessage(
+      roomId, 
+      showSuggestion, 
+      undefined, // imageUrl
+      undefined, // replyTo
+      (message) => { 
+        addOptimisticMessage(message);
+        // Clear input and suggestion immediately after optimistic message is added
+        setShowSuggestion(null);
+        handleRemoveImage();
+        // Always scroll to bottom when sending a message
+        setTimeout(() => scrollToBottom(false), 50);
+      },
+      updateOptimisticMessage
+    );
   };
 
   const cancelMessage = () => {
@@ -200,14 +307,19 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
       </div>
 
       {/* Messages */}
-      <div style={{ 
-        flex: 1, 
-        overflowY: 'auto', 
-        padding: '1rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.5rem'
-      }}>
+      <div 
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        style={{ 
+          flex: 1, 
+          overflowY: 'auto', 
+          padding: '1rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.5rem',
+          position: 'relative'
+        }}
+      >
         {messages.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#666' }}>
             Ingen beskeder endnu. Send den første!
@@ -215,6 +327,10 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
         ) : (
           messages.map((msg) => {
             const isOwnMessage = msg.user_id === user?.id;
+            const isOptimistic = msg.isOptimistic;
+            const isLoading = msg.isLoading;
+            const hasError = msg.hasError;
+            
             return (
               <div 
                 key={msg.id}
@@ -226,13 +342,20 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
                   maxWidth: '70%',
                   alignSelf: isOwnMessage ? 'flex-end' : 'flex-start',
                   marginLeft: isOwnMessage ? 'auto' : '0',
+                  opacity: isOptimistic ? 0.7 : 1,
+                  border: hasError ? '2px solid red' : undefined,
                 }}
               >
                 <div style={{ fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '0.25rem', opacity: isOwnMessage ? 0.9 : 1 }}>
-                  {isOwnMessage ? 'Dig' : (msg.profiles?.display_name || 'Ukendt bruger')}
+                  {isOwnMessage ? 'Dig' : (msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger')}
                 </div>
                 <div style={{ fontSize: '0.75rem', opacity: 0.8, marginBottom: '0.25rem' }}>
                   {getRelativeTime(msg.created_at)}
+                  {isOptimistic && (
+                    <span style={{ marginLeft: '0.5rem' }}>
+                      {isLoading ? '⏳ Sender...' : hasError ? '❌ Fejlet' : '✓ Sendt'}
+                    </span>
+                  )}
                 </div>
                 {msg.image_url && (
                   <img 
@@ -241,18 +364,29 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
                     style={{ 
                       maxWidth: '100%', 
                       borderRadius: '8px', 
-                      marginBottom: msg.body ? '0.5rem' : '0' 
+                      marginBottom: msg.body ? '0.5rem' : '0',
+                      opacity: isOptimistic && isLoading ? 0.5 : 1
                     }}
                   />
                 )}
                 {msg.body && <div>{msg.body}</div>}
+                {hasError && (
+                  <div style={{ 
+                    fontSize: '0.75rem',
+                    color: isOwnMessage ? '#ffcccc' : '#ff0000',
+                    marginTop: '0.5rem',
+                    fontStyle: 'italic'
+                  }}>
+                    Besked kunne ikke sendes. Prøv igen.
+                  </div>
+                )}
                 {msg.edited_at && (
                   <div style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '0.25rem' }}>
                     (redigeret)
                   </div>
                 )}
-                {/* Read receipts - only show for own messages */}
-                {isOwnMessage && msg.read_receipts && msg.read_receipts.length > 0 && (
+                {/* Read receipts - only show for own messages and non-optimistic messages */}
+                {isOwnMessage && !isOptimistic && msg.read_receipts && msg.read_receipts.length > 0 && (
                   <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '0.25rem' }}>
                     ✓✓ Læst af {msg.read_receipts.length}
                   </div>
@@ -260,6 +394,57 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
               </div>
             );
           })
+        )}
+        
+        {/* Jump to Bottom Button */}
+        {showScrollToBottom && (
+          <button
+            onClick={() => scrollToBottom(true)}
+            style={{
+              position: 'absolute',
+              bottom: '1rem',
+              right: '1rem',
+              width: '48px',
+              height: '48px',
+              borderRadius: '50%',
+              background: '#007bff',
+              color: 'white',
+              border: 'none',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '18px',
+              zIndex: 10
+            }}
+            title={unreadCount > 0 ? `${unreadCount} nye beskeder` : 'Gå til bunden'}
+          >
+            {unreadCount > 0 ? (
+              <div style={{ position: 'relative' }}>
+                ↓
+                <div style={{
+                  position: 'absolute',
+                  top: '-8px',
+                  right: '-8px',
+                  background: '#ff4757',
+                  color: 'white',
+                  borderRadius: '10px',
+                  minWidth: '20px',
+                  height: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '12px',
+                  fontWeight: 'bold'
+                }}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </div>
+              </div>
+            ) : (
+              '↓'
+            )}
+          </button>
         )}
       </div>
 
@@ -368,7 +553,7 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
           <input
             type="file"
             ref={fileInputRef}
-            accept="image/*"
+            accept="image/*,.heic,.heif"
             onChange={handleImageSelect}
             style={{ display: 'none' }}
           />

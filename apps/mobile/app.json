@@ -6,12 +6,25 @@
     "scheme": "klassechatten",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.klassechatten.app"
+      "bundleIdentifier": "com.klassechatten.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "package": "com.klassechatten.app"
+      "package": "com.klassechatten.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      }
     },
     "web": {
       "bundler": "metro"
@@ -21,6 +34,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "ac9d99d3-e8ba-4e0b-b140-5172098fa248"
+      },
+      "router": {}
+    },
+    "owner": "hresben"
   }
 }

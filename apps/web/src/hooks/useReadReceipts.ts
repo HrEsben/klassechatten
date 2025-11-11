@@ -4,14 +4,12 @@ import { useEffect, useCallback, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
 interface UseReadReceiptsOptions {
-  roomId: string;
   userId: string;
   messages: Array<{ id: number; user_id: string }>;
   enabled?: boolean;
 }
 
 export function useReadReceipts({
-  roomId,
   userId,
   messages,
   enabled = true,

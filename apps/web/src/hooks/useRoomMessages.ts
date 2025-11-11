@@ -5,26 +5,58 @@ import { supabase } from '@/lib/supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
 interface Message {
-  id: number;
+  id: number | string; // Allow string for optimistic messages
   room_id: string;
-  class_id: string;
+  class_id?: string;
   user_id: string;
-  body: string;
-  image_url?: string;
+  body: string | null;
+  image_url?: string | null;
   reply_to: number | null;
   created_at: string;
   edited_at: string | null;
   deleted_at: string | null;
-  meta: Record<string, unknown>;
+  meta?: Record<string, unknown>;
+  // Optimistic message state
+  isOptimistic?: boolean;
+  isLoading?: boolean;
+  hasError?: boolean;
   // Profile data from join
   profiles?: {
     display_name: string;
+  };
+  user?: {
+    id: string;
+    email: string;
+    user_metadata: { display_name?: string };
   };
   // Read receipts count (how many users have read this message)
   read_receipts?: Array<{
     user_id: string;
     read_at: string;
   }>;
+}
+
+type MessageWithProfiles = Message;
+
+interface OptimisticMessage {
+  room_id: string;
+  class_id?: string;
+  user_id: string;
+  body: string | null;
+  image_url?: string | null;
+  reply_to: number | null;
+  created_at: string;
+  edited_at: string | null;
+  deleted_at: string | null;
+  meta?: Record<string, unknown>;
+  profiles?: {
+    display_name: string;
+  };
+  user?: {
+    id: string;
+    email: string;
+    user_metadata: { display_name?: string };
+  };
 }
 
 interface UseRoomMessagesOptions {
@@ -108,6 +140,7 @@ export function useRoomMessages({
           console.log('Received INSERT event:', payload);
           const newMessage = payload.new as Message;
           console.log('New message image_url:', newMessage.image_url);
+          console.log('New message details:', { id: newMessage.id, body: newMessage.body?.substring(0, 20) });
           
           // Only add if not deleted
           if (!newMessage.deleted_at) {
@@ -124,7 +157,23 @@ export function useRoomMessages({
               profiles: profileData ? { display_name: profileData.display_name } : undefined
             };
             
-            setMessages((prev) => [...prev, messageWithProfile]);
+            setMessages((prev) => {
+              console.log('Adding new message to existing:', prev.map(m => ({ id: m.id, isOptimistic: m.isOptimistic, body: m.body?.substring(0, 20) })));
+              
+              // Check if this message content matches any optimistic message
+              // If so, remove the optimistic message and add the real one
+              const filteredPrev = prev.filter(msg => {
+                if (msg.isOptimistic && msg.body === newMessage.body && msg.user_id === newMessage.user_id) {
+                  console.log('Found matching optimistic message, removing:', { optimisticId: msg.id, realId: newMessage.id });
+                  return false; // Remove the optimistic message
+                }
+                return true; // Keep other messages
+              });
+              
+              const updated = [...filteredPrev, messageWithProfile];
+              console.log('Messages after adding new message:', updated.map(m => ({ id: m.id, isOptimistic: m.isOptimistic, body: m.body?.substring(0, 20) })));
+              return updated;
+            });
           }
         }
       )
@@ -224,11 +273,49 @@ export function useRoomMessages({
     loadMessages();
   }, [loadMessages]);
 
+  // Optimistic message handling
+  const addOptimisticMessage = useCallback((optimisticMessage: OptimisticMessage): string => {
+    const tempId = `temp_${Date.now()}_${Math.random()}`;
+    const fullOptimisticMessage: MessageWithProfiles = {
+      ...optimisticMessage,
+      id: tempId,
+      isOptimistic: true,
+      isLoading: true,
+      hasError: false,
+    };
+    
+    setMessages(prev => [...prev, fullOptimisticMessage]);
+    return tempId;
+  }, []);
+
+  const updateOptimisticMessage = useCallback((tempId: string, success: boolean): void => {
+    console.log(`updateOptimisticMessage called: tempId=${tempId}, success=${success}`);
+    setMessages(prev => {
+      console.log('Current messages before update:', prev.map(m => ({ id: m.id, isOptimistic: m.isOptimistic, body: m.body?.substring(0, 20) })));
+      
+      if (success) {
+        // Remove optimistic message on success - real message will come via realtime
+        const filtered = prev.filter(msg => msg.id !== tempId);
+        console.log('Messages after removing optimistic:', filtered.map(m => ({ id: m.id, isOptimistic: m.isOptimistic, body: m.body?.substring(0, 20) })));
+        return filtered;
+      } else {
+        // Update optimistic message with error state
+        return prev.map(msg => 
+          msg.id === tempId 
+            ? { ...msg, isLoading: false, hasError: true }
+            : msg
+        );
+      }
+    });
+  }, []);
+
   return {
     messages,
     loading,
     error,
     refresh,
     isConnected: channel?.state === 'joined',
+    addOptimisticMessage,
+    updateOptimisticMessage,
   };
 }

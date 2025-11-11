@@ -73,9 +73,14 @@ export function useUserClasses() {
 
       if (roomError) throw roomError;
 
-      // Combine data
+      // Combine data  
       const classesWithRooms: ClassWithRooms[] = memberships.map(membership => {
-        const classData = membership.classes as any;
+        const classData = membership.classes as unknown as {
+          id: string;
+          label: string;
+          grade_level: number;
+          schools?: { name: string };
+        };
         const classRooms = rooms?.filter(r => r.class_id === membership.class_id) || [];
 
         return {

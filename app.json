@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "ac9d99d3-e8ba-4e0b-b140-5172098fa248"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.hresben.klassechatten",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
+  }
+}

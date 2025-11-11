@@ -12,6 +12,27 @@ interface SendMessageResult {
   error?: string;
 }
 
+interface OptimisticMessage {
+  room_id: string;
+  class_id?: string;
+  user_id: string;
+  body: string | null;
+  image_url?: string | null;
+  reply_to: number | null;
+  created_at: string;
+  edited_at: string | null;
+  deleted_at: string | null;
+  meta?: Record<string, unknown>;
+  profiles?: {
+    display_name: string;
+  };
+  user?: {
+    id: string;
+    email: string;
+    user_metadata: { display_name?: string };
+  };
+}
+
 export function useSendMessage() {
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -54,7 +75,9 @@ export function useSendMessage() {
     roomId: string, 
     body?: string, 
     imageUrl?: string,
-    replyTo?: number
+    replyTo?: number,
+    onOptimisticAdd?: (message: OptimisticMessage) => void,
+    onOptimisticUpdate?: (tempId: string, success: boolean) => void
   ): Promise<SendMessageResult> => {
     setSending(true);
     
@@ -64,6 +87,33 @@ export function useSendMessage() {
       if (!session) {
         throw new Error('Not authenticated');
       }
+
+      // Create optimistic message
+      const tempId = `temp-${Date.now()}-${Math.random()}`;
+      const optimisticMessage: OptimisticMessage = {
+        room_id: roomId,
+        class_id: undefined,
+        user_id: session.user.id,
+        body: body || null,
+        image_url: imageUrl || null,
+        reply_to: replyTo || null,
+        created_at: new Date().toISOString(),
+        edited_at: null,
+        deleted_at: null,
+        meta: undefined,
+        profiles: undefined,
+        user: {
+          id: session.user.id,
+          email: session.user.email || '',
+          user_metadata: session.user.user_metadata || {}
+        }
+      };
+
+      // Add optimistic message immediately
+      const actualTempId = onOptimisticAdd?.(optimisticMessage) || tempId;
+      
+      // Reset sending state immediately after optimistic message is added
+      setSending(false);
 
       const payload = { 
         room_id: roomId, 
@@ -93,18 +143,29 @@ export function useSendMessage() {
       if (!response.ok) {
         console.error('Edge Function error:', result);
         console.error('Full response:', response);
+        // Mark optimistic message as failed
+        onOptimisticUpdate?.(actualTempId, false);
         throw new Error(result.error || result.reason || 'Failed to send message');
+      }
+
+      // Update optimistic message with success
+      if (result.status === 'allow' && result.message_id) {
+        // Remove optimistic message - real message will come via realtime
+        onOptimisticUpdate?.(actualTempId, true);
+      } else {
+        // Remove optimistic message for non-successful sends (blocked, flagged, etc.)
+        onOptimisticUpdate?.(actualTempId, false);
       }
 
       return result;
     } catch (error) {
       console.error('Error sending message:', error);
+      // Set sending to false on error since we set it to false earlier on success
+      setSending(false);
       return {
         status: 'blocked' as const,
         error: error instanceof Error ? error.message : 'Unknown error'
       };
-    } finally {
-      setSending(false);
     }
   };
 

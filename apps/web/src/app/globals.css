@@ -146,4 +146,9 @@ a {
   .avatar img {
     border-radius: 0 !important;
   }
+  
+/* Force avatar-group avatars to be square, override DaisyUI extreme border-radius */
+.avatar-group .avatar {
+  border-radius: 0 !important;
+}
 }

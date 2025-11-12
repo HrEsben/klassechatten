@@ -31,9 +31,9 @@ export default function OnlineUsers({
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       {/* Avatar group */}
-      <div className="avatar-group -space-x-2">
+      <div className="avatar-group -space-x-2" style={{ borderRadius: 0 }}>
         {visibleUsers.map((user) => (
-          <div key={user.user_id} className="tooltip" data-tip={user.display_name}>
+          <div key={user.user_id} className="tooltip" data-tip={user.display_name} style={{ borderRadius: 0 }}>
             <Avatar
               user={{
                 display_name: user.display_name,
@@ -45,7 +45,7 @@ export default function OnlineUsers({
           </div>
         ))}
         {remainingCount > 0 && (
-          <div className="avatar avatar-placeholder">
+          <div className="avatar avatar-placeholder" style={{ borderRadius: 0 }}>
             <div className="w-8 h-8 bg-neutral text-neutral-content" style={{ borderRadius: 0 }}>
               <span className="text-xs">+{remainingCount}</span>
             </div>

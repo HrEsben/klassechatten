@@ -50,6 +50,11 @@ apps/mobile/.env
 *.tsbuildinfo
 next-env.d.ts
 
+# ESLint
+.eslintcache
+eslint-report.json
+eslint-report.html
+
 # Turbo
 .turbo/
 

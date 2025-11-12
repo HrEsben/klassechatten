@@ -2,12 +2,11 @@
 const nextConfig = {
   transpilePackages: ['@klassechatten/lib', '@klassechatten/types', '@klassechatten/validation'],
   reactStrictMode: true,
-  eslint: {
-    ignoreDuringBuilds: false,
-  },
   typescript: {
     ignoreBuildErrors: false,
   },
+  // Enable Cache Components for Partial Pre-Rendering
+  cacheComponents: true,
 };
 
 export default nextConfig;

@@ -420,6 +420,16 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     <div className="drawer lg:drawer-open flex h-full">
       <input id="users-drawer" type="checkbox" className="drawer-toggle" defaultChecked />
       
+      {/* Sidebar - now on the left */}
+      <div className="drawer-side z-40">
+        <label htmlFor="users-drawer" aria-label="close sidebar" className="drawer-overlay"></label>
+        <UsersSidebar 
+          users={onlineUsers} 
+          currentUserId={user?.id}
+          className="w-64 min-h-full"
+        />
+      </div>
+
       {/* Main Content */}
       <div className="drawer-content flex flex-col flex-1 min-w-0 bg-base-100/80 backdrop-blur-sm">
         {/* Header */}
@@ -447,16 +457,6 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
               <div>
                 <h2 className="text-lg font-light tracking-wide text-base-content">#{roomName}</h2>
               </div>
-              
-              {/* Online users indicator - desktop and mobile */}
-              <div className="flex items-center gap-2 text-xs text-base-content/60">
-                <span>Brugere online:</span>
-                <OnlineUsers users={onlineUsers} maxVisible={3} />
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              {/* Empty space for potential future actions */}
             </div>
           </div>
         </div>
@@ -747,16 +747,6 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           </div>
         </div>
       )}
-      </div>
-
-      {/* Sidebar */}
-      <div className="drawer-side z-40">
-        <label htmlFor="users-drawer" aria-label="close sidebar" className="drawer-overlay"></label>
-        <UsersSidebar 
-          users={onlineUsers} 
-          currentUserId={user?.id}
-          className="w-64 min-h-full"
-        />
       </div>
     </div>
   );

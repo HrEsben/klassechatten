@@ -30,10 +30,10 @@ export default function UsersSidebar({
       {/* Header */}
       <div className="flex-none px-4 py-3 border-b border-primary/10">
         <div className="font-mono text-xs uppercase tracking-wider text-base-content/60">
-          Online Users
+          Brugere online
         </div>
         <div className="text-sm text-base-content/40 font-light mt-1">
-          {users.length} {users.length === 1 ? 'user' : 'users'}
+          {users.length} {users.length === 1 ? 'bruger' : 'brugere'}
         </div>
       </div>
 

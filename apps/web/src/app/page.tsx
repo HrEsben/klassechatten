@@ -84,7 +84,7 @@ function HomePage() {
       </main>
 
       {/* Footer with geometric pattern */}
-      <footer className="bg-base-100 border-t-2 border-base-content/10">
+      <footer className="bg-base-100 border-t-2 border-base-content/10 relative z-50">
         <div className="w-full max-w-7xl mx-auto px-12 py-4">
           <div className="flex justify-between items-center">
             <div className="text-xs font-mono text-base-content/40 uppercase tracking-wider">

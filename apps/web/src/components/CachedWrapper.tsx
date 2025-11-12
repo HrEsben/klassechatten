@@ -7,11 +7,9 @@ interface CachedWrapperProps {
 
 /**
  * Cached wrapper component that provides static shell around dynamic content
- * This demonstrates Next.js cache components with non-serializable children
+ * Note: This is a regular server component. For 'use cache' examples, see the cache-demo page.
  */
 export default async function CachedWrapper({ children }: CachedWrapperProps) {
-  'use cache';
-  
   // Simulate some expensive computation or data fetching
   await new Promise(resolve => setTimeout(resolve, 100));
   

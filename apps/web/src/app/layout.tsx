@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
   title: 'KlasseChatten',
@@ -15,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="da">
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <Suspense fallback={<div>Loading...</div>}>
+          <AuthProvider>{children}</AuthProvider>
+        </Suspense>
       </body>
     </html>
   );

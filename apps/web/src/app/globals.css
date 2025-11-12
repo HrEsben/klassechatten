@@ -103,6 +103,12 @@ a {
     @apply mb-4;
   }
 
+  /* Input fields have proper padding */
+  .input input,
+  label.input input {
+    @apply px-4 py-3;
+  }
+
   /* Buttons have consistent sizing */
   .btn {
     @apply min-h-12 px-6;

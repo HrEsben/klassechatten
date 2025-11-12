@@ -22,6 +22,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
   
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -403,11 +404,15 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
                   <img 
                     src={msg.image_url} 
                     alt="Uploaded image"
+                    onClick={() => setEnlargedImageUrl(msg.image_url || null)}
                     style={{ 
-                      maxWidth: '100%', 
+                      width: '120px',
+                      height: '90px',
+                      objectFit: 'cover',
                       borderRadius: '8px', 
                       marginBottom: msg.body ? '0.5rem' : '0',
-                      opacity: isOptimistic && isLoading ? 0.5 : 1
+                      opacity: isOptimistic && isLoading ? 0.5 : 1,
+                      cursor: 'pointer'
                     }}
                   />
                 )}
@@ -652,6 +657,47 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           </button>
         </div>
       </div>
+
+      {/* Enlarged Image Modal */}
+      {enlargedImageUrl && (
+        <div 
+          onClick={() => setEnlargedImageUrl(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+            cursor: 'pointer'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '90vw',
+              maxHeight: '90vh',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}
+          >
+            <img 
+              src={enlargedImageUrl}
+              alt="Enlarged view"
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain'
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

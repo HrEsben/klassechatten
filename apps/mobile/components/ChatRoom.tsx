@@ -34,6 +34,7 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
   const [showJumpToBottom, setShowJumpToBottom] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [previousMessageCount, setPreviousMessageCount] = useState(0);
+  const [enlargedImageUri, setEnlargedImageUri] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | number | null>(null);
 
@@ -364,13 +365,18 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
           )}
         </View>
         {item.image_url && (
-          <Image 
-            source={{ uri: item.image_url }}
-            style={styles.messageImage}
-            resizeMode="cover"
-            onLoad={() => console.log('Image loaded successfully:', item.image_url)}
-            onError={(e) => console.error('Image load error:', e.nativeEvent.error, item.image_url)}
-          />
+          <TouchableOpacity 
+            onPress={() => setEnlargedImageUri(item.image_url)}
+            activeOpacity={0.8}
+          >
+            <Image 
+              source={{ uri: item.image_url }}
+              style={styles.messageImageThumbnail}
+              resizeMode="cover"
+              onLoad={() => console.log('Image loaded successfully:', item.image_url)}
+              onError={(e) => console.error('Image load error:', e.nativeEvent.error, item.image_url)}
+            />
+          </TouchableOpacity>
         )}
         {item.body && (
           <Text style={[
@@ -556,6 +562,34 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
           )}
         </TouchableOpacity>
       )}
+
+      {/* Enlarged Image Modal */}
+      <Modal
+        visible={!!enlargedImageUri}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setEnlargedImageUri(null)}
+      >
+        <TouchableOpacity 
+          style={styles.imageModalOverlay}
+          activeOpacity={1}
+          onPress={() => setEnlargedImageUri(null)}
+        >
+          <TouchableOpacity 
+            style={styles.imageModalContent}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            {enlargedImageUri && (
+              <Image 
+                source={{ uri: enlargedImageUri }}
+                style={styles.enlargedImage}
+                resizeMode="contain"
+              />
+            )}
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -757,6 +791,13 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 8,
   },
+  messageImageThumbnail: {
+    width: 120,
+    height: 90,
+    borderRadius: 8,
+    marginTop: 8,
+    marginBottom: 8,
+  },
   imagePreviewContainer: {
     position: 'relative',
     padding: 8,
@@ -855,5 +896,22 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  // Image viewer modal styles
+  imageModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageModalContent: {
+    width: '90%',
+    height: '80%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  enlargedImage: {
+    width: '100%',
+    height: '100%',
   },
 });

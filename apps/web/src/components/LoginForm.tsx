@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -15,12 +15,6 @@ export default function LoginForm() {
   const { signIn, signUp } = useAuth();
   const router = useRouter();
 
-  // Random theme color for loading ball
-  const randomColor = useMemo(() => {
-    const colors = ['text-primary', 'text-secondary', 'text-accent', 'text-info', 'text-success', 'text-warning'];
-    return colors[Math.floor(Math.random() * colors.length)];
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -28,25 +22,36 @@ export default function LoginForm() {
 
     try {
       if (isSignUp) {
+        console.log('Attempting sign up...');
         const { error } = await signUp(email, password, { display_name: displayName });
         if (error) {
+          console.error('Sign up error:', error);
           setError(error.message);
           setLoading(false);
         } else {
-          // Redirect immediately - the auth state will update via the listener
+          console.log('Sign up successful, redirecting...');
+          // Small delay to let auth state propagate
+          await new Promise(resolve => setTimeout(resolve, 1000));
           router.push('/');
+          setLoading(false);
         }
       } else {
+        console.log('Attempting sign in...');
         const { error } = await signIn(email, password);
         if (error) {
+          console.error('Sign in error:', error);
           setError(error.message);
           setLoading(false);
         } else {
-          // Redirect immediately - the auth state will update via the listener
+          console.log('Sign in successful, redirecting...');
+          // Small delay to let auth state propagate
+          await new Promise(resolve => setTimeout(resolve, 1000));
           router.push('/');
+          setLoading(false);
         }
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('An unexpected error occurred');
       setLoading(false);
     }
@@ -144,7 +149,7 @@ export default function LoginForm() {
                   className="btn btn-primary w-full mt-4"
                 >
                   {loading ? (
-                    <span className={`loading loading-ball loading-md ${randomColor}`}></span>
+                    <span className="loading loading-ball loading-md text-primary-content"></span>
                   ) : (
                     <span>{isSignUp ? 'Sign Up' : 'Login'}</span>
                   )}

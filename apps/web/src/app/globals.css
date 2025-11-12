@@ -56,3 +56,22 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+/* Global component padding utility classes */
+@layer components {
+  .container {
+    @apply px-4 sm:px-6 lg:px-8 mx-auto max-w-7xl;
+  }
+
+  .page-container {
+    @apply p-4 sm:p-6 lg:p-8;
+  }
+
+  .section-padding {
+    @apply py-8 sm:py-12 lg:py-16;
+  }
+
+  .card-padding {
+    @apply p-4 sm:p-6;
+  }
+}

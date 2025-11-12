@@ -54,24 +54,24 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-primary/10 via-secondary/5 to-accent/10 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-primary/10 via-secondary/5 to-accent/10 flex items-center justify-center p-6 md:p-8">
       <div className="w-full max-w-md">
         {/* Main Card */}
         <div className="card bg-base-100 shadow-2xl">
-          <div className="card-body">
-            <form onSubmit={handleSubmit}>
-              <fieldset className="fieldset">
-                <legend className="fieldset-legend text-2xl font-semibold mb-6">
+          <div className="card-body p-8 md:p-10">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <fieldset className="fieldset space-y-5">
+                <legend className="fieldset-legend text-2xl font-semibold mb-8">
                   {isSignUp ? 'Create Account' : 'Login'}
                 </legend>
 
                 {isSignUp && (
-                  <>
-                    <label htmlFor="displayName" className="label">
+                  <div className="space-y-2">
+                    <label htmlFor="displayName" className="label text-sm font-medium">
                       Display Name
                     </label>
-                    <label className="input validator mb-4">
-                      <svg className="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <label className="input input-bordered flex items-center gap-3 h-12">
+                      <svg className="h-5 w-5 opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                         <g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.5" fill="none" stroke="currentColor">
                           <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
                           <circle cx="12" cy="7" r="4"></circle>
@@ -85,56 +85,64 @@ export default function LoginForm() {
                         required={isSignUp}
                         placeholder="Your name"
                         minLength={2}
+                        className="grow"
                       />
                     </label>
-                  </>
+                  </div>
                 )}
 
-                <label htmlFor="email" className="label">
-                  Email
-                </label>
-                <label className="input validator mb-4">
-                  <svg className="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.5" fill="none" stroke="currentColor">
-                      <path d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                    </g>
-                  </svg>
-                  <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    placeholder="email@example.com"
-                  />
-                </label>
+                <div className="space-y-2">
+                  <label htmlFor="email" className="label text-sm font-medium">
+                    Email
+                  </label>
+                  <label className="input input-bordered flex items-center gap-3 h-12">
+                    <svg className="h-5 w-5 opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                      <g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.5" fill="none" stroke="currentColor">
+                        <path d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                      </g>
+                    </svg>
+                    <input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      placeholder="email@example.com"
+                      className="grow"
+                    />
+                  </label>
+                </div>
 
-                <label htmlFor="password" className="label">
-                  Password
-                </label>
-                <label className="input validator mb-2">
-                  <svg className="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.5" fill="none" stroke="currentColor">
-                      <path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"></path>
-                      <circle cx="16.5" cy="7.5" r=".5" fill="currentColor"></circle>
-                    </g>
-                  </svg>
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="Password"
-                    minLength={6}
-                  />
-                </label>
-                <p className="validator-hint mb-4">
-                  Must be at least 6 characters
-                </p>
+                <div className="space-y-2">
+                  <label htmlFor="password" className="label text-sm font-medium">
+                    Password
+                  </label>
+                  <label className="input input-bordered flex items-center gap-3 h-12">
+                    <svg className="h-5 w-5 opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                      <g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.5" fill="none" stroke="currentColor">
+                        <path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"></path>
+                        <circle cx="16.5" cy="7.5" r=".5" fill="currentColor"></circle>
+                      </g>
+                    </svg>
+                    <input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      placeholder="Password"
+                      minLength={6}
+                      className="grow"
+                    />
+                  </label>
+                  <p className="text-xs text-base-content/60 mt-1 ml-1">
+                    Must be at least 6 characters
+                  </p>
+                </div>
 
                 {error && (
-                  <div className="alert alert-error mb-4">
+                  <div className="alert alert-error mt-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     <span>{error}</span>
                   </div>
                 )}
@@ -142,7 +150,7 @@ export default function LoginForm() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn btn-primary w-full mt-4"
+                  className="btn btn-primary w-full mt-6 h-12"
                 >
                   {loading ? (
                     <span className="loading loading-ball loading-md text-primary-content"></span>
@@ -153,7 +161,7 @@ export default function LoginForm() {
               </fieldset>
             </form>
 
-            <div className="divider">or</div>
+            <div className="divider my-6">or</div>
 
             <button
               type="button"
@@ -164,7 +172,7 @@ export default function LoginForm() {
                 setEmail('');
                 setPassword('');
               }}
-              className="btn btn-ghost w-full"
+              className="btn btn-ghost w-full h-12"
             >
               {isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
             </button>

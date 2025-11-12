@@ -138,92 +138,16 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     }
   }, [messages.length]);
 
-  // Fetch last read message and scroll to it
+  // TODO: Implement smart pagination-based scrolling (see SMART_SCROLLING.md)
+  // For now, always scroll to bottom when entering a room
   useEffect(() => {
-    const fetchLastReadMessage = async () => {
-      if (!user?.id || messages.length === 0 || hasScrolledToLastRead) return;
-
-      try {
-        const { supabase } = await import('@/lib/supabase');
-        
-        // Get the most recent message in this room (from database)
-        const { data: latestMessage } = await supabase
-          .from('messages')
-          .select('id, created_at')
-          .eq('room_id', roomId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-        
-        // Get the last message this user read in this room
-        const { data: lastRead, error } = await supabase
-          .from('read_receipts')
-          .select('message_id, read_at')
-          .eq('user_id', user.id)
-          .in('message_id', messages.map(m => m.id))
-          .order('read_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (lastRead && !error && latestMessage) {
-          // Check if the last read message is the absolute latest message in the room
-          const isLatestMessageRead = lastRead.message_id === latestMessage.id;
-          
-          // Find the index of the last read message in current view
-          const lastReadIndex = messages.findIndex(m => m.id === lastRead.message_id);
-          const lastMessageIndex = messages.length - 1;
-          
-          // Check if there are unread messages in current view
-          const hasUnreadInView = lastReadIndex >= 0 && lastReadIndex < lastMessageIndex;
-          
-          if (isLatestMessageRead || !hasUnreadInView) {
-            // All messages have been read, scroll to bottom without indicator
-            setTimeout(() => {
-              scrollToBottom(false);
-              setHasScrolledToLastRead(true);
-            }, 100);
-          } else {
-            // There are unread messages, scroll to last read and show indicator
-            setLastReadMessageId(lastRead.message_id);
-            
-            // Wait a bit for refs to be set
-            setTimeout(() => {
-              const messageElement = messageRefs.current.get(lastRead.message_id);
-              if (messageElement && messagesContainerRef.current) {
-                // Scroll to the last read message
-                messageElement.scrollIntoView({ 
-                  behavior: 'auto',
-                  block: 'center' 
-                });
-                setHasScrolledToLastRead(true);
-                
-                // After 5 seconds, clear the indicator
-                setTimeout(() => {
-                  setLastReadMessageId(null);
-                }, 5000);
-              } else {
-                // If message not found in current view, scroll to bottom
-                scrollToBottom(false);
-                setHasScrolledToLastRead(true);
-              }
-            }, 200);
-          }
-        } else {
-          // No read receipt found, scroll to bottom (new user or first visit)
-          setTimeout(() => {
-            scrollToBottom(false);
-            setHasScrolledToLastRead(true);
-          }, 100);
-        }
-      } catch (err) {
-        console.error('Error fetching last read message:', err);
+    if (messages.length > 0 && !hasScrolledToLastRead) {
+      setTimeout(() => {
         scrollToBottom(false);
         setHasScrolledToLastRead(true);
-      }
-    };
-
-    fetchLastReadMessage();
-  }, [messages.length, user?.id, hasScrolledToLastRead]);
+      }, 100);
+    }
+  }, [messages.length, hasScrolledToLastRead]);
 
   // Reset scroll state when room changes
   useEffect(() => {

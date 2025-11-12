@@ -173,6 +173,11 @@ a {
     color: oklch(60% 0 0) !important;
   }
   
+  /* Chat footer - brighter color for better visibility */
+  .chat-footer {
+    color: oklch(75% 0 0) !important;
+  }
+  
   /* Avatar fixed height to match single-line bubble */
   .chat-start .chat-image,
   .chat-end .chat-image {

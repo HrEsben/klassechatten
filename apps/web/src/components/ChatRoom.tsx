@@ -562,7 +562,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
                   {msg.body && <div className="whitespace-pre-wrap px-1">{msg.body}</div>}
                 </div>
 
-                <div className="chat-footer opacity-50">
+                <div className="chat-footer opacity-90">
                   <time className="text-xs">{getRelativeTime(msg.created_at)}</time>
                   {isOptimistic && (
                     <span className="ml-2">{isLoading ? '⏳ Sender...' : hasError ? '❌ Fejlet' : '✓ Sendt'}</span>

@@ -19,6 +19,7 @@ import { useRoomPresence } from '../hooks/useRoomPresence';
 import { useReadReceipts } from '../hooks/useReadReceipts';
 import { useAuth } from '../contexts/AuthContext';
 import { getRelativeTime } from '../utils/time';
+import Avatar from './Avatar';
 
 interface ChatRoomProps {
   roomId: string;
@@ -319,51 +320,66 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
         isOptimistic && styles.optimisticMessage,
         hasError && styles.errorMessage
       ]}>
-        <View style={styles.messageHeader}>
-          <Text style={[
-            styles.messageSender,
-            isOwnMessage && styles.ownMessageText
-          ]}>
-            {isOwnMessage ? 'Dig' : (item.profiles?.display_name || 'Ukendt bruger')}
-          </Text>
-          <Text style={[
-            styles.messageTime,
-            isOwnMessage && styles.ownMessageText
-          ]}>
-            {getRelativeTime(item.created_at)}
-          </Text>
-          {/* Loading/Error indicators */}
-          {isLoading && (
-            <ActivityIndicator 
-              size="small" 
-              color={isOwnMessage ? '#fff' : '#007bff'} 
-              style={styles.messageStatus}
+        <View style={styles.messageRow}>
+          {/* Avatar - only show for other users */}
+          {!isOwnMessage && (
+            <Avatar 
+              user={{
+                display_name: item.profiles?.display_name || 'Ukendt bruger',
+                avatar_url: item.profiles?.avatar_url,
+                avatar_color: item.profiles?.avatar_color,
+              }}
+              size={32}
+              style={styles.messageAvatar}
             />
           )}
-          {hasError && (
-            <TouchableOpacity 
-              onPress={() => {
-                Alert.alert(
-                  'Besked fejlet',
-                  'Beskeden kunne ikke sendes. Prøv igen.',
-                  [
-                    { text: 'OK' },
-                    { text: 'Prøv igen', onPress: () => {
-                      // Remove failed optimistic message
-                      removeOptimisticMessage(item.id);
-                      // Set message text back for retry
-                      if (item.body) setMessageText(item.body);
-                      if (item.image_url) setSelectedImageUri(item.image_url);
-                    }}
-                  ]
-                );
-              }}
-              style={styles.messageStatus}
-            >
-              <Text style={styles.errorIcon}>❌</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+          
+          <View style={[styles.messageContent, isOwnMessage && styles.ownMessageContent]}>
+            <View style={styles.messageHeader}>
+              <Text style={[
+                styles.messageSender,
+                isOwnMessage && styles.ownMessageText
+              ]}>
+                {isOwnMessage ? 'Dig' : (item.profiles?.display_name || 'Ukendt bruger')}
+              </Text>
+              <Text style={[
+                styles.messageTime,
+                isOwnMessage && styles.ownMessageText
+              ]}>
+                {getRelativeTime(item.created_at)}
+              </Text>
+              {/* Loading/Error indicators */}
+              {isLoading && (
+                <ActivityIndicator 
+                  size="small" 
+                  color={isOwnMessage ? '#fff' : '#007bff'} 
+                  style={styles.messageStatus}
+                />
+              )}
+              {hasError && (
+                <TouchableOpacity 
+                  onPress={() => {
+                    Alert.alert(
+                      'Besked fejlet',
+                      'Beskeden kunne ikke sendes. Prøv igen.',
+                      [
+                        { text: 'OK' },
+                        { text: 'Prøv igen', onPress: () => {
+                          // Remove failed optimistic message
+                          removeOptimisticMessage(item.id);
+                          // Set message text back for retry
+                          if (item.body) setMessageText(item.body);
+                          if (item.image_url) setSelectedImageUri(item.image_url);
+                        }}
+                      ]
+                    );
+                  }}
+                  style={styles.messageStatus}
+                >
+                  <Text style={styles.errorIcon}>❌</Text>
+                </TouchableOpacity>
+              )}
+            </View>
         {item.image_url && (
           <TouchableOpacity 
             onPress={() => setEnlargedImageUri(item.image_url)}
@@ -400,6 +416,8 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
             ✓✓ Læst af {item.read_receipts.length}
           </Text>
         )}
+          </View>
+        </View>
       </View>
     );
   };
@@ -913,5 +931,21 @@ const styles = StyleSheet.create({
   enlargedImage: {
     width: '100%',
     height: '100%',
+  },
+  // Avatar styles
+  messageRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  messageAvatar: {
+    marginRight: 8,
+    marginTop: 4,
+  },
+  messageContent: {
+    flex: 1,
+  },
+  ownMessageContent: {
+    alignItems: 'flex-end',
   },
 });

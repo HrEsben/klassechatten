@@ -23,6 +23,8 @@ interface Message {
   // Profile data from join
   profiles?: {
     display_name: string;
+    avatar_url?: string;
+    avatar_color?: string;
   };
   user?: {
     id: string;
@@ -51,6 +53,8 @@ interface OptimisticMessage {
   meta?: Record<string, unknown>;
   profiles?: {
     display_name: string;
+    avatar_url?: string;
+    avatar_color?: string;
   };
   user?: {
     id: string;
@@ -88,7 +92,9 @@ export function useRoomMessages({
         .select(`
           *,
           profiles!messages_user_id_profiles_fkey (
-            display_name
+            display_name,
+            avatar_url,
+            avatar_color
           ),
           read_receipts (
             user_id,
@@ -147,14 +153,18 @@ export function useRoomMessages({
             // Fetch profile data for the new message
             const { data: profileData } = await supabase
               .from('profiles')
-              .select('display_name')
+              .select('display_name, avatar_url, avatar_color')
               .eq('user_id', newMessage.user_id)
               .single();
             
             // Add profile data to message
             const messageWithProfile = {
               ...newMessage,
-              profiles: profileData ? { display_name: profileData.display_name } : undefined
+              profiles: profileData ? { 
+                display_name: profileData.display_name,
+                avatar_url: profileData.avatar_url,
+                avatar_color: profileData.avatar_color
+              } : undefined
             };
             
             setMessages((prev) => {

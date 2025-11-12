@@ -7,6 +7,7 @@ import { useRoomPresence } from '@/hooks/useRoomPresence';
 import { useReadReceipts } from '@/hooks/useReadReceipts';
 import { useAuth } from '@/contexts/AuthContext';
 import { getRelativeTime } from '@/lib/time';
+import Avatar from './Avatar';
 
 interface ChatRoomProps {
   roomId: string;
@@ -378,28 +379,48 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
               <div 
                 key={msg.id}
                 style={{
-                  padding: '0.75rem',
-                  background: isOwnMessage ? '#007bff' : '#f5f5f5',
-                  color: isOwnMessage ? 'white' : 'black',
-                  borderRadius: '8px',
-                  maxWidth: '70%',
-                  alignSelf: isOwnMessage ? 'flex-end' : 'flex-start',
-                  marginLeft: isOwnMessage ? 'auto' : '0',
-                  opacity: isOptimistic ? 0.7 : 1,
-                  border: hasError ? '2px solid red' : undefined,
+                  display: 'flex',
+                  flexDirection: isOwnMessage ? 'row-reverse' : 'row',
+                  alignItems: 'flex-start',
+                  gap: '0.5rem',
+                  marginBottom: '0.5rem'
                 }}
               >
-                <div style={{ fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '0.25rem', opacity: isOwnMessage ? 0.9 : 1 }}>
-                  {isOwnMessage ? 'Dig' : (msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger')}
-                </div>
-                <div style={{ fontSize: '0.75rem', opacity: 0.8, marginBottom: '0.25rem' }}>
-                  {getRelativeTime(msg.created_at)}
-                  {isOptimistic && (
-                    <span style={{ marginLeft: '0.5rem' }}>
-                      {isLoading ? '⏳ Sender...' : hasError ? '❌ Fejlet' : '✓ Sendt'}
-                    </span>
-                  )}
-                </div>
+                {/* Avatar - only show for other users */}
+                {!isOwnMessage && (
+                  <Avatar 
+                    user={{
+                      display_name: msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger',
+                      avatar_url: msg.profiles?.avatar_url,
+                      avatar_color: msg.profiles?.avatar_color,
+                    }}
+                    size={32}
+                    style={{ marginTop: '4px' }}
+                  />
+                )}
+                
+                <div
+                  style={{
+                    padding: '0.75rem',
+                    background: isOwnMessage ? '#007bff' : '#f5f5f5',
+                    color: isOwnMessage ? 'white' : 'black',
+                    borderRadius: '8px',
+                    maxWidth: '70%',
+                    opacity: isOptimistic ? 0.7 : 1,
+                    border: hasError ? '2px solid red' : undefined,
+                  }}
+                >
+                  <div style={{ fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '0.25rem', opacity: isOwnMessage ? 0.9 : 1 }}>
+                    {isOwnMessage ? 'Dig' : (msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger')}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', opacity: 0.8, marginBottom: '0.25rem' }}>
+                    {getRelativeTime(msg.created_at)}
+                    {isOptimistic && (
+                      <span style={{ marginLeft: '0.5rem' }}>
+                        {isLoading ? '⏳ Sender...' : hasError ? '❌ Fejlet' : '✓ Sendt'}
+                      </span>
+                    )}
+                  </div>
                 {msg.image_url && (
                   <img 
                     src={msg.image_url} 
@@ -438,6 +459,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
                     ✓✓ Læst af {msg.read_receipts.length}
                   </div>
                 )}
+                </div>
               </div>
             );
           })
@@ -686,15 +708,17 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
               alignItems: 'center'
             }}
           >
-            <img 
-              src={enlargedImageUrl}
-              alt="Enlarged view"
-              style={{
-                maxWidth: '100%',
-                maxHeight: '100%',
-                objectFit: 'contain'
-              }}
-            />
+            {enlargedImageUrl && (
+              <img 
+                src={enlargedImageUrl}
+                alt="Enlarged view"
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain'
+                }}
+              />
+            )}
           </div>
         </div>
       )}

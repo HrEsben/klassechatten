@@ -302,7 +302,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   return (
     <div className="flex flex-col h-full bg-base-100/80 backdrop-blur-sm">
       {/* Header */}
-      <div className="bg-base-100/60 border-b border-primary/10 px-6 py-4">
+      <div className="bg-base-100/60 border-b border-primary/10 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             {onBack && (
@@ -332,11 +332,13 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             </div>
           </div>
         </div>
-      </div>      {/* Messages */}
+      </div>
+
+      {/* Messages */}
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-transparent"
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-transparent min-h-0"
       >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
@@ -372,7 +374,6 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
 
                 <div className="chat-header">
                   {isOwnMessage ? 'Dig' : (msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger')}
-                  <time className="text-xs opacity-50 ml-2">{getRelativeTime(msg.created_at)}</time>
                 </div>
 
                 <div
@@ -388,22 +389,23 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
                       className={`w-40 h-28 object-cover rounded-lg cursor-pointer mb-2 hover:brightness-90 ${isOptimistic && isLoading ? 'opacity-50' : ''}`}
                     />
                   )}
-                  {msg.body && <div className="whitespace-pre-wrap">{msg.body}</div>}
+                  {msg.body && <div className="whitespace-pre-wrap px-1">{msg.body}</div>}
                 </div>
 
                 <div className="chat-footer opacity-50">
+                  <time className="text-xs">{getRelativeTime(msg.created_at)}</time>
                   {isOptimistic && (
-                    <span>{isLoading ? '⏳ Sender...' : hasError ? '❌ Fejlet' : '✓ Sendt'}</span>
+                    <span className="ml-2">{isLoading ? '⏳ Sender...' : hasError ? '❌ Fejlet' : '✓ Sendt'}</span>
                   )}
                   {hasError && (
                     <div className="text-error italic mt-1">Besked kunne ikke sendes. Prøv igen.</div>
                   )}
                   {msg.edited_at && (
-                    <div>(redigeret)</div>
+                    <div className="ml-2">(redigeret)</div>
                   )}
                   {/* Read receipts - only show for own messages and non-optimistic messages */}
                   {isOwnMessage && !isOptimistic && msg.read_receipts && msg.read_receipts.length > 0 && (
-                    <div>✓✓ Læst af {msg.read_receipts.length}</div>
+                    <div className="ml-2">✓✓ Læst af {msg.read_receipts.length}</div>
                   )}
                 </div>
               </div>
@@ -438,7 +440,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
 
       {/* Typing Indicator */}
       {typingUsers.length > 0 && (
-        <div className="px-6 py-2 text-xs text-base-content/40 font-mono bg-base-100/30">
+        <div className="px-4 py-2 text-xs text-base-content/40 font-mono bg-base-100/30">
           {typingUsers.length === 1
             ? `${typingUsers[0]?.display_name || 'Someone'} typing...`
             : typingUsers.length === 2
@@ -449,7 +451,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
 
       {/* Suggestion Dialog */}
       {showSuggestion && (
-        <div className="px-6 py-4 bg-warning/5 border-t border-warning/20">
+        <div className="px-4 py-4 bg-warning/5 border-t border-warning/20">
           <div className="font-mono text-xs uppercase tracking-wider text-warning mb-3">Message blocked</div>
           <p className="text-sm text-base-content/70 mb-3 font-light">
             Content flagged. Alternative suggestion:
@@ -474,26 +476,26 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         </div>
       )}
 
-      {/* Input */}
-      <div className="px-6 py-4 border-t border-primary/10 bg-base-100/60 backdrop-blur-sm">
+      {/* Input - Always visible at bottom */}
+      <div className="sticky bottom-0 px-4 py-4 border-t border-primary/10 bg-base-100/90 backdrop-blur-md">
         {/* Image Preview */}
         {imagePreview && (
           <div className="mb-4 relative inline-block">
             <img 
               src={imagePreview} 
               alt="Preview" 
-              className="max-h-20 border border-base-300"
+              className="max-h-20 border border-base-300 rounded"
             />
             <button
               onClick={handleRemoveImage}
-              className="absolute -top-2 -right-2 w-6 h-6 bg-error text-error-content text-xs flex items-center justify-center hover:bg-error/80 transition-colors duration-200"
+              className="absolute -top-2 -right-2 w-6 h-6 bg-error text-error-content text-xs flex items-center justify-center hover:bg-error/80 transition-colors duration-200 rounded-full"
             >
               ×
             </button>
           </div>
         )}
         
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-end">
           <input
             type="file"
             ref={fileInputRef}
@@ -504,10 +506,10 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={sending || uploading}
-            className="w-10 h-10 flex items-center justify-center bg-base-200/50 hover:bg-base-200 text-base-content/60 hover:text-base-content transition-all duration-200 disabled:opacity-50"
+            className="btn btn-square btn-ghost btn-sm text-base-content/60 hover:text-base-content"
             title="Upload image"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </button>
@@ -516,14 +518,14 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             value={messageText}
             onChange={(e) => handleInputChange(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            placeholder=""
+            placeholder="Type a message..."
             disabled={sending || uploading}
-            className="bg-base-200/50 border-0 border-b border-base-300 focus:border-primary rounded-none flex-1 px-3 py-2 transition-all duration-300 focus:bg-base-200 font-light"
+            className="input input-bordered flex-1 bg-base-100 focus:bg-base-100"
           />
           <button
             onClick={handleSend}
             disabled={sending || uploading || (!messageText.trim() && !selectedImage)}
-            className="px-6 py-2 bg-primary/90 hover:bg-primary text-primary-content text-xs font-mono uppercase tracking-wider transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="btn btn-primary btn-sm"
           >
             {uploading ? 'Uploading' : sending ? 'Sending' : 'Send'}
           </button>

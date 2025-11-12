@@ -59,16 +59,16 @@ export default function ClassRoomBrowser() {
   }
 
   return (
-    <div className="min-h-screen bg-base-100/80 backdrop-blur-sm px-6 py-8">
+    <div className="bg-base-100/80 backdrop-blur-sm">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="mb-12 text-center">
+        <div className="mb-8 text-center">
           <div className="w-12 h-0.5 bg-primary/60 mx-auto mb-4"></div>
           <h2 className="text-2xl font-light tracking-wide text-base-content">Classes</h2>
         </div>
         
         {/* Classes List */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {classes.map((classItem) => (
             <div 
               key={classItem.id}

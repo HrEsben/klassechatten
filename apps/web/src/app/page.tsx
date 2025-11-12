@@ -17,7 +17,7 @@ function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-base-200">
       {/* Header */}
-      <div className="navbar bg-base-100 shadow-lg">
+      <div className="navbar bg-base-100 shadow-lg px-4">
         <div className="navbar-start">
           <h1 className="text-xl font-bold text-primary">KlasseChatten</h1>
         </div>
@@ -37,7 +37,7 @@ function HomePage() {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto p-4">
         <ClassRoomBrowser />
       </div>
     </div>

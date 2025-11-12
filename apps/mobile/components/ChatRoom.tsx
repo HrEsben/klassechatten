@@ -342,12 +342,6 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
               ]}>
                 {isOwnMessage ? 'Dig' : (item.profiles?.display_name || 'Ukendt bruger')}
               </Text>
-              <Text style={[
-                styles.messageTime,
-                isOwnMessage && styles.ownMessageText
-              ]}>
-                {getRelativeTime(item.created_at)}
-              </Text>
               {/* Loading/Error indicators */}
               {isLoading && (
                 <ActivityIndicator 
@@ -410,12 +404,21 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
             (redigeret)
           </Text>
         )}
-        {/* Read receipts - only show for own messages */}
-        {isOwnMessage && item.read_receipts && item.read_receipts.length > 0 && (
-          <Text style={[styles.readReceipt, styles.ownMessageText]}>
-            ✓✓ Læst af {item.read_receipts.length}
+        {/* Time and read receipts footer */}
+        <View style={styles.messageFooter}>
+          <Text style={[
+            styles.messageTime,
+            isOwnMessage && styles.ownMessageText
+          ]}>
+            {getRelativeTime(item.created_at)}
           </Text>
-        )}
+          {/* Read receipts - only show for own messages */}
+          {isOwnMessage && item.read_receipts && item.read_receipts.length > 0 && (
+            <Text style={[styles.readReceipt, styles.ownMessageText]}>
+              ✓✓ Læst af {item.read_receipts.length}
+            </Text>
+          )}
+        </View>
           </View>
         </View>
       </View>
@@ -687,10 +690,17 @@ const styles = StyleSheet.create({
   messageTime: {
     fontSize: 12,
     color: '#666',
-    marginBottom: 4,
+    opacity: 0.7,
   },
   messageBody: {
     fontSize: 16,
+    paddingHorizontal: 4, // Add some horizontal padding to text bubbles
+  },
+  messageFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 8,
   },
   editedLabel: {
     fontSize: 12,

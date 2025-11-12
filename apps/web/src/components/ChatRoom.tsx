@@ -380,6 +380,40 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             <div>
               <h2 className="text-lg font-light tracking-wide text-base-content">#{roomName}</h2>
             </div>
+            
+            {/* DEV: Flush all messages button */}
+            <button
+              onClick={async () => {
+                if (!confirm('Delete ALL messages in this channel? This cannot be undone!')) return;
+                
+                try {
+                  // Use API route with service role access
+                  const response = await fetch('/api/dev/flush-messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roomId })
+                  });
+                  
+                  const data = await response.json();
+                  
+                  if (!response.ok) {
+                    console.error('Error deleting messages:', data.error);
+                    alert('Failed to delete messages: ' + data.error);
+                  } else {
+                    alert(`Deleted ${data.count} messages`);
+                  }
+                } catch (err) {
+                  console.error('Error:', err);
+                  alert('Failed to delete messages');
+                }
+              }}
+              className="ml-auto btn btn-square btn-sm btn-ghost text-error hover:bg-error/10"
+              title="DEV: Delete all messages"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
           </div>
         </div>
 

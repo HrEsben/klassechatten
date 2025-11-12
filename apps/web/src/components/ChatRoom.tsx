@@ -320,98 +320,80 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           </div>
         </div>
       </div>      {/* Messages */}
-      <div 
+      <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        style={{ 
-          flex: 1, 
-          overflowY: 'auto', 
-          padding: '1rem',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.5rem',
-          position: 'relative'
-        }}
+        className="flex-1 overflow-y-auto p-4 space-y-3 bg-base-100"
       >
         {messages.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#666' }}>
-            Ingen beskeder endnu. Send den første!
-          </p>
+          <p className="text-center text-base-content/70">Ingen beskeder endnu. Send den første!</p>
         ) : (
           messages.map((msg) => {
             const isOwnMessage = msg.user_id === user?.id;
             const isOptimistic = msg.isOptimistic;
             const isLoading = msg.isLoading;
             const hasError = msg.hasError;
-            
+
             return (
-              <div 
-                key={msg.id}
-                className={`chat ${isOwnMessage ? 'chat-end' : 'chat-start'}`}
-              >
-                {/* Avatar - only show for other users */}
-                {!isOwnMessage && (
-                  <div className="chat-image">
-                    <Avatar 
+              <div key={msg.id} className={`chat ${isOwnMessage ? 'chat-end' : 'chat-start'}`}>
+                {/* Avatar - show for all messages following DaisyUI pattern */}
+                <div className="chat-image avatar">
+                  <div className="w-10 rounded-full">
+                    <Avatar
                       user={{
-                        display_name: msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger',
-                        avatar_url: msg.profiles?.avatar_url,
-                        avatar_color: msg.profiles?.avatar_color,
+                        display_name:
+                          isOwnMessage 
+                            ? 'Dig'
+                            : (msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger'),
+                        avatar_url: isOwnMessage ? user?.user_metadata?.avatar_url : msg.profiles?.avatar_url,
+                        avatar_color: isOwnMessage ? user?.user_metadata?.avatar_color : msg.profiles?.avatar_color,
                       }}
                       size="sm"
                     />
                   </div>
-                )}
-
-                <div className="chat-header text-xs opacity-70">
-                  {isOwnMessage ? 'Dig' : (msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger')}
-                  <time className="ml-1">{getRelativeTime(msg.created_at)}</time>
-                  {isOptimistic && (
-                    <span className="ml-2">
-                      {isLoading ? '⏳ Sender...' : hasError ? '❌ Fejlet' : '✓ Sendt'}
-                    </span>
-                  )}
                 </div>
 
-                <div className={`chat-bubble ${
-                  isOwnMessage ? 'chat-bubble-primary' : 'chat-bubble-neutral'
-                } ${isOptimistic ? 'opacity-70' : ''} ${hasError ? 'border-2 border-error' : ''}`}>
+                <div className="chat-header">
+                  {isOwnMessage ? 'Dig' : (msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger')}
+                  <time className="text-xs opacity-50 ml-2">{getRelativeTime(msg.created_at)}</time>
+                </div>
+
+                <div
+                  className={`chat-bubble ${isOwnMessage ? 'chat-bubble-primary' : 'chat-bubble-neutral'} ${
+                    isOptimistic ? 'opacity-70' : ''
+                  } ${hasError ? 'border-2 border-error' : ''}`}
+                >
                   {msg.image_url && (
-                    <img 
-                      src={msg.image_url} 
+                    <img
+                      src={msg.image_url}
                       alt="Uploaded image"
                       onClick={() => setEnlargedImageUrl(msg.image_url || null)}
-                      className={`w-32 h-24 object-cover rounded cursor-pointer mb-2 hover:brightness-75 ${
-                        isOptimistic && isLoading ? 'opacity-50' : ''
-                      }`}
+                      className={`w-40 h-28 object-cover rounded-lg cursor-pointer mb-2 hover:brightness-90 ${isOptimistic && isLoading ? 'opacity-50' : ''}`}
                     />
                   )}
                   {msg.body && <div className="whitespace-pre-wrap">{msg.body}</div>}
                 </div>
 
-                <div className="chat-footer">
+                <div className="chat-footer opacity-50">
+                  {isOptimistic && (
+                    <span>{isLoading ? '⏳ Sender...' : hasError ? '❌ Fejlet' : '✓ Sendt'}</span>
+                  )}
                   {hasError && (
-                    <div className="text-xs text-error italic mt-1">
-                      Besked kunne ikke sendes. Prøv igen.
-                    </div>
+                    <div className="text-error italic mt-1">Besked kunne ikke sendes. Prøv igen.</div>
                   )}
                   {msg.edited_at && (
-                    <div className="text-xs opacity-70 mt-1">
-                      (redigeret)
-                    </div>
+                    <div>(redigeret)</div>
                   )}
                   {/* Read receipts - only show for own messages and non-optimistic messages */}
                   {isOwnMessage && !isOptimistic && msg.read_receipts && msg.read_receipts.length > 0 && (
-                    <div className="text-xs opacity-80 mt-1">
-                      ✓✓ Læst af {msg.read_receipts.length}
-                    </div>
+                    <div>✓✓ Læst af {msg.read_receipts.length}</div>
                   )}
                 </div>
               </div>
             );
           })
         )}
-        
+
         {/* Jump to Bottom Button */}
         {showScrollToBottom && (
           <button

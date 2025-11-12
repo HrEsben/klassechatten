@@ -40,26 +40,23 @@ export default function OnlineUsers({
                 avatar_url: user.avatar_url,
                 avatar_color: user.avatar_color,
               }}
-              online={true}
               size="sm"
             />
           </div>
         ))}
         {remainingCount > 0 && (
           <div className="avatar avatar-placeholder">
-            <div className="w-8 h-8 bg-neutral text-neutral-content rounded-full">
+            <div className="w-8 h-8 bg-neutral text-neutral-content" style={{ borderRadius: 0 }}>
               <span className="text-xs">+{remainingCount}</span>
             </div>
           </div>
         )}
       </div>
-      
       {/* Online count text */}
       <div className="flex items-center gap-1">
         <span className="text-sm text-base-content/70">
           {users.length} online
         </span>
-        <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
       </div>
     </div>
   );

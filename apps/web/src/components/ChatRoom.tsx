@@ -427,13 +427,6 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           
           <div className="flex items-center gap-4">
             <OnlineUsers users={onlineUsers} maxVisible={3} />
-            
-            <div className="flex items-center gap-2">
-              <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-success' : 'bg-warning'}`}></div>
-              <span className="text-xs text-base-content/50 font-mono uppercase tracking-wider">
-                {isConnected ? 'Live' : 'Connecting'}
-              </span>
-            </div>
           </div>
         </div>
       </div>

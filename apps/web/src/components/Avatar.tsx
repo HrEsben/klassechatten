@@ -7,8 +7,6 @@ interface AvatarProps {
     avatar_color?: string;
   };
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number;
-  online?: boolean;
-  offline?: boolean;
   placeholder?: boolean;
   className?: string;
 }
@@ -16,8 +14,6 @@ interface AvatarProps {
 export default function Avatar({ 
   user, 
   size, 
-  online = false, 
-  offline = false,
   placeholder = false,
   className = '' 
 }: AvatarProps) {
@@ -35,29 +31,29 @@ export default function Avatar({
       .toUpperCase();
   };
 
-  // Build DaisyUI classes
+  // Build classes - no online/offline indicators
   const avatarClasses = ['avatar'];
-  if (online) avatarClasses.push('avatar-online');
-  if (offline) avatarClasses.push('avatar-offline');
   if (placeholder) avatarClasses.push('avatar-placeholder');
   
-  // Size classes for DaisyUI
+
+  // Size classes for square avatars
   const sizeClasses = {
     xs: 'w-6 h-6',
-    sm: 'w-8 h-8', 
+    sm: 'w-8 h-8',
     md: 'w-10 h-10',
     lg: 'w-12 h-12',
     xl: 'w-16 h-16'
   };
 
-  const sizeClass = typeof size === 'string' && sizeClasses[size] 
-    ? sizeClasses[size] 
+  const sizeClass = typeof size === 'string' && sizeClasses[size]
+    ? sizeClasses[size]
     : 'w-10 h-10'; // default to md
 
   const customSizeStyle = typeof size === 'number' ? {
     width: `${size}px`,
-    height: `${size}px`
-  } : {};
+    height: `${size}px`,
+    borderRadius: 0
+  } : { borderRadius: 0 };
 
   if (avatarUrl) {
     return (
@@ -66,6 +62,7 @@ export default function Avatar({
           <img
             src={avatarUrl}
             alt={`${displayName} avatar`}
+            style={{ borderRadius: 0 }}
             onError={() => {
               // Fallback to initials if image fails to load
               console.log('Avatar image failed to load, will show initials');
@@ -79,7 +76,7 @@ export default function Avatar({
   // Fallback to placeholder with initials
   return (
     <div className={`${avatarClasses.join(' ')} avatar-placeholder ${className}`}>
-      <div 
+      <div
         className={`text-neutral-content ${sizeClass}`}
         style={{ backgroundColor: avatarColor, ...customSizeStyle }}
       >

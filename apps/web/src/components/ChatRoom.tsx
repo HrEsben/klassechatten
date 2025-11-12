@@ -19,6 +19,7 @@ interface ChatRoomProps {
 export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   const [messageText, setMessageText] = useState('');
   const [showSuggestion, setShowSuggestion] = useState<string | null>(null);
+  const [alertMessage, setAlertMessage] = useState<{ type: 'error' | 'warning' | 'success' | 'info', message: string, blockedText?: string } | null>(null);
   const [roomName, setRoomName] = useState<string>('Chat Room');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -227,7 +228,10 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           reader.readAsDataURL(file);
         }
       } else {
-        alert('Kun billedfiler er tilladt (JPG, PNG, HEIC, etc.)');
+        setAlertMessage({
+          type: 'warning',
+          message: 'Kun billedfiler er tilladt (JPG, PNG, HEIC, etc.)'
+        });
       }
     }
   };
@@ -255,10 +259,16 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     if (selectedImage) {
       imageUrl = await uploadImage(selectedImage);
       if (!imageUrl) {
-        alert('Kunne ikke uploade billede. Prøv igen.');
+        setAlertMessage({
+          type: 'error',
+          message: 'Kunne ikke uploade billede. Prøv igen.'
+        });
         return;
       }
     }
+
+    // Track the tempId for potential removal if blocked
+    let optimisticMessageId: string | undefined;
 
     const result = await sendMessage(
       roomId, 
@@ -266,7 +276,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       imageUrl || undefined,
       undefined, // replyTo
       (message) => { 
-        addOptimisticMessage(message);
+        optimisticMessageId = addOptimisticMessage(message);
         // Clear input immediately after optimistic message is added
         setMessageText('');
         handleRemoveImage();
@@ -277,7 +287,15 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     );
 
     if (result.status === 'block' || result.status === 'blocked') {
-      alert(result.reason || 'Din besked blev blokeret på grund af upassende indhold (fx stødende sprog, hadefulde udtryk eller vold).');
+      // Remove the optimistic message from UI
+      if (optimisticMessageId) {
+        updateOptimisticMessage(optimisticMessageId, true); // true = remove message
+      }
+      setAlertMessage({
+        type: 'error',
+        message: 'Din besked blev blokeret på grund af upassende indhold',
+        blockedText: messageText.trim()
+      });
       return;
     }
 
@@ -347,7 +365,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       
       {/* Sidebar - now on the left */}
       <div className="drawer-side z-40">
-        <label htmlFor="users-drawer" aria-label="close sidebar" className="drawer-overlay"></label>
+        <label htmlFor="users-drawer" aria-label="luk sidebaren" className="drawer-overlay"></label>
         <UsersSidebar 
           users={onlineUsers} 
           currentUserId={user?.id}
@@ -371,7 +389,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
               <button
                 onClick={onBack}
                 className="w-8 h-8 flex items-center justify-center text-base-content/60 hover:text-base-content transition-colors duration-200"
-                title="Back"
+                title="Tilbage"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
@@ -429,8 +447,8 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="w-12 h-0.5 bg-primary/40 mb-4"></div>
-            <p className="text-base-content/50 font-light text-sm tracking-wide">Empty channel</p>
-            <p className="text-base-content/30 font-light text-xs mt-1">Be the first to start the conversation</p>
+            <p className="text-base-content/50 font-light text-sm tracking-wide">Ingen beskeder</p>
+            <p className="text-base-content/30 font-light text-xs mt-1">Vær den første til at starte samtalen</p>
           </div>
         ) : (
           messages.map((msg) => {
@@ -524,10 +542,10 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
                 <div className="chat-footer opacity-90">
                   <time className="text-xs">{getRelativeTime(msg.created_at)}</time>
                   {isOptimistic && (
-                    <span className="ml-2">{isLoading ? '⏳ Sender...' : hasError ? '❌ Fejlet' : '✓ Sendt'}</span>
+                    <span className="ml-2 text-xs">{isLoading ? 'Sender...' : hasError ? 'Fejlet' : 'Sendt'}</span>
                   )}
                   {hasError && (
-                    <div className="text-error italic mt-1">Besked kunne ikke sendes. Prøv igen.</div>
+                    <div className="text-error italic mt-1 text-xs">Besked kunne ikke sendes. Prøv igen.</div>
                   )}
                   {msg.edited_at && (
                     <div className="ml-2">(redigeret)</div>
@@ -547,7 +565,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           <button
             onClick={() => scrollToBottom(true)}
             className="fixed bottom-24 right-6 w-10 h-10 bg-primary/90 hover:bg-primary text-primary-content flex items-center justify-center shadow-lg z-10 transition-all duration-200"
-            title={unreadCount > 0 ? `${unreadCount} new messages` : 'Jump to bottom'}
+            title={unreadCount > 0 ? `${unreadCount} nye beskeder` : 'Gå til bunden'}
           >
             {unreadCount > 0 ? (
               <div className="relative">
@@ -581,9 +599,9 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       {/* Suggestion Dialog */}
       {showSuggestion && (
         <div className="flex-none px-4 py-4 bg-warning/5 border-t border-warning/20">
-          <div className="font-mono text-xs uppercase tracking-wider text-warning mb-3">Message blocked</div>
+          <div className="font-mono text-xs uppercase tracking-wider text-warning mb-3">Besked markeret</div>
           <p className="text-sm text-base-content/70 mb-3 font-light">
-            Content flagged. Alternative suggestion:
+            Indhold blev markeret. Alternativ formulering:
           </p>
           <p className="mb-4 text-base-content/80 bg-base-200/50 p-3 rounded-none border-l-2 border-primary/40">
             {showSuggestion}
@@ -593,13 +611,45 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
               onClick={useSuggestion}
               className="px-4 py-2 bg-success/20 text-success text-xs font-mono uppercase tracking-wider hover:bg-success/30 transition-colors duration-200"
             >
-              Use
+              Brug forslag
             </button>
             <button 
               onClick={cancelMessage}
               className="px-4 py-2 text-base-content/60 text-xs font-mono uppercase tracking-wider hover:text-base-content transition-colors duration-200"
             >
-              Cancel
+              Annuller
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Alert notification - positioned above input */}
+      {alertMessage && (
+        <div className="flex-none px-4 pb-2">
+          <div role="alert" className={`alert alert-error bg-error/10 border border-error/30`}>
+            <div className="flex-1">
+              <div className="flex items-start gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0 stroke-current mt-0.5" fill="none" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div className="flex-1">
+                  <div className="font-mono text-xs uppercase tracking-wider text-error mb-1">Besked blokeret</div>
+                  <div className="text-sm text-base-content/80 mb-2">{alertMessage.message}</div>
+                  {alertMessage.blockedText && (
+                    <div className="text-xs bg-base-200/50 border-l-2 border-error/40 p-2 text-base-content/60 font-mono">
+                      "{alertMessage.blockedText}"
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <button 
+              onClick={() => setAlertMessage(null)}
+              className="btn btn-sm btn-ghost btn-square text-error hover:bg-error/20"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
         </div>

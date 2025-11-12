@@ -273,7 +273,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           status: "blocked",
-          reason: "Message contains inappropriate content",
+          reason: "Din besked indeholder upassende indhold",
           categories: moderation.results[0].categories
         }), 
         { 

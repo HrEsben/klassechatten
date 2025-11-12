@@ -139,4 +139,11 @@ a {
   .card {
     border-radius: 0 !important;
   }
+
+  /* Remove rounded corners from all images and avatars globally */
+  img,
+  .avatar > div,
+  .avatar img {
+    border-radius: 0 !important;
+  }
 }

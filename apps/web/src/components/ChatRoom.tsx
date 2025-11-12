@@ -488,7 +488,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
                 
                 {/* Avatar - show for all messages following DaisyUI pattern */}
                 <div className="chat-image avatar">
-                  <div className="w-10 rounded-full">
+                  <div className="w-10">
                     <Avatar
                       user={{
                         display_name:
@@ -517,7 +517,11 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
                       src={msg.image_url}
                       alt="Uploaded image"
                       onClick={() => setEnlargedImageUrl(msg.image_url || null)}
-                      className={`w-40 h-28 object-cover rounded-lg cursor-pointer mb-2 hover:brightness-90 ${isOptimistic && isLoading ? 'opacity-50' : ''}`}
+                        className={`w-40 h-28 object-cover cursor-pointer mb-2 hover:brightness-90 ${isOptimistic && isLoading ? 'opacity-50' : ''}`}
+                        onError={e => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'160\' height=\'112\'><rect width=\'100%\' height=\'100%\' fill=\'#f3f4f6\'/><text x=\'50%\' y=\'50%\' text-anchor=\'middle\' dy=\'.3em\' font-size=\'16\' fill=\'#9ca3af\'>Billede fejler</text></svg>';
+                        }}
                     />
                   )}
                   {msg.body && <div className="whitespace-pre-wrap px-1">{msg.body}</div>}
@@ -612,14 +616,18 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         {/* Image Preview */}
         {imagePreview && (
           <div className="mb-4 relative inline-block">
-            <img 
-              src={imagePreview} 
-              alt="Preview" 
-              className="max-h-20 border border-base-300 rounded"
-            />
+              <img 
+                src={imagePreview} 
+                alt="Preview" 
+                className="max-h-20 border border-base-300"
+                onError={e => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'160\' height=\'80\'><rect width=\'100%\' height=\'100%\' fill=\'#f3f4f6\'/><text x=\'50%\' y=\'50%\' text-anchor=\'middle\' dy=\'.3em\' font-size=\'16\' fill=\'#9ca3af\'>Billede fejler</text></svg>';
+                }}
+              />
             <button
               onClick={handleRemoveImage}
-              className="absolute -top-2 -right-2 w-6 h-6 bg-error text-error-content text-xs flex items-center justify-center hover:bg-error/80 transition-colors duration-200 rounded-full"
+              className="absolute -top-2 -right-2 w-6 h-6 bg-error text-error-content text-xs flex items-center justify-center hover:bg-error/80 transition-colors duration-200"
             >
               ×
             </button>
@@ -673,13 +681,17 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             onClick={(e) => e.stopPropagation()}
             className="max-w-[90vw] max-h-[90vh] flex justify-center items-center"
           >
-            {enlargedImageUrl && (
-              <img 
-                src={enlargedImageUrl}
-                alt="Enlarged view"
-                className="max-w-full max-h-full object-contain"
-              />
-            )}
+              {enlargedImageUrl && (
+                <img 
+                  src={enlargedImageUrl}
+                  alt="Enlarged view"
+                  className="max-w-full max-h-full object-contain"
+                  onError={e => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'><rect width=\'100%\' height=\'100%\' fill=\'#111827\'/><text x=\'50%\' y=\'50%\' text-anchor=\'middle\' dy=\'.3em\' font-size=\'24\' fill=\'#9ca3af\'>Billede fejler</text></svg>';
+                  }}
+                />
+              )}
           </div>
         </div>
       )}

@@ -62,7 +62,7 @@ export default function Avatar({
   if (avatarUrl) {
     return (
       <div className={`${avatarClasses.join(' ')} ${className}`}>
-        <div className={`rounded-full ${sizeClass}`} style={customSizeStyle}>
+        <div className={sizeClass} style={customSizeStyle}>
           <img
             src={avatarUrl}
             alt={`${displayName} avatar`}
@@ -80,7 +80,7 @@ export default function Avatar({
   return (
     <div className={`${avatarClasses.join(' ')} avatar-placeholder ${className}`}>
       <div 
-        className={`rounded-full text-neutral-content ${sizeClass}`}
+        className={`text-neutral-content ${sizeClass}`}
         style={{ backgroundColor: avatarColor, ...customSizeStyle }}
       >
         <span className="text-xs font-semibold">

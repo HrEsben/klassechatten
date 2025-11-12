@@ -16,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="da">
       <body>
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={null}>
           <AuthProvider>{children}</AuthProvider>
         </Suspense>
       </body>

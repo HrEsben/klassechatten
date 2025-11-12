@@ -54,128 +54,116 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-primary/10 via-secondary/5 to-accent/10 flex items-center justify-center p-6 md:p-8">
-      <div className="w-full max-w-md">
-        {/* Main Card */}
-        <div className="card bg-base-100 shadow-2xl">
-          <div className="card-body p-8 md:p-10">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <fieldset className="fieldset space-y-5">
-                <legend className="fieldset-legend text-2xl font-semibold mb-8">
-                  {isSignUp ? 'Create Account' : 'Login'}
-                </legend>
+    <div className="min-h-screen bg-base-300 flex items-center justify-center px-6 py-12">
+      <div className="w-full max-w-lg">
+        {/* Modern Berlin Edgy Login Card */}
+        <div className="relative">
+          {/* Accent border effect */}
+          <div className="absolute -inset-0.5 bg-linear-to-r from-primary to-secondary opacity-20 blur-sm"></div>
+          
+          <div className="relative bg-base-100 shadow-xl">
+            {/* Header with strong typography */}
+            <div className="border-b-2 border-primary/20 px-10 py-8">
+              <h1 className="text-4xl font-black tracking-tight text-base-content uppercase">
+                {isSignUp ? 'Opret Konto' : 'Log Ind'}
+              </h1>
+              <div className="h-1 w-16 bg-primary mt-4"></div>
+            </div>
 
+            <div className="px-10 py-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 {isSignUp && (
                   <div className="space-y-2">
-                    <label htmlFor="displayName" className="label text-sm font-medium">
-                      Display Name
+                    <label htmlFor="displayName" className="block text-xs font-bold uppercase tracking-widest text-base-content/70">
+                      Visningsnavn
                     </label>
-                    <label className="input input-bordered flex items-center gap-3 h-12">
-                      <svg className="h-5 w-5 opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                        <g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.5" fill="none" stroke="currentColor">
-                          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                          <circle cx="12" cy="7" r="4"></circle>
-                        </g>
-                      </svg>
-                      <input
-                        id="displayName"
-                        type="text"
-                        value={displayName}
-                        onChange={(e) => setDisplayName(e.target.value)}
-                        required={isSignUp}
-                        placeholder="Your name"
-                        minLength={2}
-                        className="grow"
-                      />
-                    </label>
+                    <input
+                      id="displayName"
+                      type="text"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      required={isSignUp}
+                      placeholder="Indtast dit navn"
+                      minLength={2}
+                      className="input w-full px-6 bg-base-200 focus:bg-base-100 border-0 focus:ring-2 focus:ring-primary focus:outline-none h-14 text-base font-medium transition-all"
+                    />
                   </div>
                 )}
 
                 <div className="space-y-2">
-                  <label htmlFor="email" className="label text-sm font-medium">
-                    Email
+                  <label htmlFor="email" className="block text-xs font-bold uppercase tracking-widest text-base-content/70">
+                    Email Adresse
                   </label>
-                  <label className="input input-bordered flex items-center gap-3 h-12">
-                    <svg className="h-5 w-5 opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                      <g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.5" fill="none" stroke="currentColor">
-                        <path d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                      </g>
-                    </svg>
-                    <input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      placeholder="email@example.com"
-                      className="grow"
-                    />
-                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="din@email.dk"
+                    className="input w-full px-6 bg-base-200 focus:bg-base-100 border-0 focus:ring-2 focus:ring-primary focus:outline-none h-14 text-base font-medium transition-all"
+                  />
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="password" className="label text-sm font-medium">
-                    Password
+                  <label htmlFor="password" className="block text-xs font-bold uppercase tracking-widest text-base-content/70">
+                    Adgangskode
                   </label>
-                  <label className="input input-bordered flex items-center gap-3 h-12">
-                    <svg className="h-5 w-5 opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                      <g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.5" fill="none" stroke="currentColor">
-                        <path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"></path>
-                        <circle cx="16.5" cy="7.5" r=".5" fill="currentColor"></circle>
-                      </g>
-                    </svg>
-                    <input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      placeholder="Password"
-                      minLength={6}
-                      className="grow"
-                    />
-                  </label>
-                  <p className="text-xs text-base-content/60 mt-1 ml-1">
-                    Must be at least 6 characters
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="Indtast adgangskode"
+                    minLength={6}
+                    className="input w-full px-6 bg-base-200 focus:bg-base-100 border-0 focus:ring-2 focus:ring-primary focus:outline-none h-14 text-base font-medium transition-all"
+                  />
+                  <p className="text-xs text-base-content/50 font-mono tracking-wide">
+                    MIN. 6 TEGN
                   </p>
                 </div>
 
                 {error && (
-                  <div className="alert alert-error mt-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <span>{error}</span>
+                  <div className="bg-error/10 border-l-4 border-error px-6 py-4">
+                    <p className="text-error text-sm font-bold uppercase tracking-wide">{error}</p>
                   </div>
                 )}
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn btn-primary w-full mt-6 h-12"
+                  className="btn w-full h-14 bg-primary hover:bg-primary/90 text-primary-content border-0 font-black text-base uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
-                    <span className="loading loading-ball loading-md text-primary-content"></span>
+                    <span className="loading loading-spinner loading-md"></span>
                   ) : (
-                    <span>{isSignUp ? 'Sign Up' : 'Login'}</span>
+                    <span>{isSignUp ? 'Opret Konto' : 'Få Adgang'}</span>
                   )}
                 </button>
-              </fieldset>
-            </form>
+              </form>
 
-            <div className="divider my-6">or</div>
+              {/* Divider with geometric style */}
+              <div className="flex items-center gap-4 my-8">
+                <div className="flex-1 h-px bg-base-content/10"></div>
+                <span className="text-xs font-bold uppercase tracking-widest text-base-content/40">Eller</span>
+                <div className="flex-1 h-px bg-base-content/10"></div>
+              </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError('');
-                setDisplayName('');
-                setEmail('');
-                setPassword('');
-              }}
-              className="btn btn-ghost w-full h-12"
-            >
-              {isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError('');
+                  setDisplayName('');
+                  setEmail('');
+                  setPassword('');
+                }}
+                className="w-full text-center px-8 py-4 text-sm font-bold uppercase tracking-wider text-base-content/60 hover:text-primary transition-colors border-2 border-base-content/10 hover:border-primary/50"
+              >
+                {isSignUp ? 'Log Ind I Stedet' : 'Opret Ny Konto'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

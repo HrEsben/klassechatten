@@ -25,9 +25,9 @@
   --color-warning-content: oklch(18.202% 0.042 100.5);
   --color-error: oklch(64.84% 0.293 29.349);
   --color-error-content: oklch(12.968% 0.058 29.349);
-  --radius-selector: 0.5rem;
-  --radius-field: 0.5rem;
-  --radius-box: 1rem;
+  --radius-selector: 0rem;
+  --radius-field: 0rem;
+  --radius-box: 0rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
@@ -37,12 +37,12 @@
 
 * {
   box-sizing: border-box;
-  padding: 0;
-  margin: 0;
 }
 
 html,
 body {
+  margin: 0;
+  padding: 0;
   max-width: 100vw;
   overflow-x: hidden;
 }
@@ -58,21 +58,46 @@ a {
 }
 
 /* Global component padding utility classes */
+@layer utilities {
+  .content-wrapper {
+    width: 100%;
+    max-width: 80rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+  
+  @media (max-width: 768px) {
+    .content-wrapper {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+}
+
 @layer components {
-  .container {
-    @apply px-4 sm:px-6 lg:px-8 mx-auto max-w-7xl;
-  }
-
   .page-container {
-    @apply p-4 sm:p-6 lg:p-8;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    max-width: 80rem;
   }
-
-  .section-padding {
-    @apply py-8 sm:py-12 lg:py-16;
+  
+  @media (min-width: 640px) {
+    .page-container {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
   }
-
-  .card-padding {
-    @apply p-4 sm:p-6;
+  
+  @media (min-width: 1024px) {
+    .page-container {
+      padding-left: 3rem;
+      padding-right: 3rem;
+    }
   }
 }
 
@@ -80,42 +105,38 @@ a {
 @layer base {
   /* Fieldset always has padding and spacing */
   fieldset.fieldset {
-    @apply p-6 space-y-4;
+    padding: 1.5rem;
   }
 
   /* Card body always has good padding */
   .card-body {
-    @apply p-6 sm:p-8;
+    padding: 1.5rem;
   }
 
-  /* Forms have consistent spacing */
-  form {
-    @apply space-y-4;
-  }
-
-  /* Labels have proper spacing */
-  label.label {
-    @apply mb-2 block;
-  }
-
-  /* Input groups have consistent spacing */
-  label.input {
-    @apply mb-4;
-  }
-
-  /* Input fields have proper padding */
-  .input input,
-  label.input input {
-    @apply px-4 py-3;
-  }
-
-  /* Buttons have consistent sizing */
+  /* Buttons have consistent sizing and sharp edges */
   .btn {
-    @apply min-h-12 px-6;
+    min-height: 3rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    border-radius: 0 !important;
+  }
+  
+  /* Input fields have proper padding */
+  .input,
+  input.input {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    border-radius: 0 !important;
   }
 
-  /* Alerts have proper padding */
+  /* Alerts have proper padding and sharp edges */
   .alert {
-    @apply p-4 rounded-lg;
+    padding: 1rem;
+    border-radius: 0 !important;
+  }
+
+  /* Cards have sharp edges */
+  .card {
+    border-radius: 0 !important;
   }
 }

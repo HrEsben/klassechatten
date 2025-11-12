@@ -187,9 +187,17 @@ EXPO_PUBLIC_OPENAI_API_KEY=sk-proj-...
 - ✅ Environment secrets ikke i git
 
 ### Design Guidelines
+- **Language**: All user-facing text in the frontend must be in Danish
+- **Visual Style**: Modern Berlin Edgy aesthetic - minimalist, bold, urban, with sharp edges and strong contrast
 - **No Emojis**: Never use emojis in the codebase. Use icons (SVG), text, or visual elements instead
 - **Clean Interface**: Maintain a professional, clean interface without decorative emojis
 - **Accessibility**: Use semantic HTML and proper ARIA labels instead of emojis for meaning
+- **Typography**: Use bold headings, clean sans-serif fonts, generous letter-spacing for impact
+- **Layout**: Generous whitespace, asymmetric layouts when appropriate, strong grid alignment
+- **Colors**: High contrast, monochromatic with accent colors, minimal color palette
+- **Shapes**: Sharp corners, geometric patterns, clean lines, minimal rounded corners
+- **Spacing**: Breathing room between elements, clear visual hierarchy
+- **Effects**: Subtle shadows, clean borders, minimal gradients - prefer solid colors
 
 ### DaisyUI Integration
 - **UI Framework**: DaisyUI v5 + Tailwind CSS v4 (web app only)

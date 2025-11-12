@@ -283,7 +283,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       <div className="flex justify-center items-center h-full bg-base-100/80">
         <div className="flex flex-col items-center gap-6">
           <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-          <div className="text-base-content/60 font-light tracking-wide">Loading...</div>
+          <div className="text-base-content/60 font-light tracking-wide">Indlæser...</div>
         </div>
       </div>
     );
@@ -507,7 +507,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             onClick={() => fileInputRef.current?.click()}
             disabled={sending || uploading}
             className="btn btn-square btn-ghost btn-sm text-base-content/60 hover:text-base-content"
-            title="Upload image"
+            title="Upload billede"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -518,7 +518,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             value={messageText}
             onChange={(e) => handleInputChange(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            placeholder="Type a message..."
+            placeholder="Skriv en besked..."
             disabled={sending || uploading}
             className="input input-bordered flex-1 bg-base-100 focus:bg-base-100"
           />
@@ -527,7 +527,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             disabled={sending || uploading || (!messageText.trim() && !selectedImage)}
             className="btn btn-primary btn-sm"
           >
-            {uploading ? 'Uploading' : sending ? 'Sending' : 'Send'}
+            {uploading ? 'Uploader' : sending ? 'Sender' : 'Send'}
           </button>
         </div>
       </div>

@@ -115,7 +115,8 @@ a {
 
   /* Buttons have consistent sizing and sharp edges */
   .btn {
-    min-height: 3rem;
+    min-height: 40px;
+    height: 40px;
     padding-left: 1.5rem;
     padding-right: 1.5rem;
     border-radius: 0 !important;
@@ -189,6 +190,48 @@ a {
     width: 40px !important;
   }
   
+  /* Join component alignment for input area */
+  .join .join-item {
+    align-self: stretch !important;
+  }
+  
+  .join .btn.join-item {
+    height: 40px !important;
+    min-height: 40px !important;
+  }
+  
+  /* Input placeholder - lighter color for better visibility */
+  .input::placeholder,
+  input.input::placeholder {
+    color: oklch(70% 0 0) !important;
+    opacity: 1 !important;
+  }
+  
+  /* Remove focus borders and ensure visible cursor */
+  .input:focus,
+  input.input:focus,
+  .input:focus-visible,
+  input.input:focus-visible {
+    outline: none !important;
+    border-color: currentColor !important;
+    box-shadow: none !important;
+  }
+  
+  /* Ensure cursor is visible */
+  .input,
+  input.input {
+    caret-color: currentColor !important;
+  }
+  
+  /* Input text color - lighter for better visibility in dark mode */
+  .input,
+  input.input,
+  textarea.textarea,
+  select.select {
+    color: oklch(95% 0 0) !important;
+  }
+}
+  
   /* Equal spacing between avatar and bubble on both sides */
   .chat-start,
   .chat-end {
@@ -238,4 +281,4 @@ a {
     border-top: 2px dashed currentColor !important;
     opacity: 0.2 !important;
   }
-}
+

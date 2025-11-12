@@ -19,32 +19,21 @@ function HomePage() {
     <div className="min-h-screen bg-base-300 flex flex-col">
       {/* Edgy Berlin Header */}
       <header className="bg-base-100 border-b-2 border-base-content/10">
-        <div className="w-full px-12 lg:grid lg:grid-cols-[256px_1fr] lg:px-0">
-          <div className="flex items-center justify-between py-4 lg:justify-end">
+        <div className="w-full px-4 lg:px-0 lg:grid lg:grid-cols-[256px_1fr]">
+          <div className="flex items-center justify-between py-4 lg:justify-end lg:px-12">
             {/* Logo/Brand with accent bar */}
-            <div className="flex flex-col items-end">
-              <h1 className="text-2xl font-black uppercase tracking-tight text-base-content">
+            <div className="flex flex-col">
+              <h1 className="text-xl lg:text-2xl font-black uppercase tracking-tight text-base-content">
                 KlasseChatten
               </h1>
-              <div className="h-0.5 w-20 bg-primary mt-1 ml-auto"></div>
+              <div className="h-0.5 w-16 lg:w-20 bg-primary mt-1 lg:ml-auto"></div>
             </div>
 
-            {/* User Controls - mobile only */}
-            <div className="flex items-center gap-6 lg:hidden">
-              {/* User Info */}
-              <div className="flex flex-col items-end">
-                <span className="text-xs font-bold uppercase tracking-widest text-base-content/50">
-                  Bruger
-                </span>
-                <span className="text-sm font-medium text-base-content">
-                  {user?.user_metadata?.display_name || user?.email}
-                </span>
-              </div>
-              
-              {/* Logout Button */}
+            {/* Mobile menu button - shows user controls */}
+            <div className="lg:hidden">
               <button
                 onClick={handleSignOut}
-                className="btn btn-sm h-10 px-8 bg-base-content text-base-100 hover:bg-primary hover:text-primary-content font-bold uppercase tracking-wider text-xs transition-all shadow-sm hover:shadow-md"
+                className="btn btn-sm bg-base-content text-base-100 hover:bg-primary hover:text-primary-content"
               >
                 Log Ud
               </button>
@@ -52,7 +41,7 @@ function HomePage() {
           </div>
           
           {/* User Controls for large screens - in second grid column */}
-          <div className="hidden lg:flex items-center gap-6 py-4 px-12">
+          <div className="hidden lg:flex items-center justify-end gap-6 py-4 px-12">
             {/* User Info */}
             <div className="flex flex-col items-end">
               <span className="text-xs font-bold uppercase tracking-widest text-base-content/50">
@@ -66,7 +55,7 @@ function HomePage() {
             {/* Logout Button */}
             <button
               onClick={handleSignOut}
-              className="btn btn-sm h-10 px-8 bg-base-content text-base-100 hover:bg-primary hover:text-primary-content font-bold uppercase tracking-wider text-xs transition-all shadow-sm hover:shadow-md"
+              className="btn bg-base-content text-base-100 hover:bg-primary hover:text-primary-content"
             >
               Log Ud
             </button>

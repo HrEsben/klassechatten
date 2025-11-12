@@ -418,7 +418,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
 
   return (
     <div className="drawer lg:drawer-open flex h-full">
-      <input id="users-drawer" type="checkbox" className="drawer-toggle" defaultChecked />
+      <input id="users-drawer" type="checkbox" className="drawer-toggle" />
       
       {/* Sidebar - now on the left */}
       <div className="drawer-side z-40">
@@ -426,7 +426,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         <UsersSidebar 
           users={onlineUsers} 
           currentUserId={user?.id}
-          className="w-64 min-h-full"
+          className="w-64 min-h-full mt-18 lg:mt-0"
         />
       </div>
 
@@ -437,7 +437,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {/* Sidebar toggle for mobile */}
-              <label htmlFor="users-drawer" className="btn btn-square btn-ghost btn-sm lg:hidden">
+              <label htmlFor="users-drawer" className="btn btn-square btn-ghost btn-sm lg:hidden text-base-content">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
@@ -669,7 +669,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           </div>
         )}
         
-        <div className="flex gap-3 items-end">
+        <div className="join w-full">
           <input
             type="file"
             ref={fileInputRef}
@@ -680,7 +680,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={sending || uploading}
-            className="btn btn-square btn-ghost btn-sm text-base-content/60 hover:text-base-content"
+            className="btn join-item bg-base-200 hover:bg-base-300 w-10 h-10 min-h-10 p-0 border-0"
             title="Upload billede"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -694,12 +694,12 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
             placeholder="Skriv en besked..."
             disabled={sending || uploading}
-            className="input input-bordered flex-1 bg-base-100 focus:bg-base-100"
+            className="input input-bordered join-item flex-1"
           />
           <button
             onClick={handleSend}
             disabled={sending || uploading || (!messageText.trim() && !selectedImage)}
-            className="btn btn-primary btn-sm"
+            className="btn btn-primary join-item"
           >
             {uploading ? 'Uploader' : sending ? 'Sender' : 'Send'}
           </button>

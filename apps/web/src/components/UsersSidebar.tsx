@@ -26,14 +26,23 @@ export default function UsersSidebar({
   }
 
   return (
-    <div className={`flex flex-col h-full bg-base-200/60 border-r border-primary/10 ${className}`}>
+    <div className={`flex flex-col h-full bg-base-200 lg:bg-base-200/60 border-r border-primary/10 ${className}`}>
       {/* Header */}
       <div className="flex-none px-4 py-3 border-b border-primary/10">
-        <div className="font-mono text-xs uppercase tracking-wider text-base-content/60">
-          Brugere online
-        </div>
-        <div className="text-sm text-base-content/40 font-light mt-1">
-          {users.length} {users.length === 1 ? 'bruger' : 'brugere'}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="font-mono text-xs uppercase tracking-wider text-base-content/60">
+              Brugere online
+            </div>
+            <div className="text-sm text-base-content/40 font-light mt-1">
+              {users.length} {users.length === 1 ? 'bruger' : 'brugere'}
+            </div>
+          </div>
+          <label htmlFor="users-drawer" className="btn btn-ghost btn-sm btn-square lg:hidden text-base-content">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </label>
         </div>
       </div>
 

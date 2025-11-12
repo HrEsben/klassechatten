@@ -75,3 +75,41 @@ a {
     @apply p-4 sm:p-6;
   }
 }
+
+/* Global component defaults for better UI */
+@layer base {
+  /* Fieldset always has padding and spacing */
+  fieldset.fieldset {
+    @apply p-6 space-y-4;
+  }
+
+  /* Card body always has good padding */
+  .card-body {
+    @apply p-6 sm:p-8;
+  }
+
+  /* Forms have consistent spacing */
+  form {
+    @apply space-y-4;
+  }
+
+  /* Labels have proper spacing */
+  label.label {
+    @apply mb-2 block;
+  }
+
+  /* Input groups have consistent spacing */
+  label.input {
+    @apply mb-4;
+  }
+
+  /* Buttons have consistent sizing */
+  .btn {
+    @apply min-h-12 px-6;
+  }
+
+  /* Alerts have proper padding */
+  .alert {
+    @apply p-4 rounded-lg;
+  }
+}

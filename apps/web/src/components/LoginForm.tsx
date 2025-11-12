@@ -32,8 +32,7 @@ export default function LoginForm() {
           console.log('Sign up successful, redirecting...');
           // Small delay to let auth state propagate
           await new Promise(resolve => setTimeout(resolve, 1000));
-          router.push('/');
-          setLoading(false);
+          window.location.href = '/';
         }
       } else {
         console.log('Attempting sign in...');
@@ -46,8 +45,7 @@ export default function LoginForm() {
           console.log('Sign in successful, redirecting...');
           // Small delay to let auth state propagate
           await new Promise(resolve => setTimeout(resolve, 1000));
-          router.push('/');
-          setLoading(false);
+          window.location.href = '/';
         }
       }
     } catch (err) {

@@ -8,6 +8,7 @@ import { useReadReceipts } from '@/hooks/useReadReceipts';
 import { useAuth } from '@/contexts/AuthContext';
 import { getRelativeTime } from '@/lib/time';
 import Avatar from './Avatar';
+import OnlineUsers from './OnlineUsers';
 
 interface ChatRoomProps {
   roomId: string;
@@ -46,7 +47,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   const { sendMessage, uploadImage, sending, uploading } = useSendMessage();
   
   // Presence and typing indicators
-  const { typingUsers, setTyping, onlineCount } = useRoomPresence({
+  const { onlineUsers, typingUsers, setTyping, onlineCount } = useRoomPresence({
     roomId,
     userId: user?.id || '',
     displayName: user?.user_metadata?.display_name || user?.email || 'Anonymous',
@@ -293,64 +294,32 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       overflow: 'hidden'
     }}>
       {/* Consolidated Header */}
-      <div style={{ 
-        padding: '1rem', 
-        borderBottom: '1px solid #eee',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexShrink: 0,
-        background: 'white'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      {/* Header */}
+      <div className="navbar bg-base-100 shadow-sm border-b border-base-200">
+        <div className="navbar-start">
           {onBack && (
             <button
               onClick={onBack}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '1.5rem',
-                cursor: 'pointer',
-                color: '#007bff',
-                padding: '0.25rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
+              className="btn btn-ghost btn-sm"
               title="Tilbage til klasseliste"
             >
               ←
             </button>
           )}
-          <div>
-            <h2 style={{ margin: 0, fontSize: '1.1rem' }}>#{roomName}</h2>
+          <h2 className="text-lg font-semibold">#{roomName}</h2>
+        </div>
+        
+        <div className="navbar-end flex items-center gap-3">
+          <OnlineUsers users={onlineUsers} maxVisible={4} />
+          
+          <div className="flex items-center gap-1">
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-success' : 'bg-warning'}`}></div>
+            <span className="text-xs text-base-content/70">
+              {isConnected ? 'Connected' : 'Connecting...'}
+            </span>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {onlineCount > 0 && (
-            <>
-              <span style={{ fontSize: '0.875rem', color: '#666' }}>
-                {onlineCount} online
-              </span>
-              <div style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: '#28a745'
-              }} />
-            </>
-          )}
-          <div style={{ 
-            fontSize: '0.875rem', 
-            color: isConnected ? 'green' : 'orange',
-            marginLeft: '0.5rem'
-          }}>
-            {isConnected ? '🟢' : '🟠'}
-          </div>
-        </div>
-      </div>
-
-      {/* Messages */}
+      </div>      {/* Messages */}
       <div 
         ref={messagesContainerRef}
         onScroll={handleScroll}
@@ -378,87 +347,65 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             return (
               <div 
                 key={msg.id}
-                style={{
-                  display: 'flex',
-                  flexDirection: isOwnMessage ? 'row-reverse' : 'row',
-                  alignItems: 'flex-start',
-                  gap: '0.5rem',
-                  marginBottom: '0.5rem'
-                }}
+                className={`chat ${isOwnMessage ? 'chat-end' : 'chat-start'}`}
               >
                 {/* Avatar - only show for other users */}
                 {!isOwnMessage && (
-                  <Avatar 
-                    user={{
-                      display_name: msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger',
-                      avatar_url: msg.profiles?.avatar_url,
-                      avatar_color: msg.profiles?.avatar_color,
-                    }}
-                    size={32}
-                    style={{ marginTop: '4px' }}
-                  />
-                )}
-                
-                <div
-                  style={{
-                    padding: '0.75rem',
-                    background: isOwnMessage ? '#007bff' : '#f5f5f5',
-                    color: isOwnMessage ? 'white' : 'black',
-                    borderRadius: '8px',
-                    maxWidth: '70%',
-                    opacity: isOptimistic ? 0.7 : 1,
-                    border: hasError ? '2px solid red' : undefined,
-                  }}
-                >
-                  <div style={{ fontSize: '0.875rem', fontWeight: 'bold', marginBottom: '0.25rem', opacity: isOwnMessage ? 0.9 : 1 }}>
-                    {isOwnMessage ? 'Dig' : (msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger')}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.8, marginBottom: '0.25rem' }}>
-                    {getRelativeTime(msg.created_at)}
-                    {isOptimistic && (
-                      <span style={{ marginLeft: '0.5rem' }}>
-                        {isLoading ? '⏳ Sender...' : hasError ? '❌ Fejlet' : '✓ Sendt'}
-                      </span>
-                    )}
-                  </div>
-                {msg.image_url && (
-                  <img 
-                    src={msg.image_url} 
-                    alt="Uploaded image"
-                    onClick={() => setEnlargedImageUrl(msg.image_url || null)}
-                    style={{ 
-                      width: '120px',
-                      height: '90px',
-                      objectFit: 'cover',
-                      borderRadius: '8px', 
-                      marginBottom: msg.body ? '0.5rem' : '0',
-                      opacity: isOptimistic && isLoading ? 0.5 : 1,
-                      cursor: 'pointer'
-                    }}
-                  />
-                )}
-                {msg.body && <div>{msg.body}</div>}
-                {hasError && (
-                  <div style={{ 
-                    fontSize: '0.75rem',
-                    color: isOwnMessage ? '#ffcccc' : '#ff0000',
-                    marginTop: '0.5rem',
-                    fontStyle: 'italic'
-                  }}>
-                    Besked kunne ikke sendes. Prøv igen.
+                  <div className="chat-image">
+                    <Avatar 
+                      user={{
+                        display_name: msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger',
+                        avatar_url: msg.profiles?.avatar_url,
+                        avatar_color: msg.profiles?.avatar_color,
+                      }}
+                      size="sm"
+                    />
                   </div>
                 )}
-                {msg.edited_at && (
-                  <div style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '0.25rem' }}>
-                    (redigeret)
-                  </div>
-                )}
-                {/* Read receipts - only show for own messages and non-optimistic messages */}
-                {isOwnMessage && !isOptimistic && msg.read_receipts && msg.read_receipts.length > 0 && (
-                  <div style={{ fontSize: '0.75rem', opacity: 0.8, marginTop: '0.25rem' }}>
-                    ✓✓ Læst af {msg.read_receipts.length}
-                  </div>
-                )}
+
+                <div className="chat-header text-xs opacity-70">
+                  {isOwnMessage ? 'Dig' : (msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger')}
+                  <time className="ml-1">{getRelativeTime(msg.created_at)}</time>
+                  {isOptimistic && (
+                    <span className="ml-2">
+                      {isLoading ? '⏳ Sender...' : hasError ? '❌ Fejlet' : '✓ Sendt'}
+                    </span>
+                  )}
+                </div>
+
+                <div className={`chat-bubble ${
+                  isOwnMessage ? 'chat-bubble-primary' : 'chat-bubble-neutral'
+                } ${isOptimistic ? 'opacity-70' : ''} ${hasError ? 'border-2 border-error' : ''}`}>
+                  {msg.image_url && (
+                    <img 
+                      src={msg.image_url} 
+                      alt="Uploaded image"
+                      onClick={() => setEnlargedImageUrl(msg.image_url || null)}
+                      className={`w-32 h-24 object-cover rounded cursor-pointer mb-2 hover:brightness-75 ${
+                        isOptimistic && isLoading ? 'opacity-50' : ''
+                      }`}
+                    />
+                  )}
+                  {msg.body && <div className="whitespace-pre-wrap">{msg.body}</div>}
+                </div>
+
+                <div className="chat-footer">
+                  {hasError && (
+                    <div className="text-xs text-error italic mt-1">
+                      Besked kunne ikke sendes. Prøv igen.
+                    </div>
+                  )}
+                  {msg.edited_at && (
+                    <div className="text-xs opacity-70 mt-1">
+                      (redigeret)
+                    </div>
+                  )}
+                  {/* Read receipts - only show for own messages and non-optimistic messages */}
+                  {isOwnMessage && !isOptimistic && msg.read_receipts && msg.read_receipts.length > 0 && (
+                    <div className="text-xs opacity-80 mt-1">
+                      ✓✓ Læst af {msg.read_receipts.length}
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -469,44 +416,13 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         {showScrollToBottom && (
           <button
             onClick={() => scrollToBottom(true)}
-            style={{
-              position: 'absolute',
-              bottom: '1rem',
-              right: '1rem',
-              width: '48px',
-              height: '48px',
-              borderRadius: '50%',
-              background: '#007bff',
-              color: 'white',
-              border: 'none',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '18px',
-              zIndex: 10
-            }}
+            className="btn btn-circle btn-primary fixed bottom-20 right-4 shadow-lg z-10"
             title={unreadCount > 0 ? `${unreadCount} nye beskeder` : 'Gå til bunden'}
           >
             {unreadCount > 0 ? (
-              <div style={{ position: 'relative' }}>
+              <div className="relative">
                 ↓
-                <div style={{
-                  position: 'absolute',
-                  top: '-8px',
-                  right: '-8px',
-                  background: '#ff4757',
-                  color: 'white',
-                  borderRadius: '10px',
-                  minWidth: '20px',
-                  height: '20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12px',
-                  fontWeight: 'bold'
-                }}>
+                <div className="badge badge-error badge-sm absolute -top-2 -right-2">
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </div>
               </div>
@@ -519,15 +435,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
 
       {/* Typing Indicator */}
       {typingUsers.length > 0 && (
-        <div style={{
-          padding: '0.5rem 1rem',
-          fontSize: '0.875rem',
-          color: '#666',
-          fontStyle: 'italic',
-          borderTop: '1px solid #f0f0f0',
-          background: 'white',
-          flexShrink: 0
-        }}>
+        <div className="px-4 py-2 text-sm text-base-content/70 italic border-t border-base-300 bg-base-100">
           {typingUsers.length === 1
             ? `${typingUsers[0]?.display_name || 'Nogen'} skriver...`
             : typingUsers.length === 2
@@ -538,45 +446,26 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
 
       {/* Suggestion Dialog */}
       {showSuggestion && (
-        <div style={{
-          padding: '1rem',
-          background: '#fff3cd',
-          borderTop: '1px solid #ffc107',
-          flexShrink: 0
-        }}>
-          <p style={{ marginBottom: '0.5rem', fontWeight: 'bold' }}>
+        <div className="p-4 bg-warning/10 border-t border-warning">
+          <p className="font-bold mb-2">
             Din besked blev blokeret
           </p>
-          <p style={{ marginBottom: '0.5rem', fontSize: '0.9rem', color: '#666' }}>
+          <p className="text-sm text-base-content/70 mb-2">
             Din besked indeholder indhold der kan være upassende. Du kan sende denne omformulering i stedet:
           </p>
-          <p style={{ marginBottom: '1rem', fontStyle: 'italic' }}>
+          <p className="mb-4 italic">
             &ldquo;{showSuggestion}&rdquo;
           </p>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="flex gap-2">
             <button 
               onClick={useSuggestion}
-              style={{
-                padding: '0.5rem 1rem',
-                background: '#28a745',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
+              className="btn btn-success btn-sm"
             >
               Send omformulering
             </button>
             <button 
               onClick={cancelMessage}
-              style={{
-                padding: '0.5rem 1rem',
-                background: '#6c757d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
+              className="btn btn-neutral btn-sm"
             >
               Annuller
             </button>
@@ -585,45 +474,25 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       )}
 
       {/* Input */}
-      <div style={{ 
-        padding: '1rem', 
-        borderTop: '1px solid #eee',
-        background: 'white',
-        flexShrink: 0
-      }}>
+      <div className="p-4 border-t border-base-300 bg-base-100">
         {/* Image Preview */}
         {imagePreview && (
-          <div style={{ marginBottom: '0.5rem', position: 'relative', display: 'inline-block' }}>
+          <div className="mb-2 relative inline-block">
             <img 
               src={imagePreview} 
               alt="Preview" 
-              style={{ maxHeight: '100px', borderRadius: '8px' }}
+              className="max-h-24 rounded-lg"
             />
             <button
               onClick={handleRemoveImage}
-              style={{
-                position: 'absolute',
-                top: '4px',
-                right: '4px',
-                background: 'rgba(0,0,0,0.6)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '50%',
-                width: '24px',
-                height: '24px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
+              className="btn btn-circle btn-error btn-xs absolute top-1 right-1"
             >
               ×
             </button>
           </div>
         )}
         
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div className="flex gap-2">
           <input
             type="file"
             ref={fileInputRef}
@@ -634,15 +503,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={sending || uploading}
-            style={{
-              padding: '0.75rem',
-              background: '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: (sending || uploading) ? 'not-allowed' : 'pointer',
-              fontSize: '1.2rem'
-            }}
+            className={`btn btn-square ${(sending || uploading) ? 'btn-disabled' : 'btn-neutral'}`}
             title="Upload billede"
           >
             📷
@@ -654,26 +515,12 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
             placeholder="Skriv en besked..."
             disabled={sending || uploading}
-            style={{
-              flex: 1,
-              padding: '0.75rem',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              fontSize: '1rem'
-            }}
+            className="input input-bordered flex-1"
           />
           <button
             onClick={handleSend}
             disabled={sending || uploading || (!messageText.trim() && !selectedImage)}
-            style={{
-              padding: '0.75rem 1.5rem',
-              background: (sending || uploading) ? '#ccc' : '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: (sending || uploading) ? 'not-allowed' : 'pointer',
-              fontSize: '1rem'
-            }}
+            className={`btn ${(sending || uploading || (!messageText.trim() && !selectedImage)) ? 'btn-disabled' : 'btn-primary'}`}
           >
             {uploading ? 'Uploader...' : sending ? 'Sender...' : 'Send'}
           </button>
@@ -684,39 +531,17 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       {enlargedImageUrl && (
         <div 
           onClick={() => setEnlargedImageUrl(null)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.9)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000,
-            cursor: 'pointer'
-          }}
+          className="fixed inset-0 bg-black/90 flex justify-center items-center z-50 cursor-pointer"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: '90vw',
-              maxHeight: '90vh',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}
+            className="max-w-[90vw] max-h-[90vh] flex justify-center items-center"
           >
             {enlargedImageUrl && (
               <img 
                 src={enlargedImageUrl}
                 alt="Enlarged view"
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  objectFit: 'contain'
-                }}
+                className="max-w-full max-h-full object-contain"
               />
             )}
           </div>

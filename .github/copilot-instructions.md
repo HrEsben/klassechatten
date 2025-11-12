@@ -186,6 +186,15 @@ EXPO_PUBLIC_OPENAI_API_KEY=sk-proj-...
 - ✅ CORS konfigureret korrekt
 - ✅ Environment secrets ikke i git
 
+### DaisyUI Integration
+- **UI Framework**: DaisyUI v5 + Tailwind CSS v4 (web app only)
+- **MCP Server**: Always use Context7 MCP server for DaisyUI-related tasks
+- **Documentation**: Use `mcp_context7_get-library-docs` for DaisyUI component documentation
+- **Component Library**: Use `daisyui` library ID when querying Context7
+- **Best Practices**: Follow DaisyUI v5 guidelines from `.github/instructions/daisyui.instructions.md`
+- **CSS Setup**: Use `@plugin "daisyui";` in CSS, no tailwind.config.js needed
+- **Classes**: Prefer DaisyUI semantic classes (`btn`, `card`, `modal`) over custom CSS
+
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js 16, React 19, Expo (React Native)
@@ -194,7 +203,7 @@ EXPO_PUBLIC_OPENAI_API_KEY=sk-proj-...
 - **Monorepo**: Turborepo + npm workspaces
 - **Language**: TypeScript (strict mode)
 - **Validation**: Zod
-- **Styling**: Inline styles (can be upgraded to Tailwind/styled-components)
+- **Styling**: Tailwind CSS v4 + DaisyUI v5 (web), Inline styles (mobile)
 
 ## 📊 Architecture Decisions
 

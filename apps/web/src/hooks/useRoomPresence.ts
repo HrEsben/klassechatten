@@ -108,8 +108,8 @@ export function useRoomPresence({
   );
 
   return {
-    onlineUsers: onlineUsers.filter((u) => u.user_id !== userId), // Exclude self
-    typingUsers: typingUsers.filter((u) => u.user_id !== userId), // Exclude self
+    onlineUsers,
+    typingUsers,
     setTyping,
     onlineCount: onlineUsers.length,
   };

@@ -16,7 +16,7 @@ function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-base-300">
+    <div className="min-h-screen bg-base-300 flex flex-col">
       {/* Edgy Berlin Header */}
       <header className="bg-base-100 border-b-2 border-base-content/10">
         <div className="w-full max-w-7xl mx-auto px-12">
@@ -56,7 +56,7 @@ function HomePage() {
       </header>
 
       {/* Main Content Area */}
-      <main className="py-8 bg-base-300">
+      <main className="flex-1 py-8 bg-base-300">
         <div className="w-full max-w-7xl mx-auto px-12">
           <Suspense fallback={
             <div className="flex justify-center items-center min-h-[60vh]">

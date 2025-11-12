@@ -25,10 +25,13 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
+  const [lastReadMessageId, setLastReadMessageId] = useState<number | null>(null);
+  const [hasScrolledToLastRead, setHasScrolledToLastRead] = useState(false);
   
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const previousMessageCountRef = useRef(0);
   
   const { user } = useAuth();
@@ -122,6 +125,88 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     }
   }, [messages.length]);
 
+  // Fetch last read message and scroll to it
+  useEffect(() => {
+    const fetchLastReadMessage = async () => {
+      if (!user?.id || messages.length === 0 || hasScrolledToLastRead) return;
+
+      try {
+        const { supabase } = await import('@/lib/supabase');
+        
+        // Get the last message this user read in this room
+        const { data, error } = await supabase
+          .from('read_receipts')
+          .select('message_id, read_at')
+          .eq('user_id', user.id)
+          .in('message_id', messages.map(m => m.id))
+          .order('read_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (data && !error) {
+          // Find the index of the last read message
+          const lastReadIndex = messages.findIndex(m => m.id === data.message_id);
+          const lastMessageIndex = messages.length - 1;
+          
+          // Check if there are unread messages after the last read one
+          const hasUnreadMessages = lastReadIndex >= 0 && lastReadIndex < lastMessageIndex;
+          
+          if (!hasUnreadMessages) {
+            // All messages have been read, scroll to bottom without indicator
+            setTimeout(() => {
+              scrollToBottom(false);
+              setHasScrolledToLastRead(true);
+            }, 100);
+          } else {
+            // There are unread messages, scroll to last read and show indicator
+            setLastReadMessageId(data.message_id);
+            
+            // Wait a bit for refs to be set
+            setTimeout(() => {
+              const messageElement = messageRefs.current.get(data.message_id);
+              if (messageElement && messagesContainerRef.current) {
+                // Scroll to the last read message
+                messageElement.scrollIntoView({ 
+                  behavior: 'auto',
+                  block: 'center' 
+                });
+                setHasScrolledToLastRead(true);
+                
+                // After 5 seconds, clear the indicator
+                setTimeout(() => {
+                  setLastReadMessageId(null);
+                }, 5000);
+              } else {
+                // If message not found in current view, scroll to bottom
+                scrollToBottom(false);
+                setHasScrolledToLastRead(true);
+              }
+            }, 200);
+          }
+        } else {
+          // No read receipt found, scroll to bottom (new user or first visit)
+          setTimeout(() => {
+            scrollToBottom(false);
+            setHasScrolledToLastRead(true);
+          }, 100);
+        }
+      } catch (err) {
+        console.error('Error fetching last read message:', err);
+        scrollToBottom(false);
+        setHasScrolledToLastRead(true);
+      }
+    };
+
+    fetchLastReadMessage();
+  }, [messages.length, user?.id, hasScrolledToLastRead]);
+
+  // Reset scroll state when room changes
+  useEffect(() => {
+    setHasScrolledToLastRead(false);
+    setLastReadMessageId(null);
+    messageRefs.current.clear();
+  }, [roomId]);
+
   // Fetch room details
   useEffect(() => {
     const fetchRoomDetails = async () => {
@@ -134,10 +219,17 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       
       if (data && !error) {
         setRoomName(data.name);
+        // Update page title
+        document.title = `# ${data.name} - KlasseChat`;
       }
     };
 
     fetchRoomDetails();
+    
+    // Reset title when leaving room
+    return () => {
+      document.title = 'KlasseChat';
+    };
   }, [roomId]);
 
   // Handle typing indicator
@@ -302,7 +394,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   return (
     <div className="flex flex-col h-full bg-base-100/80 backdrop-blur-sm">
       {/* Header */}
-      <div className="bg-base-100/60 border-b border-primary/10 px-4 py-3">
+      <div className="flex-none bg-base-100/60 border-b border-primary/10 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             {onBack && (
@@ -352,9 +444,48 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             const isOptimistic = msg.isOptimistic;
             const isLoading = msg.isLoading;
             const hasError = msg.hasError;
+            const isLastRead = msg.id === lastReadMessageId;
 
             return (
-              <div key={msg.id} className={`chat ${isOwnMessage ? 'chat-end' : 'chat-start'}`}>
+              <div 
+                key={msg.id} 
+                ref={(el) => {
+                  if (el && typeof msg.id === 'number') {
+                    messageRefs.current.set(msg.id, el);
+                  }
+                }}
+                className={`chat ${isOwnMessage ? 'chat-end' : 'chat-start'} ${
+                  isLastRead ? 'relative' : ''
+                }`}
+              >
+                {/* Last Read Indicator */}
+                {isLastRead && (
+                  <div className="absolute -top-12 left-0 right-0 flex items-center gap-3 z-10 px-4">
+                    {/* Left dashed line */}
+                    <div className="flex-1 border-t-2 border-dashed border-info/30"></div>
+                    
+                    {/* Center badge with link */}
+                    <div className="flex items-center gap-2 bg-info/90 text-info-content px-4 py-1.5 text-xs font-medium uppercase tracking-wider shadow-lg">
+                      <div className="w-1 h-1 bg-info-content rounded-full"></div>
+                      <span>Sidst læst</span>
+                      <div className="w-1 h-1 bg-info-content rounded-full"></div>
+                      {/* Jump to latest button */}
+                      <button
+                        onClick={() => scrollToBottom(true)}
+                        className="ml-2 text-info-content/70 hover:text-info-content transition-colors"
+                        title="Gå til seneste besked"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                        </svg>
+                      </button>
+                    </div>
+                    
+                    {/* Right dashed line */}
+                    <div className="flex-1 border-t-2 border-dashed border-info/30"></div>
+                  </div>
+                )}
+                
                 {/* Avatar - show for all messages following DaisyUI pattern */}
                 <div className="chat-image avatar">
                   <div className="w-10 rounded-full">
@@ -440,7 +571,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
 
       {/* Typing Indicator */}
       {typingUsers.length > 0 && (
-        <div className="px-4 py-2 text-xs text-base-content/40 font-mono bg-base-100/30">
+        <div className="flex-none px-4 py-2 text-xs text-base-content/40 font-mono bg-base-100/30">
           {typingUsers.length === 1
             ? `${typingUsers[0]?.display_name || 'Someone'} typing...`
             : typingUsers.length === 2
@@ -451,7 +582,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
 
       {/* Suggestion Dialog */}
       {showSuggestion && (
-        <div className="px-4 py-4 bg-warning/5 border-t border-warning/20">
+        <div className="flex-none px-4 py-4 bg-warning/5 border-t border-warning/20">
           <div className="font-mono text-xs uppercase tracking-wider text-warning mb-3">Message blocked</div>
           <p className="text-sm text-base-content/70 mb-3 font-light">
             Content flagged. Alternative suggestion:
@@ -477,7 +608,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       )}
 
       {/* Input - Always visible at bottom */}
-      <div className="sticky bottom-0 px-4 py-4 border-t border-primary/10 bg-base-100/90 backdrop-blur-md">
+      <div className="flex-none px-4 py-4 border-t border-primary/10 bg-base-100/90 backdrop-blur-md">
         {/* Image Preview */}
         {imagePreview && (
           <div className="mb-4 relative inline-block">

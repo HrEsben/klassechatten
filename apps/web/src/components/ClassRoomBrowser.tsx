@@ -1,13 +1,43 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useUserClasses } from '@/hooks/useUserClasses';
 import ChatRoom from './ChatRoom';
 
 export default function ClassRoomBrowser() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { classes, loading, error } = useUserClasses();
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [expandedClassId, setExpandedClassId] = useState<string | null>(null);
+
+  // Initialize from URL params
+  useEffect(() => {
+    const roomParam = searchParams.get('room');
+    if (roomParam) {
+      setSelectedRoomId(roomParam);
+    }
+  }, [searchParams]);
+
+  // Expand first class by default when classes load
+  useEffect(() => {
+    if (classes.length > 0 && !expandedClassId) {
+      setExpandedClassId(classes[0].id);
+    }
+  }, [classes, expandedClassId]);
+
+  // Handler to select a room and update URL
+  const handleSelectRoom = (roomId: string) => {
+    setSelectedRoomId(roomId);
+    router.push(`?room=${roomId}`, { scroll: false });
+  };
+
+  // Handler to go back from room and clear URL
+  const handleBack = () => {
+    setSelectedRoomId(null);
+    router.push('/', { scroll: false });
+  };
 
   if (loading) {
     return (
@@ -47,11 +77,11 @@ export default function ClassRoomBrowser() {
   // If a room is selected, show the chat
   if (selectedRoomId) {
     return (
-      <div className="h-full flex flex-col">
+      <div className="fixed inset-0 top-[73px] bottom-[57px] flex flex-col z-10 bg-base-300">
         <div className="flex-1 overflow-hidden">
           <ChatRoom 
             roomId={selectedRoomId}
-            onBack={() => setSelectedRoomId(null)}
+            onBack={handleBack}
           />
         </div>
       </div>
@@ -138,7 +168,7 @@ export default function ClassRoomBrowser() {
                         {classItem.rooms.map((room) => (
                           <button
                             key={room.id}
-                            onClick={() => setSelectedRoomId(room.id)}
+                            onClick={() => handleSelectRoom(room.id)}
                             disabled={room.is_locked}
                             className="w-full px-6 py-4 text-left bg-base-100 hover:bg-base-100 border-l-4 border-primary/30 hover:border-primary disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-primary/30 transition-all duration-200 group/room shadow-sm hover:shadow-md"
                           >
@@ -146,7 +176,7 @@ export default function ClassRoomBrowser() {
                               <div className="flex items-center gap-3">
                                 <div className="w-1 h-6 bg-primary group-hover/room:h-8 transition-all duration-200"></div>
                                 <span className="text-sm font-bold uppercase tracking-wider text-base-content">
-                                  {room.name}
+                                  # {room.name}
                                 </span>
                                 {room.is_locked && (
                                   <svg className="w-4 h-4 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>

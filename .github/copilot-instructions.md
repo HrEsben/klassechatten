@@ -186,6 +186,11 @@ EXPO_PUBLIC_OPENAI_API_KEY=sk-proj-...
 - ✅ CORS konfigureret korrekt
 - ✅ Environment secrets ikke i git
 
+### Design Guidelines
+- **No Emojis**: Never use emojis in the codebase. Use icons (SVG), text, or visual elements instead
+- **Clean Interface**: Maintain a professional, clean interface without decorative emojis
+- **Accessibility**: Use semantic HTML and proper ARIA labels instead of emojis for meaning
+
 ### DaisyUI Integration
 - **UI Framework**: DaisyUI v5 + Tailwind CSS v4 (web app only)
 - **MCP Server**: Always use Context7 MCP server for DaisyUI-related tasks

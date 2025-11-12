@@ -37,7 +37,7 @@ export default function ClassRoomBrowser() {
           <div className="w-16 h-0.5 bg-primary/40 mx-auto mb-4"></div>
           <h2 className="text-2xl font-light tracking-wide text-base-content mb-4">No classes found</h2>
           <p className="text-base-content/60 font-light max-w-md">
-            You're not a member of any classes yet. Ask your teacher for an invitation code.
+            You&apos;re not a member of any classes yet. Ask your teacher for an invitation code.
           </p>
         </div>
       </div>

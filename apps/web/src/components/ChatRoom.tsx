@@ -133,8 +133,17 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       try {
         const { supabase } = await import('@/lib/supabase');
         
+        // Get the most recent message in this room (from database)
+        const { data: latestMessage } = await supabase
+          .from('messages')
+          .select('id, created_at')
+          .eq('room_id', roomId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
         // Get the last message this user read in this room
-        const { data, error } = await supabase
+        const { data: lastRead, error } = await supabase
           .from('read_receipts')
           .select('message_id, read_at')
           .eq('user_id', user.id)
@@ -143,15 +152,18 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           .limit(1)
           .single();
 
-        if (data && !error) {
-          // Find the index of the last read message
-          const lastReadIndex = messages.findIndex(m => m.id === data.message_id);
+        if (lastRead && !error && latestMessage) {
+          // Check if the last read message is the absolute latest message in the room
+          const isLatestMessageRead = lastRead.message_id === latestMessage.id;
+          
+          // Find the index of the last read message in current view
+          const lastReadIndex = messages.findIndex(m => m.id === lastRead.message_id);
           const lastMessageIndex = messages.length - 1;
           
-          // Check if there are unread messages after the last read one
-          const hasUnreadMessages = lastReadIndex >= 0 && lastReadIndex < lastMessageIndex;
+          // Check if there are unread messages in current view
+          const hasUnreadInView = lastReadIndex >= 0 && lastReadIndex < lastMessageIndex;
           
-          if (!hasUnreadMessages) {
+          if (isLatestMessageRead || !hasUnreadInView) {
             // All messages have been read, scroll to bottom without indicator
             setTimeout(() => {
               scrollToBottom(false);
@@ -159,11 +171,11 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             }, 100);
           } else {
             // There are unread messages, scroll to last read and show indicator
-            setLastReadMessageId(data.message_id);
+            setLastReadMessageId(lastRead.message_id);
             
             // Wait a bit for refs to be set
             setTimeout(() => {
-              const messageElement = messageRefs.current.get(data.message_id);
+              const messageElement = messageRefs.current.get(lastRead.message_id);
               if (messageElement && messagesContainerRef.current) {
                 // Scroll to the last read message
                 messageElement.scrollIntoView({ 

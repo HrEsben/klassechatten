@@ -279,54 +279,71 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   };
 
   if (loading) {
-    return <div style={{ padding: '2rem' }}>Loading messages...</div>;
+    return (
+      <div className="flex justify-center items-center h-full bg-base-100/80">
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+          <div className="text-base-content/60 font-light tracking-wide">Loading...</div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div style={{ padding: '2rem', color: 'red' }}>Error: {error}</div>;
+    return (
+      <div className="flex justify-center items-center h-full bg-base-100/80">
+        <div className="bg-error/10 border border-error/20 px-6 py-4 font-mono text-error text-sm">
+          {error}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      height: '100%',
-      overflow: 'hidden'
-    }}>
-      {/* Consolidated Header */}
+    <div className="flex flex-col h-full bg-base-100/80 backdrop-blur-sm">
       {/* Header */}
-      <div className="navbar bg-base-100 shadow-sm border-b border-base-200">
-        <div className="navbar-start">
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="btn btn-ghost btn-sm"
-              title="Tilbage til klasseliste"
-            >
-              ←
-            </button>
-          )}
-          <h2 className="text-lg font-semibold">#{roomName}</h2>
-        </div>
-        
-        <div className="navbar-end flex items-center gap-3">
-          <OnlineUsers users={onlineUsers} maxVisible={4} />
+      <div className="bg-base-100/60 border-b border-primary/10 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="w-8 h-8 flex items-center justify-center text-base-content/60 hover:text-base-content transition-colors duration-200"
+                title="Back"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
+            <div>
+              <h2 className="text-lg font-light tracking-wide text-base-content">#{roomName}</h2>
+            </div>
+          </div>
           
-          <div className="flex items-center gap-1">
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-success' : 'bg-warning'}`}></div>
-            <span className="text-xs text-base-content/70">
-              {isConnected ? 'Connected' : 'Connecting...'}
-            </span>
+          <div className="flex items-center gap-4">
+            <OnlineUsers users={onlineUsers} maxVisible={3} />
+            
+            <div className="flex items-center gap-2">
+              <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-success' : 'bg-warning'}`}></div>
+              <span className="text-xs text-base-content/50 font-mono uppercase tracking-wider">
+                {isConnected ? 'Live' : 'Connecting'}
+              </span>
+            </div>
           </div>
         </div>
       </div>      {/* Messages */}
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 space-y-3 bg-base-100"
+        className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-transparent"
       >
         {messages.length === 0 ? (
-          <p className="text-center text-base-content/70">Ingen beskeder endnu. Send den første!</p>
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="w-12 h-0.5 bg-primary/40 mb-4"></div>
+            <p className="text-base-content/50 font-light text-sm tracking-wide">Empty channel</p>
+            <p className="text-base-content/30 font-light text-xs mt-1">Be the first to start the conversation</p>
+          </div>
         ) : (
           messages.map((msg) => {
             const isOwnMessage = msg.user_id === user?.id;
@@ -398,18 +415,22 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         {showScrollToBottom && (
           <button
             onClick={() => scrollToBottom(true)}
-            className="btn btn-circle btn-primary fixed bottom-20 right-4 shadow-lg z-10"
-            title={unreadCount > 0 ? `${unreadCount} nye beskeder` : 'Gå til bunden'}
+            className="fixed bottom-24 right-6 w-10 h-10 bg-primary/90 hover:bg-primary text-primary-content flex items-center justify-center shadow-lg z-10 transition-all duration-200"
+            title={unreadCount > 0 ? `${unreadCount} new messages` : 'Jump to bottom'}
           >
             {unreadCount > 0 ? (
               <div className="relative">
-                ↓
-                <div className="badge badge-error badge-sm absolute -top-2 -right-2">
-                  {unreadCount > 99 ? '99+' : unreadCount}
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+                <div className="absolute -top-2 -right-2 w-4 h-4 bg-error text-error-content text-xs flex items-center justify-center rounded-full">
+                  {unreadCount > 9 ? '9+' : unreadCount}
                 </div>
               </div>
             ) : (
-              '↓'
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
             )}
           </button>
         )}
@@ -417,64 +438,62 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
 
       {/* Typing Indicator */}
       {typingUsers.length > 0 && (
-        <div className="px-4 py-2 text-sm text-base-content/70 italic border-t border-base-300 bg-base-100">
+        <div className="px-6 py-2 text-xs text-base-content/40 font-mono bg-base-100/30">
           {typingUsers.length === 1
-            ? `${typingUsers[0]?.display_name || 'Nogen'} skriver...`
+            ? `${typingUsers[0]?.display_name || 'Someone'} typing...`
             : typingUsers.length === 2
-            ? `${typingUsers[0]?.display_name || 'Nogen'} og ${typingUsers[1]?.display_name || 'nogen'} skriver...`
-            : `${typingUsers.length} personer skriver...`}
+            ? `${typingUsers[0]?.display_name || 'Someone'} and ${typingUsers[1]?.display_name || 'someone'} typing...`
+            : `${typingUsers.length} people typing...`}
         </div>
       )}
 
       {/* Suggestion Dialog */}
       {showSuggestion && (
-        <div className="p-4 bg-warning/10 border-t border-warning">
-          <p className="font-bold mb-2">
-            Din besked blev blokeret
+        <div className="px-6 py-4 bg-warning/5 border-t border-warning/20">
+          <div className="font-mono text-xs uppercase tracking-wider text-warning mb-3">Message blocked</div>
+          <p className="text-sm text-base-content/70 mb-3 font-light">
+            Content flagged. Alternative suggestion:
           </p>
-          <p className="text-sm text-base-content/70 mb-2">
-            Din besked indeholder indhold der kan være upassende. Du kan sende denne omformulering i stedet:
+          <p className="mb-4 text-base-content/80 bg-base-200/50 p-3 rounded-none border-l-2 border-primary/40">
+            {showSuggestion}
           </p>
-          <p className="mb-4 italic">
-            &ldquo;{showSuggestion}&rdquo;
-          </p>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <button 
               onClick={useSuggestion}
-              className="btn btn-success btn-sm"
+              className="px-4 py-2 bg-success/20 text-success text-xs font-mono uppercase tracking-wider hover:bg-success/30 transition-colors duration-200"
             >
-              Send omformulering
+              Use
             </button>
             <button 
               onClick={cancelMessage}
-              className="btn btn-neutral btn-sm"
+              className="px-4 py-2 text-base-content/60 text-xs font-mono uppercase tracking-wider hover:text-base-content transition-colors duration-200"
             >
-              Annuller
+              Cancel
             </button>
           </div>
         </div>
       )}
 
       {/* Input */}
-      <div className="p-4 border-t border-base-300 bg-base-100">
+      <div className="px-6 py-4 border-t border-primary/10 bg-base-100/60 backdrop-blur-sm">
         {/* Image Preview */}
         {imagePreview && (
-          <div className="mb-2 relative inline-block">
+          <div className="mb-4 relative inline-block">
             <img 
               src={imagePreview} 
               alt="Preview" 
-              className="max-h-24 rounded-lg"
+              className="max-h-20 border border-base-300"
             />
             <button
               onClick={handleRemoveImage}
-              className="btn btn-circle btn-error btn-xs absolute top-1 right-1"
+              className="absolute -top-2 -right-2 w-6 h-6 bg-error text-error-content text-xs flex items-center justify-center hover:bg-error/80 transition-colors duration-200"
             >
               ×
             </button>
           </div>
         )}
         
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <input
             type="file"
             ref={fileInputRef}
@@ -485,26 +504,28 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={sending || uploading}
-            className={`btn btn-square ${(sending || uploading) ? 'btn-disabled' : 'btn-neutral'}`}
-            title="Upload billede"
+            className="w-10 h-10 flex items-center justify-center bg-base-200/50 hover:bg-base-200 text-base-content/60 hover:text-base-content transition-all duration-200 disabled:opacity-50"
+            title="Upload image"
           >
-            📷
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
           </button>
           <input
             type="text"
             value={messageText}
             onChange={(e) => handleInputChange(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            placeholder="Skriv en besked..."
+            placeholder=""
             disabled={sending || uploading}
-            className="input input-bordered flex-1"
+            className="bg-base-200/50 border-0 border-b border-base-300 focus:border-primary rounded-none flex-1 px-3 py-2 transition-all duration-300 focus:bg-base-200 font-light"
           />
           <button
             onClick={handleSend}
             disabled={sending || uploading || (!messageText.trim() && !selectedImage)}
-            className={`btn ${(sending || uploading || (!messageText.trim() && !selectedImage)) ? 'btn-disabled' : 'btn-primary'}`}
+            className="px-6 py-2 bg-primary/90 hover:bg-primary text-primary-content text-xs font-mono uppercase tracking-wider transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            {uploading ? 'Uploader...' : sending ? 'Sender...' : 'Send'}
+            {uploading ? 'Uploading' : sending ? 'Sending' : 'Send'}
           </button>
         </div>
       </div>

@@ -25,18 +25,29 @@ export default function LoginForm() {
         const { error } = await signUp(email, password, { display_name: displayName });
         if (error) {
           setError(error.message);
+          setLoading(false);
         } else {
-          router.push('/');
+          // Wait a bit for the auth state to update
+          setTimeout(() => {
+            router.push('/');
+            router.refresh();
+          }, 500);
         }
       } else {
         const { error } = await signIn(email, password);
         if (error) {
           setError(error.message);
+          setLoading(false);
         } else {
-          router.push('/');
+          // Wait a bit for the auth state to update
+          setTimeout(() => {
+            router.push('/');
+            router.refresh();
+          }, 500);
         }
       }
-    } finally {
+    } catch (err) {
+      setError('An unexpected error occurred');
       setLoading(false);
     }
   };
@@ -44,18 +55,10 @@ export default function LoginForm() {
   return (
     <div className="min-h-screen bg-linear-to-br from-primary/10 via-secondary/5 to-accent/10 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Welcome Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-light tracking-wide text-primary mb-2">
-            KC
-          </h1>
-          <div className="w-12 h-0.5 bg-primary/60 mx-auto"></div>
-        </div>
-
         {/* Main Card */}
         <div className="bg-base-100/80 backdrop-blur-sm border border-primary/10 rounded-none shadow-2xl">
           <div className="p-8">
-            <form onSubmit={handleSubmit} className="space-y-6">{/* Removed form header */}
+            <form onSubmit={handleSubmit} className="space-y-6">
               {isSignUp && (
                 <div className="relative">
                   <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-base-content/40 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">

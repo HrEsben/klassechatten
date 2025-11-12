@@ -19,20 +19,18 @@ function HomePage() {
     <div className="min-h-screen bg-base-300 flex flex-col">
       {/* Edgy Berlin Header */}
       <header className="bg-base-100 border-b-2 border-base-content/10">
-        <div className="w-full max-w-7xl mx-auto px-12">
-          <div className="flex items-center justify-between py-4">
+        <div className="w-full px-12 lg:grid lg:grid-cols-[256px_1fr] lg:px-0">
+          <div className="flex items-center justify-between py-4 lg:justify-end">
             {/* Logo/Brand with accent bar */}
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col">
-                <h1 className="text-2xl font-black uppercase tracking-tight text-base-content">
-                  KlasseChat
-                </h1>
-                <div className="h-0.5 w-20 bg-primary mt-1"></div>
-              </div>
+            <div className="flex flex-col items-end">
+              <h1 className="text-2xl font-black uppercase tracking-tight text-base-content">
+                KlasseChatten
+              </h1>
+              <div className="h-0.5 w-20 bg-primary mt-1 ml-auto"></div>
             </div>
 
-            {/* User Controls */}
-            <div className="flex items-center gap-6">
+            {/* User Controls - mobile only */}
+            <div className="flex items-center gap-6 lg:hidden">
               {/* User Info */}
               <div className="flex flex-col items-end">
                 <span className="text-xs font-bold uppercase tracking-widest text-base-content/50">
@@ -51,6 +49,27 @@ function HomePage() {
                 Log Ud
               </button>
             </div>
+          </div>
+          
+          {/* User Controls for large screens - in second grid column */}
+          <div className="hidden lg:flex items-center gap-6 py-4 px-12">
+            {/* User Info */}
+            <div className="flex flex-col items-end">
+              <span className="text-xs font-bold uppercase tracking-widest text-base-content/50">
+                Bruger
+              </span>
+              <span className="text-sm font-medium text-base-content">
+                {user?.user_metadata?.display_name || user?.email}
+              </span>
+            </div>
+            
+            {/* Logout Button */}
+            <button
+              onClick={handleSignOut}
+              className="btn btn-sm h-10 px-8 bg-base-content text-base-100 hover:bg-primary hover:text-primary-content font-bold uppercase tracking-wider text-xs transition-all shadow-sm hover:shadow-md"
+            >
+              Log Ud
+            </button>
           </div>
         </div>
       </header>
@@ -85,16 +104,23 @@ function HomePage() {
 
       {/* Footer with geometric pattern */}
       <footer className="bg-base-100 border-t-2 border-base-content/10 relative z-50">
-        <div className="w-full max-w-7xl mx-auto px-12 py-4">
-          <div className="flex justify-between items-center">
+        <div className="w-full px-12 py-4 lg:grid lg:grid-cols-[256px_1fr] lg:px-0">
+          <div className="flex justify-between items-center lg:flex-col lg:items-end">
             <div className="text-xs font-mono text-base-content/40 uppercase tracking-wider">
-              © 2025 KlasseChat
+              © 2025 KlasseChatten
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 lg:hidden">
               <div className="w-2 h-2 bg-primary"></div>
               <div className="w-2 h-2 bg-secondary"></div>
               <div className="w-2 h-2 bg-accent"></div>
             </div>
+          </div>
+          
+          {/* Geometric pattern for large screens - in second grid column */}
+          <div className="hidden lg:flex gap-2 items-center px-12">
+            <div className="w-2 h-2 bg-primary"></div>
+            <div className="w-2 h-2 bg-secondary"></div>
+            <div className="w-2 h-2 bg-accent"></div>
           </div>
         </div>
       </footer>

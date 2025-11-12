@@ -152,12 +152,41 @@ a {
     border-radius: 0 !important;
   }
 
-  /* Chat bubbles - square corners */
+  /* Chat bubble - Berlin edgy style */
   .chat-bubble {
-    border-radius: 0 !important;
+    border-radius: 0 !important; /* No rounded corners */
     position: relative !important;
     word-break: break-word !important;
     overflow-wrap: break-word !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+  
+  /* Remove padding for image-only bubbles */
+  .chat-bubble.p-0 {
+    padding: 0 !important;
+  }
+  
+  /* Chat header - lighter color for better contrast */
+  .chat-header {
+    color: oklch(60% 0 0) !important;
+  }
+  
+  /* Avatar fixed height to match single-line bubble */
+  .chat-start .chat-image,
+  .chat-end .chat-image {
+    height: 40px !important;
+  }
+  
+  .chat-start .chat-image .avatar,
+  .chat-end .chat-image .avatar {
+    height: 40px !important;
+  }
+  
+  .chat-start .chat-image .avatar > div,
+  .chat-end .chat-image .avatar > div {
+    height: 40px !important;
+    width: 40px !important;
   }
   
   /* Equal spacing between avatar and bubble on both sides */
@@ -181,11 +210,16 @@ a {
   }
   
   /* Dashed line connectors as pseudo-elements - using ::after since ::before is blocked */
+  .chat-bubble.dashed-line-left::after,
+  .chat-bubble.dashed-line-right::after {
+    overflow: visible !important;
+  }
+  
   .chat-bubble.dashed-line-left::after {
     content: '' !important;
     display: block !important;
     position: absolute !important;
-    top: 0.9rem !important;
+    top: 1.2rem !important;
     left: -1.4rem !important;
     width: 1.3rem !important;
     height: 0 !important;
@@ -197,7 +231,7 @@ a {
     content: '' !important;
     display: block !important;
     position: absolute !important;
-    top: 0.9rem !important;
+    top: 1.2rem !important;
     right: -1.4rem !important;
     width: 1.3rem !important;
     height: 0 !important;

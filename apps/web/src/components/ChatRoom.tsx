@@ -543,7 +543,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
                 <div
                   className={`chat-bubble relative ${isOwnMessage ? 'chat-bubble-primary' : 'chat-bubble-neutral'} ${
                     isOptimistic ? 'opacity-70' : ''
-                  } ${hasError ? 'border-2 border-error' : ''} ${msg.image_url && !msg.body ? 'p-0 overflow-hidden' : ''} ${
+                  } ${hasError ? 'border-2 border-error' : ''} ${msg.image_url && !msg.body ? 'p-0' : ''} ${
                     isOwnMessage ? 'dashed-line-right' : 'dashed-line-left'
                   }`}
                 >
@@ -552,7 +552,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
                       src={msg.image_url}
                       alt="Uploaded image"
                       onClick={() => setEnlargedImageUrl(msg.image_url || null)}
-                      className={`max-w-xs w-full h-auto object-cover cursor-pointer hover:brightness-90 transition-all ${isOptimistic && isLoading ? 'opacity-50' : ''} ${msg.body ? 'mb-3' : ''}`}
+                      className={`max-w-xs w-full h-auto object-cover cursor-pointer hover:brightness-90 transition-all block ${isOptimistic && isLoading ? 'opacity-50' : ''} ${msg.body ? 'mb-3' : ''}`}
                       onError={e => {
                         e.currentTarget.onerror = null;
                         e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'320\' height=\'240\'><rect width=\'100%\' height=\'100%\' fill=\'#f3f4f6\'/><text x=\'50%\' y=\'50%\' text-anchor=\'middle\' dy=\'.3em\' font-size=\'16\' fill=\'#9ca3af\'>Billede fejler</text></svg>';

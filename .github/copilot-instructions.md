@@ -200,6 +200,13 @@ EXPO_PUBLIC_OPENAI_API_KEY=sk-proj-...
 - **CSS Setup**: Use `@plugin "daisyui";` in CSS, no tailwind.config.js needed
 - **Classes**: Prefer DaisyUI semantic classes (`btn`, `card`, `modal`) over custom CSS
 
+### Next.js MCP Integration
+- **Framework**: Next.js 16 with built-in MCP support via `/_next/mcp` endpoint
+- **MCP Server**: `next-devtools-mcp` configured in `.mcp.json` for real-time development insights
+- **Capabilities**: Error detection, live state queries, page metadata, development logs
+- **Documentation**: Use Next.js MCP tools for framework-specific guidance and debugging
+- **Development**: MCP provides real-time access to build errors, runtime state, and project structure
+
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js 16, React 19, Expo (React Native)
@@ -209,6 +216,7 @@ EXPO_PUBLIC_OPENAI_API_KEY=sk-proj-...
 - **Language**: TypeScript (strict mode)
 - **Validation**: Zod
 - **Styling**: Tailwind CSS v4 + DaisyUI v5 (web), Inline styles (mobile)
+- **Development**: MCP (Model Context Protocol) for real-time development insights
 
 ## 📊 Architecture Decisions
 

@@ -152,16 +152,56 @@ a {
     border-radius: 0 !important;
   }
 
-  /* Chat bubble tail positioning - align with avatar */
-  .chat-bubble::before {
+  /* Chat bubbles - square corners */
+  .chat-bubble {
     border-radius: 0 !important;
+    position: relative !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
   }
   
-  .chat-start .chat-bubble::before {
-    left: -0.5rem;
+  /* Equal spacing between avatar and bubble on both sides */
+  .chat-start,
+  .chat-end {
+    column-gap: 1.5rem !important;
   }
   
-  .chat-end .chat-bubble::before {
-    right: -0.5rem;
+  /* Force avatar to align with the bubble (row 2) not the header (row 1) */
+  .chat-start .chat-image,
+  .chat-end .chat-image {
+    grid-row-start: 2 !important;
+    align-self: start !important;
+    margin-top: 0 !important;
+  }
+  
+  /* Remove the default tail/arrow completely */
+  .chat-bubble::before {
+    content: none !important;
+    display: none !important;
+  }
+  
+  /* Dashed line connectors as pseudo-elements - using ::after since ::before is blocked */
+  .chat-bubble.dashed-line-left::after {
+    content: '' !important;
+    display: block !important;
+    position: absolute !important;
+    top: 0.9rem !important;
+    left: -1.4rem !important;
+    width: 1.3rem !important;
+    height: 0 !important;
+    border-top: 2px dashed currentColor !important;
+    opacity: 0.2 !important;
+  }
+
+  .chat-bubble.dashed-line-right::after {
+    content: '' !important;
+    display: block !important;
+    position: absolute !important;
+    top: 0.9rem !important;
+    right: -1.4rem !important;
+    width: 1.3rem !important;
+    height: 0 !important;
+    border-top: 2px dashed currentColor !important;
+    opacity: 0.2 !important;
   }
 }

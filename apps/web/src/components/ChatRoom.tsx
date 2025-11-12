@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getRelativeTime } from '@/lib/time';
 import Avatar from './Avatar';
 import OnlineUsers from './OnlineUsers';
+import UsersSidebar from './UsersSidebar';
 
 interface ChatRoomProps {
   roomId: string;
@@ -416,32 +417,49 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-base-100/80 backdrop-blur-sm">
-      {/* Header */}
-      <div className="flex-none bg-base-100/60 border-b border-primary/10 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="w-8 h-8 flex items-center justify-center text-base-content/60 hover:text-base-content transition-colors duration-200"
-                title="Back"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+    <div className="drawer lg:drawer-open flex h-full">
+      <input id="users-drawer" type="checkbox" className="drawer-toggle" defaultChecked />
+      
+      {/* Main Content */}
+      <div className="drawer-content flex flex-col flex-1 min-w-0 bg-base-100/80 backdrop-blur-sm">
+        {/* Header */}
+        <div className="flex-none bg-base-100/60 border-b border-primary/10 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {/* Sidebar toggle for mobile */}
+              <label htmlFor="users-drawer" className="btn btn-square btn-ghost btn-sm lg:hidden">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
-              </button>
-            )}
-            <div>
-              <h2 className="text-lg font-light tracking-wide text-base-content">#{roomName}</h2>
+              </label>
+              
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="w-8 h-8 flex items-center justify-center text-base-content/60 hover:text-base-content transition-colors duration-200"
+                  title="Back"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+              )}
+              <div>
+                <h2 className="text-lg font-light tracking-wide text-base-content">#{roomName}</h2>
+              </div>
+              
+              {/* Online users indicator - desktop and mobile */}
+              <div className="flex items-center gap-2 text-xs text-base-content/60">
+                <span>Brugere online:</span>
+                <OnlineUsers users={onlineUsers} maxVisible={3} />
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              {/* Empty space for potential future actions */}
             </div>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <OnlineUsers users={onlineUsers} maxVisible={3} />
-          </div>
         </div>
-      </div>
 
       {/* Messages */}
       <div
@@ -503,21 +521,19 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
                   </div>
                 )}
                 
-                {/* Avatar - show for all messages following DaisyUI pattern */}
+                {/* Avatar */}
                 <div className="chat-image avatar">
-                  <div className="w-10">
-                    <Avatar
-                      user={{
-                        display_name:
-                          isOwnMessage 
-                            ? 'Dig'
-                            : (msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger'),
-                        avatar_url: isOwnMessage ? user?.user_metadata?.avatar_url : msg.profiles?.avatar_url,
-                        avatar_color: isOwnMessage ? user?.user_metadata?.avatar_color : msg.profiles?.avatar_color,
-                      }}
-                      size="sm"
-                    />
-                  </div>
+                  <Avatar
+                    user={{
+                      display_name:
+                        isOwnMessage 
+                          ? 'Dig'
+                          : (msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger'),
+                      avatar_url: isOwnMessage ? user?.user_metadata?.avatar_url : msg.profiles?.avatar_url,
+                      avatar_color: isOwnMessage ? user?.user_metadata?.avatar_color : msg.profiles?.avatar_color,
+                    }}
+                    size="sm"
+                  />
                 </div>
 
                 <div className="chat-header">
@@ -525,9 +541,11 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
                 </div>
 
                 <div
-                  className={`chat-bubble ${isOwnMessage ? 'chat-bubble-primary' : 'chat-bubble-neutral'} ${
+                  className={`chat-bubble relative ${isOwnMessage ? 'chat-bubble-primary' : 'chat-bubble-neutral'} ${
                     isOptimistic ? 'opacity-70' : ''
-                  } ${hasError ? 'border-2 border-error' : ''} ${msg.image_url && !msg.body ? 'p-0 overflow-hidden' : ''}`}
+                  } ${hasError ? 'border-2 border-error' : ''} ${msg.image_url && !msg.body ? 'p-0 overflow-hidden' : ''} ${
+                    isOwnMessage ? 'dashed-line-right' : 'dashed-line-left'
+                  }`}
                 >
                   {msg.image_url && (
                     <img
@@ -729,6 +747,17 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           </div>
         </div>
       )}
+      </div>
+
+      {/* Sidebar */}
+      <div className="drawer-side z-40">
+        <label htmlFor="users-drawer" aria-label="close sidebar" className="drawer-overlay"></label>
+        <UsersSidebar 
+          users={onlineUsers} 
+          currentUserId={user?.id}
+          className="w-64 min-h-full"
+        />
+      </div>
     </div>
   );
 }

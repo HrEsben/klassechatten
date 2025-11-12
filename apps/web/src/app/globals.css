@@ -1,30 +1,66 @@
 @import "tailwindcss";
-@plugin "daisyui";
+@plugin "daisyui" {
+  themes: funkyfred --default, dark;
+}
+
+/* Light theme (funkyfred) */
 @plugin "daisyui/theme" {
   name: "funkyfred";
-  default: true;
-  prefersdark: false;
   color-scheme: "light";
   --color-base-100: oklch(98% 0 0);
   --color-base-200: oklch(95% 0 0);
   --color-base-300: oklch(91% 0 0);
-  --color-base-content: oklch(0% 0 0);
+  --color-base-content: oklch(20% 0 0);
   --color-primary: oklch(71.9% 0.357 330.759);
-  --color-primary-content: oklch(14.38% 0.071 330.759);
+  --color-primary-content: oklch(98% 0 0);
+  --color-secondary: oklch(68% 0.224 48.25);
+  --color-secondary-content: oklch(98% 0 0);
+  --color-accent: oklch(75% 0.264 122.962);
+  --color-accent-content: oklch(20% 0 0);
+  --color-neutral: oklch(42% 0.199 265.638);
+  --color-neutral-content: oklch(98% 0 0);
+  --color-info: oklch(60.72% 0.227 252.05);
+  --color-info-content: oklch(98% 0 0);
+  --color-success: oklch(75% 0.266 158.53);
+  --color-success-content: oklch(20% 0 0);
+  --color-warning: oklch(80% 0.212 100.5);
+  --color-warning-content: oklch(20% 0 0);
+  --color-error: oklch(64.84% 0.293 29.349);
+  --color-error-content: oklch(98% 0 0);
+  --radius-selector: 0rem;
+  --radius-field: 0rem;
+  --radius-box: 0rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/* Dark theme */
+@plugin "daisyui/theme" {
+  name: "dark";
+  color-scheme: "dark";
+  --color-base-100: oklch(22% 0 0);
+  --color-base-200: oklch(18% 0 0);
+  --color-base-300: oklch(14% 0 0);
+  --color-base-content: oklch(90% 0 0);
+  --color-primary: oklch(71.9% 0.357 330.759);
+  --color-primary-content: oklch(98% 0 0);
   --color-secondary: oklch(73.37% 0.224 48.25);
-  --color-secondary-content: oklch(14.674% 0.044 48.25);
+  --color-secondary-content: oklch(98% 0 0);
   --color-accent: oklch(92.78% 0.264 122.962);
   --color-accent-content: oklch(18.556% 0.052 122.962);
   --color-neutral: oklch(42% 0.199 265.638);
-  --color-neutral-content: oklch(84.262% 0.025 278.68);
+  --color-neutral-content: oklch(90% 0 0);
   --color-info: oklch(60.72% 0.227 252.05);
-  --color-info-content: oklch(12.144% 0.045 252.05);
+  --color-info-content: oklch(98% 0 0);
   --color-success: oklch(85.72% 0.266 158.53);
-  --color-success-content: oklch(17.144% 0.053 158.53);
+  --color-success-content: oklch(18% 0 0);
   --color-warning: oklch(91.01% 0.212 100.5);
-  --color-warning-content: oklch(18.202% 0.042 100.5);
+  --color-warning-content: oklch(18% 0 0);
   --color-error: oklch(64.84% 0.293 29.349);
-  --color-error-content: oklch(12.968% 0.058 29.349);
+  --color-error-content: oklch(98% 0 0);
   --radius-selector: 0rem;
   --radius-field: 0rem;
   --radius-box: 0rem;
@@ -205,9 +241,15 @@ a {
     min-height: 40px !important;
   }
   
-  /* Input placeholder - lighter color for better visibility */
-  .input::placeholder,
-  input.input::placeholder {
+  /* Input placeholder - theme-aware colors */
+  [data-theme="funkyfred"] .input::placeholder,
+  [data-theme="funkyfred"] input.input::placeholder {
+    color: oklch(50% 0 0) !important;
+    opacity: 1 !important;
+  }
+  
+  [data-theme="dark"] .input::placeholder,
+  [data-theme="dark"] input.input::placeholder {
     color: oklch(70% 0 0) !important;
     opacity: 1 !important;
   }
@@ -228,11 +270,18 @@ a {
     caret-color: currentColor !important;
   }
   
-  /* Input text color - lighter for better visibility in dark mode */
-  .input,
-  input.input,
-  textarea.textarea,
-  select.select {
+  /* Input text color - dark in light theme, light in dark theme */
+  [data-theme="funkyfred"] .input,
+  [data-theme="funkyfred"] input.input,
+  [data-theme="funkyfred"] textarea.textarea,
+  [data-theme="funkyfred"] select.select {
+    color: oklch(20% 0 0) !important;
+  }
+  
+  [data-theme="dark"] .input,
+  [data-theme="dark"] input.input,
+  [data-theme="dark"] textarea.textarea,
+  [data-theme="dark"] select.select {
     color: oklch(95% 0 0) !important;
   }
 }
@@ -286,4 +335,16 @@ a {
     border-top: 2px dashed currentColor !important;
     opacity: 0.2 !important;
   }
+
+  /* Theme switcher icons - theme-aware colors */
+  [data-theme="funkyfred"] .swap svg {
+    color: oklch(30% 0 0);
+  }
+  
+  [data-theme="dark"] .swap svg {
+    color: oklch(90% 0 0);
+  }
+
+
+
 

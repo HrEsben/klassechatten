@@ -27,9 +27,9 @@ export default function UsersSidebar({
 
   return (
     <div className={`flex flex-col h-full bg-base-200 lg:bg-base-200/60 border-r border-primary/10 ${className}`}>
-      {/* Header */}
-      <div className="flex-none px-4 py-3 border-b border-primary/10">
-        <div className="flex items-center justify-between">
+      {/* Header - fixed height to match chat header */}
+      <div className="flex-none px-4 h-[57px] border-b border-primary/10 flex items-center">
+        <div className="flex items-center justify-between w-full">
           <div>
             <div className="font-mono text-xs uppercase tracking-wider text-base-content/60">
               Brugere online

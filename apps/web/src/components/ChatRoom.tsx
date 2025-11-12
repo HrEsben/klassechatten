@@ -426,37 +426,35 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         <UsersSidebar 
           users={onlineUsers} 
           currentUserId={user?.id}
-          className="w-64 min-h-full mt-18 lg:mt-0"
+          className="w-64 min-h-full mt-18 lg:mt-0 border-t-0"
         />
       </div>
 
       {/* Main Content */}
       <div className="drawer-content flex flex-col flex-1 min-w-0 bg-base-100/80 backdrop-blur-sm">
-        {/* Header */}
-        <div className="flex-none bg-base-100/60 border-b border-primary/10 px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {/* Sidebar toggle for mobile */}
-              <label htmlFor="users-drawer" className="btn btn-square btn-ghost btn-sm lg:hidden text-base-content">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        {/* Header - fixed height to match sidebar header */}
+        <div className="flex-none bg-base-100/60 border-b border-primary/10 px-4 h-[57px] flex items-center">
+          <div className="flex items-center gap-4">
+            {/* Sidebar toggle for mobile */}
+            <label htmlFor="users-drawer" className="btn btn-square btn-ghost btn-sm lg:hidden text-base-content">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </label>
+            
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="w-8 h-8 flex items-center justify-center text-base-content/60 hover:text-base-content transition-colors duration-200"
+                title="Back"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
                 </svg>
-              </label>
-              
-              {onBack && (
-                <button
-                  onClick={onBack}
-                  className="w-8 h-8 flex items-center justify-center text-base-content/60 hover:text-base-content transition-colors duration-200"
-                  title="Back"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-              )}
-              <div>
-                <h2 className="text-lg font-light tracking-wide text-base-content">#{roomName}</h2>
-              </div>
+              </button>
+            )}
+            <div>
+              <h2 className="text-lg font-light tracking-wide text-base-content">#{roomName}</h2>
             </div>
           </div>
         </div>

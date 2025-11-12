@@ -53,6 +53,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     loading, 
     error, 
     isConnected, 
+    refresh,
     addOptimisticMessage, 
     updateOptimisticMessage 
   } = useRoomMessages({ 
@@ -401,6 +402,8 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
                     alert('Failed to delete messages: ' + data.error);
                   } else {
                     alert(`Deleted ${data.count} messages`);
+                    // Refresh the messages list
+                    refresh();
                   }
                 } catch (err) {
                   console.error('Error:', err);

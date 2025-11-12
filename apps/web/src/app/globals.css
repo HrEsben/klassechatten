@@ -147,8 +147,21 @@ a {
     border-radius: 0 !important;
   }
   
-/* Force avatar-group avatars to be square, override DaisyUI extreme border-radius */
-.avatar-group .avatar {
-  border-radius: 0 !important;
-}
+  /* Force avatar-group avatars to be square, override DaisyUI extreme border-radius */
+  .avatar-group .avatar {
+    border-radius: 0 !important;
+  }
+
+  /* Chat bubble tail positioning - align with avatar */
+  .chat-bubble::before {
+    border-radius: 0 !important;
+  }
+  
+  .chat-start .chat-bubble::before {
+    left: -0.5rem;
+  }
+  
+  .chat-end .chat-bubble::before {
+    right: -0.5rem;
+  }
 }

@@ -33,6 +33,18 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const previousMessageCountRef = useRef(0);
+
+  // Handle ESC key to close lightbox
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && enlargedImageUrl) {
+        setEnlargedImageUrl(null);
+      }
+    };
+    
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [enlargedImageUrl]);
   
   const { user } = useAuth();
   const { 
@@ -515,18 +527,18 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
                 <div
                   className={`chat-bubble ${isOwnMessage ? 'chat-bubble-primary' : 'chat-bubble-neutral'} ${
                     isOptimistic ? 'opacity-70' : ''
-                  } ${hasError ? 'border-2 border-error' : ''}`}
+                  } ${hasError ? 'border-2 border-error' : ''} ${msg.image_url && !msg.body ? 'p-0 overflow-hidden' : ''}`}
                 >
                   {msg.image_url && (
                     <img
                       src={msg.image_url}
                       alt="Uploaded image"
                       onClick={() => setEnlargedImageUrl(msg.image_url || null)}
-                        className={`w-40 h-28 object-cover cursor-pointer mb-2 hover:brightness-90 ${isOptimistic && isLoading ? 'opacity-50' : ''}`}
-                        onError={e => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'160\' height=\'112\'><rect width=\'100%\' height=\'100%\' fill=\'#f3f4f6\'/><text x=\'50%\' y=\'50%\' text-anchor=\'middle\' dy=\'.3em\' font-size=\'16\' fill=\'#9ca3af\'>Billede fejler</text></svg>';
-                        }}
+                      className={`max-w-xs w-full h-auto object-cover cursor-pointer hover:brightness-90 transition-all ${isOptimistic && isLoading ? 'opacity-50' : ''} ${msg.body ? 'mb-3' : ''}`}
+                      onError={e => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'320\' height=\'240\'><rect width=\'100%\' height=\'100%\' fill=\'#f3f4f6\'/><text x=\'50%\' y=\'50%\' text-anchor=\'middle\' dy=\'.3em\' font-size=\'16\' fill=\'#9ca3af\'>Billede fejler</text></svg>';
+                      }}
                     />
                   )}
                   {msg.body && <div className="whitespace-pre-wrap px-1">{msg.body}</div>}
@@ -676,27 +688,44 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         </div>
       </div>
 
-      {/* Enlarged Image Modal */}
+      {/* Enlarged Image Modal - Lightbox */}
       {enlargedImageUrl && (
         <div 
           onClick={() => setEnlargedImageUrl(null)}
-          className="fixed inset-0 bg-black/90 flex justify-center items-center z-50 cursor-pointer"
+          className="fixed inset-0 bg-black/95 flex flex-col justify-center items-center z-50 cursor-pointer backdrop-blur-sm"
         >
+          {/* Close button */}
+          <button
+            onClick={() => setEnlargedImageUrl(null)}
+            className="absolute top-4 right-4 w-12 h-12 flex items-center justify-center text-white/80 hover:text-white bg-black/50 hover:bg-black/70 transition-all duration-200"
+            title="Luk (ESC)"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {/* Image container */}
           <div
             onClick={(e) => e.stopPropagation()}
-            className="max-w-[90vw] max-h-[90vh] flex justify-center items-center"
+            className="relative max-w-[95vw] max-h-[95vh] flex justify-center items-center p-4"
           >
-              {enlargedImageUrl && (
-                <img 
-                  src={enlargedImageUrl}
-                  alt="Enlarged view"
-                  className="max-w-full max-h-full object-contain"
-                  onError={e => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'><rect width=\'100%\' height=\'100%\' fill=\'#111827\'/><text x=\'50%\' y=\'50%\' text-anchor=\'middle\' dy=\'.3em\' font-size=\'24\' fill=\'#9ca3af\'>Billede fejler</text></svg>';
-                  }}
-                />
-              )}
+            {enlargedImageUrl && (
+              <img 
+                src={enlargedImageUrl}
+                alt="Enlarged view"
+                className="max-w-full max-h-[90vh] object-contain shadow-2xl"
+                onError={e => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'><rect width=\'100%\' height=\'100%\' fill=\'#111827\'/><text x=\'50%\' y=\'50%\' text-anchor=\'middle\' dy=\'.3em\' font-size=\'24\' fill=\'#9ca3af\'>Billede fejler</text></svg>';
+                }}
+              />
+            )}
+          </div>
+
+          {/* Instructions */}
+          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-white/60 text-sm font-light">
+            Klik for at lukke
           </div>
         </div>
       )}

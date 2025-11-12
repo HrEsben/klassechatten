@@ -47,7 +47,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   const { sendMessage, uploadImage, sending, uploading } = useSendMessage();
   
   // Presence and typing indicators
-  const { onlineUsers, typingUsers, setTyping, onlineCount } = useRoomPresence({
+  const { onlineUsers, typingUsers, setTyping } = useRoomPresence({
     roomId,
     userId: user?.id || '',
     displayName: user?.user_metadata?.display_name || user?.email || 'Anonymous',

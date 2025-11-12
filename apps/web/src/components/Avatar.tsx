@@ -66,7 +66,7 @@ export default function Avatar({
           <img
             src={avatarUrl}
             alt={`${displayName} avatar`}
-            onError={(e) => {
+            onError={() => {
               // Fallback to initials if image fails to load
               console.log('Avatar image failed to load, will show initials');
             }}

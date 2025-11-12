@@ -16,13 +16,11 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh' 
-      }}>
-        <div>Indlæser...</div>
+      <div className="min-h-screen flex justify-center items-center">
+        <div className="flex flex-col items-center gap-4">
+          <span className="loading loading-spinner loading-lg"></span>
+          <div className="text-base-content">Indlæser...</div>
+        </div>
       </div>
     );
   }

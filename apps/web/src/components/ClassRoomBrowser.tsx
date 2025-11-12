@@ -11,27 +11,39 @@ export default function ClassRoomBrowser() {
 
   if (loading) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <div>Indlæser klasser...</div>
+      <div className="flex justify-center items-center p-8">
+        <div className="flex flex-col items-center gap-4">
+          <span className="loading loading-spinner loading-lg"></span>
+          <div className="text-base-content">Indlæser klasser...</div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ padding: '2rem', color: '#dc3545' }}>
-        Fejl: {error}
+      <div className="p-8">
+        <div className="alert alert-error">
+          <svg className="w-6 h-6 stroke-current shrink-0" fill="none" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span>Fejl: {error}</span>
+        </div>
       </div>
     );
   }
 
   if (classes.length === 0) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <h2>Ingen klasser endnu</h2>
-        <p style={{ color: '#666', marginTop: '1rem' }}>
-          Du er ikke medlem af nogen klasser. Bed din lærer om en invitationskode.
-        </p>
+      <div className="hero min-h-[50vh]">
+        <div className="hero-content text-center">
+          <div className="max-w-md">
+            <h2 className="text-3xl font-bold">Ingen klasser endnu</h2>
+            <p className="py-6 text-base-content/70">
+              Du er ikke medlem af nogen klasser. Bed din lærer om en invitationskode.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -39,8 +51,8 @@ export default function ClassRoomBrowser() {
   // If a room is selected, show the chat
   if (selectedRoomId) {
     return (
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ flex: 1, overflow: 'hidden' }}>
+      <div className="h-full flex flex-col">
+        <div className="flex-1 overflow-hidden">
           <ChatRoom 
             roomId={selectedRoomId}
             onBack={() => setSelectedRoomId(null)}
@@ -51,79 +63,67 @@ export default function ClassRoomBrowser() {
   }
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
-      <h2 style={{ marginBottom: '2rem' }}>Mine klasser</h2>
+    <div className="p-8 max-w-4xl mx-auto">
+      <h2 className="text-3xl font-bold mb-8">Mine klasser</h2>
       
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div className="space-y-4">
         {classes.map((classItem) => (
           <div 
             key={classItem.id}
-            style={{
-              border: '1px solid #ddd',
-              borderRadius: '8px',
-              overflow: 'hidden',
-            }}
+            className="card bg-base-100 shadow-lg border border-base-300"
           >
             {/* Class header */}
             <div
               onClick={() => setExpandedClassId(
                 expandedClassId === classItem.id ? null : classItem.id
               )}
-              style={{
-                padding: '1rem',
-                background: '#f8f9fa',
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
+              className="card-body cursor-pointer hover:bg-base-200/50 transition-colors"
             >
-              <div>
-                <h3 style={{ margin: 0 }}>{classItem.label}</h3>
-                {classItem.school_name && (
-                  <p style={{ margin: '0.25rem 0 0', color: '#666', fontSize: '0.875rem' }}>
-                    {classItem.school_name}
-                  </p>
-                )}
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="card-title text-xl">{classItem.label}</h3>
+                  {classItem.school_name && (
+                    <p className="text-base-content/70 text-sm mt-1">
+                      {classItem.school_name}
+                    </p>
+                  )}
+                </div>
+                <div className="text-2xl text-base-content/50">
+                  {expandedClassId === classItem.id ? '▼' : '▶'}
+                </div>
               </div>
-              <span style={{ fontSize: '1.5rem' }}>
-                {expandedClassId === classItem.id ? '▼' : '▶'}
-              </span>
             </div>
 
             {/* Rooms list */}
             {expandedClassId === classItem.id && (
-              <div style={{ padding: '1rem' }}>
+              <div className="card-body pt-0">
+                <div className="divider my-2"></div>
                 {classItem.rooms.length === 0 ? (
-                  <p style={{ color: '#666', fontStyle: 'italic' }}>
-                    Ingen chatrum endnu
-                  </p>
+                  <div className="text-center py-8">
+                    <p className="text-base-content/70 italic">
+                      Ingen chatrum endnu
+                    </p>
+                  </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div className="space-y-2">
                     {classItem.rooms.map((room) => (
                       <button
                         key={room.id}
                         onClick={() => setSelectedRoomId(room.id)}
                         disabled={room.is_locked}
-                        style={{
-                          padding: '0.75rem 1rem',
-                          background: room.is_locked ? '#e9ecef' : 'white',
-                          border: '1px solid #dee2e6',
-                          borderRadius: '4px',
-                          textAlign: 'left',
-                          cursor: room.is_locked ? 'not-allowed' : 'pointer',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                        }}
+                        className={`btn w-full justify-between ${
+                          room.is_locked 
+                            ? 'btn-disabled' 
+                            : 'btn-outline hover:btn-primary'
+                        }`}
                       >
-                        <span>
+                        <span className="flex items-center gap-2">
                           #{room.name}
                           {room.is_locked && (
-                            <span style={{ marginLeft: '0.5rem', color: '#999' }}>🔒</span>
+                            <span className="text-base-content/50">🔒</span>
                           )}
                         </span>
-                        <span style={{ color: '#007bff' }}>→</span>
+                        <span className="text-primary">→</span>
                       </button>
                     ))}
                   </div>

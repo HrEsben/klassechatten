@@ -646,6 +646,73 @@ shadow-lg  // Standard card shadow (only shadow used in the system)
 - **Styling**: Tailwind CSS v4 + DaisyUI v5 (web), Inline styles (mobile)
 - **Development**: MCP (Model Context Protocol) for real-time development insights
 
+## 🔧 Next.js 16 Specific Rules
+
+### CRITICAL: Always follow these Next.js 16 patterns
+
+1. **API Route Params Must Be Awaited**
+   ```typescript
+   // ❌ WRONG - Next.js 15 pattern
+   export async function GET(
+     request: Request,
+     { params }: { params: { id: string } }
+   ) {
+     const id = params.id;
+   }
+
+   // ✅ CORRECT - Next.js 16 pattern
+   export async function GET(
+     request: Request,
+     { params }: { params: Promise<{ id: string }> }
+   ) {
+     const { id } = await params;
+   }
+   ```
+
+2. **Page Component Params Must Be Awaited**
+   ```typescript
+   // ❌ WRONG
+   export default function Page({ params }: { params: { id: string } }) {
+     return <div>{params.id}</div>;
+   }
+
+   // ✅ CORRECT - use React.use() for client components
+   'use client';
+   import { use } from 'react';
+   
+   export default function Page({ params }: { params: Promise<{ id: string }> }) {
+     const { id } = use(params);
+     return <div>{id}</div>;
+   }
+
+   // ✅ CORRECT - await in server components
+   export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+     const { id } = await params;
+     return <div>{id}</div>;
+   }
+   ```
+
+3. **SearchParams Must Be Awaited**
+   ```typescript
+   // ✅ CORRECT
+   export default async function Page({ 
+     searchParams 
+   }: { 
+     searchParams: Promise<{ query?: string }> 
+   }) {
+     const { query } = await searchParams;
+   }
+   ```
+
+4. **Cookies and Headers Must Be Awaited**
+   ```typescript
+   import { cookies, headers } from 'next/headers';
+   
+   // ✅ CORRECT
+   const cookieStore = await cookies();
+   const headersList = await headers();
+   ```
+
 ## 📊 Architecture Decisions
 
 ### Why Monorepo?

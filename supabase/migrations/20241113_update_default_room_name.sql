@@ -399,6 +399,31 @@ GRANT EXECUTE ON FUNCTION revoke_class_admin TO authenticated;
 GRANT EXECUTE ON FUNCTION add_student_slots TO authenticated;
 GRANT EXECUTE ON FUNCTION remove_placeholder_slot TO authenticated;
 
+-- Helper function to get user's class IDs (bypasses RLS)
+CREATE OR REPLACE FUNCTION get_user_class_ids(p_user_id uuid)
+RETURNS SETOF uuid
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = ''
+AS $$
+  SELECT class_id FROM public.class_members WHERE user_id = p_user_id;
+$$;
+
+-- Helper function to get user's admin class IDs (bypasses RLS)
+CREATE OR REPLACE FUNCTION get_user_admin_class_ids(p_user_id uuid)
+RETURNS SETOF uuid
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = ''
+AS $$
+  SELECT class_id FROM public.class_members WHERE user_id = p_user_id AND is_class_admin = true;
+$$;
+
+GRANT EXECUTE ON FUNCTION get_user_class_ids TO authenticated;
+GRANT EXECUTE ON FUNCTION get_user_admin_class_ids TO authenticated;
+
 -- RLS Policies for class_members table
 -- Enable RLS
 ALTER TABLE public.class_members ENABLE ROW LEVEL SECURITY;
@@ -409,11 +434,7 @@ CREATE POLICY "Users can view members in their classes"
 ON public.class_members FOR SELECT
 TO authenticated
 USING (
-  EXISTS (
-    SELECT 1 FROM public.class_members cm
-    WHERE cm.class_id = class_members.class_id
-    AND cm.user_id = auth.uid()
-  )
+  class_id IN (SELECT get_user_class_ids(auth.uid()))
 );
 
 -- Policy: System admins can view all class members
@@ -435,12 +456,7 @@ CREATE POLICY "Class admins can add members"
 ON public.class_members FOR INSERT
 TO authenticated
 WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM public.class_members cm
-    WHERE cm.class_id = class_members.class_id
-    AND cm.user_id = auth.uid()
-    AND cm.is_class_admin = true
-  )
+  class_id IN (SELECT get_user_admin_class_ids(auth.uid()))
 );
 
 -- Policy: Class admins can update member roles and admin status
@@ -449,12 +465,7 @@ CREATE POLICY "Class admins can update members"
 ON public.class_members FOR UPDATE
 TO authenticated
 USING (
-  EXISTS (
-    SELECT 1 FROM public.class_members cm
-    WHERE cm.class_id = class_members.class_id
-    AND cm.user_id = auth.uid()
-    AND cm.is_class_admin = true
-  )
+  class_id IN (SELECT get_user_admin_class_ids(auth.uid()))
 );
 
 -- Policy: Class admins can remove members
@@ -463,12 +474,7 @@ CREATE POLICY "Class admins can remove members"
 ON public.class_members FOR DELETE
 TO authenticated
 USING (
-  EXISTS (
-    SELECT 1 FROM public.class_members cm
-    WHERE cm.class_id = class_members.class_id
-    AND cm.user_id = auth.uid()
-    AND cm.is_class_admin = true
-  )
+  class_id IN (SELECT get_user_admin_class_ids(auth.uid()))
 );
 
 -- Policy: System admins can do anything with class_members

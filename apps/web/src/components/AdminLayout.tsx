@@ -14,7 +14,7 @@ export default function AdminLayout({
 }) {
   const { user, signOut } = useAuth();
   const router = useRouter();
-  const { profile, roleLabel } = useUserProfile();
+  const { profile, roleLabel, isClassAdmin } = useUserProfile();
 
   const handleSignOut = async () => {
     await signOut();
@@ -54,7 +54,7 @@ export default function AdminLayout({
             {/* User Info */}
             <div className="flex flex-col items-end">
               <span className="text-xs font-bold uppercase tracking-widest text-base-content/50">
-                {roleLabel}
+                {roleLabel}{isClassAdmin && '⁺'}
               </span>
               <span className="text-sm font-medium text-base-content">
                 {profile?.display_name || user?.user_metadata?.display_name || user?.email}

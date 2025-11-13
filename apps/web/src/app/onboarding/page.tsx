@@ -3,21 +3,23 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 
-type OnboardingStep = 'choice' | 'create' | 'join';
+type OnboardingStep = 'choice' | 'create' | 'join' | 'success';
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [step, setStep] = useState<OnboardingStep>('choice');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [createdClass, setCreatedClass] = useState<any>(null);
+  const [copied, setCopied] = useState(false);
 
   // Create class form state
   const [schoolName, setSchoolName] = useState('');
   const [gradeLevel, setGradeLevel] = useState('0');
   const [classLetter, setClassLetter] = useState('A');
-  const [nickname, setNickname] = useState('');
   const [studentCount, setStudentCount] = useState('20');
 
   // Join class form state
@@ -29,14 +31,25 @@ export default function OnboardingPage() {
     setLoading(true);
 
     try {
+      // Get current session to pass to API
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        setError('Du skal være logget ind for at oprette en klasse');
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch('/api/classes/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           schoolName,
           gradeLevel: parseInt(gradeLevel),
           classLetter,
-          nickname,
           studentCount: parseInt(studentCount),
         }),
       });
@@ -47,8 +60,9 @@ export default function OnboardingPage() {
         throw new Error(data.error || 'Failed to create class');
       }
 
-      // Success! Redirect to dashboard
-      router.push('/');
+      // Success! Show invite code before redirecting
+      setCreatedClass(data.class);
+      setStep('success');
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -62,9 +76,21 @@ export default function OnboardingPage() {
     setLoading(true);
 
     try {
+      // Get current session to pass to API
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        setError('Du skal være logget ind for at tilmelde dig en klasse');
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch('/api/classes/join', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({ inviteCode: inviteCode.toUpperCase() }),
       });
 
@@ -82,6 +108,55 @@ export default function OnboardingPage() {
       setLoading(false);
     }
   };
+
+  const handleCopyInviteCode = async () => {
+    if (createdClass?.invite_code) {
+      try {
+        await navigator.clipboard.writeText(createdClass.invite_code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    }
+  };
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-base-300 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <span className="loading loading-ball loading-lg text-primary"></span>
+          <p className="text-base-content/60 font-medium">Indlæser...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-base-300 flex items-center justify-center p-4">
+        <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 text-center space-y-4 max-w-md">
+          <svg className="w-16 h-16 stroke-current text-warning mx-auto" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+            <path strokeLinecap="square" strokeLinejoin="miter" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <h2 className="text-2xl font-black uppercase tracking-tight text-base-content">
+            Ikke Logget Ind
+          </h2>
+          <p className="text-base-content/60">
+            Du skal være logget ind for at fortsætte med onboarding.
+          </p>
+          <button 
+            onClick={() => router.push('/login')}
+            className="btn bg-base-content text-base-100 hover:bg-primary hover:text-primary-content"
+          >
+            Gå til Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-base-300 flex items-center justify-center p-4">
@@ -127,19 +202,19 @@ export default function OnboardingPage() {
             {/* Join Class Card */}
             <button
               onClick={() => setStep('join')}
-              className="relative group text-left bg-base-100 border-2 border-base-content/10 hover:border-primary/50 transition-all duration-200 overflow-hidden"
+              className="relative group text-left bg-base-100 border-2 border-base-content/10 hover:border-warning transition-all duration-200 overflow-hidden"
             >
-              <div className="absolute left-0 top-0 w-1 h-full bg-secondary/30 group-hover:bg-secondary group-hover:w-2 transition-all duration-200"></div>
+              <div className="absolute left-0 top-0 w-1 h-full bg-warning/30 group-hover:bg-warning group-hover:w-2 transition-all duration-200"></div>
               
               <div className="px-8 py-6 pl-10">
                 <div className="flex items-start justify-between mb-3">
-                  <svg className="w-8 h-8 stroke-current text-secondary" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                  <svg className="w-8 h-8 stroke-current text-warning" strokeWidth={2} fill="none" viewBox="0 0 24 24">
                     <path strokeLinecap="square" strokeLinejoin="miter" d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/>
                   </svg>
                 </div>
                 
                 <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
-                  Tilmeld Klasse
+                  Brug Invitation
                 </h3>
                 
                 <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
@@ -153,6 +228,7 @@ export default function OnboardingPage() {
         {/* Create Class Form */}
         {step === 'create' && (
           <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
+            {/* Header */}
             <div className="p-6 border-b-2 border-base-content/10">
               <button
                 onClick={() => setStep('choice')}
@@ -163,97 +239,106 @@ export default function OnboardingPage() {
               <h2 className="text-xl font-black uppercase tracking-tight text-base-content">
                 Opret Ny Klasse
               </h2>
+              <div className="h-1 w-24 bg-primary mt-2"></div>
             </div>
 
-            <form onSubmit={handleCreateClass} className="p-6 space-y-4">
+            <form onSubmit={handleCreateClass} className="p-6 space-y-6">
               {error && (
-                <div className="alert alert-error alert-outline">
+                <div className="alert alert-error">
+                  <svg className="w-6 h-6 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                    <path strokeLinecap="square" strokeLinejoin="miter" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                  </svg>
                   <span className="text-xs font-mono uppercase tracking-wider">{error}</span>
                 </div>
               )}
 
-              <fieldset className="fieldset">
-                <legend className="fieldset-legend">Skole Information</legend>
-                
-                <label className="input">
-                  <span className="label">Skole Navn</span>
-                  <input
-                    type="text"
-                    placeholder="F.eks. Sønderskov Skole"
-                    value={schoolName}
-                    onChange={(e) => setSchoolName(e.target.value)}
-                    required
-                  />
-                </label>
-              </fieldset>
-
-              <fieldset className="fieldset">
-                <legend className="fieldset-legend">Klasse Detaljer</legend>
-                
+              <div className="space-y-4">
+                {/* Grade + Letter inline with equal width */}
                 <div className="grid grid-cols-2 gap-4">
-                  <label className="input">
-                    <span className="label">Klassetrin</span>
-                    <select
-                      value={gradeLevel}
-                      onChange={(e) => setGradeLevel(e.target.value)}
-                      className="select"
-                      required
-                    >
-                      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(grade => (
-                        <option key={grade} value={grade}>
-                          {grade}. klasse
-                        </option>
+                  {/* Klassetrin dropdown */}
+                  <div className="dropdown w-full">
+                    <div tabIndex={0} role="button" className="btn btn-outline btn-primary w-full justify-between font-black">
+                      <span className="text-xs font-bold uppercase tracking-widest">
+                        {gradeLevel}. KLASSE
+                      </span>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="square" strokeLinejoin="miter" d="M19 9l-7 7-7-7"/>
+                      </svg>
+                    </div>
+                    <ul tabIndex={-1} className="dropdown-content menu bg-base-100 border-2 border-primary z-10 w-full p-2 shadow-lg">
+                      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(grade => (
+                        <li key={grade}>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              setGradeLevel(grade.toString());
+                              (document.activeElement as HTMLElement)?.blur();
+                            }}
+                            className="font-bold uppercase"
+                          >
+                            {grade}. klasse
+                          </button>
+                        </li>
                       ))}
-                    </select>
-                  </label>
+                    </ul>
+                  </div>
 
-                  <label className="input">
-                    <span className="label">Klasse Bogstav</span>
-                    <select
+                  {/* Letter input */}
+                  <label className="input input-secondary w-full">
+                    <span className="label text-xs font-bold uppercase tracking-widest">Bogstav</span>
+                    <input
+                      type="text"
+                      placeholder="A, X, RØD..."
                       value={classLetter}
-                      onChange={(e) => setClassLetter(e.target.value)}
-                      className="select"
+                      onChange={(e) => setClassLetter(e.target.value.toUpperCase())}
+                      maxLength={20}
+                      className="font-bold"
                       required
-                    >
-                      {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(letter => (
-                        <option key={letter} value={letter}>
-                          {letter}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </label>
                 </div>
 
-                <label className="input">
-                  <span className="label">Kælenavn (valgfrit)</span>
+                {/* School name - full width */}
+                <label className="input input-accent w-full">
+                  <span className="label text-xs font-bold uppercase tracking-widest">Skole</span>
                   <input
                     type="text"
-                    placeholder="F.eks. De Seje, Løverne"
-                    value={nickname}
-                    onChange={(e) => setNickname(e.target.value)}
+                    placeholder="F.eks. Vadgård Skole"
+                    value={schoolName}
+                    onChange={(e) => setSchoolName(e.target.value)}
+                    className="font-bold"
+                    required
                   />
                 </label>
-                <p className="label text-xs">Et sjovt navn til klassen</p>
-              </fieldset>
 
-              <fieldset className="fieldset">
-                <legend className="fieldset-legend">Elever</legend>
-                
-                <label className="input">
-                  <span className="label">Antal Elever</span>
+                {/* Student count - full width */}
+                <label className="input input-info w-full">
+                  <span className="label text-xs font-bold uppercase tracking-widest">Antal Elever</span>
                   <input
                     type="number"
                     min="1"
                     max="50"
                     value={studentCount}
                     onChange={(e) => setStudentCount(e.target.value)}
+                    className="font-bold"
                     required
                   />
                 </label>
-                <p className="label text-xs">
-                  Dette opretter pladser som eleverne kan tilmelde sig med invitationskoden
-                </p>
-              </fieldset>
+              </div>
+
+              {/* Live Preview - clean, no box */}
+              {(gradeLevel || classLetter || schoolName || studentCount) && (
+                <div className="text-center py-6">
+                  <p className="text-3xl font-black uppercase tracking-tight text-base-content mb-1">
+                    {gradeLevel}.{classLetter || '?'} på {schoolName || 'Skolen'}
+                  </p>
+                  {studentCount && (
+                    <p className="text-xs font-mono uppercase tracking-wider text-base-content/50 mt-2">
+                      {studentCount} elever
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="flex gap-2 justify-end">
                 <button
@@ -344,6 +429,74 @@ export default function OnboardingPage() {
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* Success Step - Show Invite Code */}
+        {step === 'success' && createdClass && (
+          <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
+            <div className="p-6 border-b-2 border-base-content/10">
+              <h2 className="text-xl font-black uppercase tracking-tight text-base-content">
+                Klasse Oprettet
+              </h2>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div className="bg-accent/10 border-2 border-accent p-6">
+                <p className="text-xs font-bold uppercase tracking-widest text-base-content/60 mb-2 text-center">
+                  Invitationskode
+                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <code className="text-5xl font-black tracking-wider text-accent font-mono">
+                    {createdClass.invite_code}
+                  </code>
+                  <div className={`tooltip ${copied ? 'tooltip-open tooltip-success' : ''}`} data-tip={copied ? 'Kopieret!' : 'Kopier kode'}>
+                    <button
+                      onClick={handleCopyInviteCode}
+                      className="btn btn-ghost btn-square btn-sm"
+                    >
+                      <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                        <path strokeLinecap="square" strokeLinejoin="miter" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <p className="text-xs text-base-content/60 text-center mt-4">
+                  Del denne kode med klassens forældre, så de kan oprette en bruger i klassen
+                </p>
+              </div>
+
+              <div className="bg-info/10 border-l-2 border-info p-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-base-content mb-2">
+                  Næste Skridt
+                </p>
+                <ol className="text-xs text-base-content/70 space-y-2">
+                  <li className="flex gap-2">
+                    <span className="font-bold text-primary">1.</span>
+                    <span>Del invitationskoden med de andre forældre i klassen</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="font-bold text-primary">2.</span>
+                    <span>Hver forælder skal tilmelde sig med koden via "Tilmeld Dig Klasse"</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="font-bold text-primary">3.</span>
+                    <span>Gå til <strong>"Opret Barn Konto"</strong> i dashboardet for at oprette konti til jeres børn</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="font-bold text-primary">4.</span>
+                    <span>Børnene kan derefter logge ind med deres brugernavn og adgangskode</span>
+                  </li>
+                </ol>
+              </div>
+
+              <button
+                onClick={() => router.push('/')}
+                className="btn w-full bg-base-content text-base-100 hover:bg-primary hover:text-primary-content"
+              >
+                Gå Til Dashboard
+              </button>
+            </div>
           </div>
         )}
       </div>

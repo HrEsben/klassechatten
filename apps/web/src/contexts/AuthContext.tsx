@@ -4,11 +4,19 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
+interface SignUpResponse {
+  data: {
+    user: User | null;
+    session: Session | null;
+  };
+  error: AuthError | null;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, metadata?: { display_name?: string }) => Promise<{ error: AuthError | null }>;
+  signUp: (email: string, password: string, metadata?: { display_name?: string }) => Promise<SignUpResponse>;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<{ error: AuthError | null }>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
@@ -41,15 +49,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, metadata?: { display_name?: string }) => {
-    const { error } = await supabase.auth.signUp({
+  const signUp = async (email: string, password: string, metadata?: { display_name?: string }): Promise<SignUpResponse> => {
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: metadata,
+        // Disable email confirmation for smoother onboarding
+        emailRedirectTo: `${window.location.origin}/onboarding`,
       },
     });
-    return { error };
+    
+    // Log the signup response to help debug
+    console.log('SignUp response:', { 
+      user: data.user?.id, 
+      session: !!data.session,
+      error 
+    });
+    
+    return { data, error };
   };
 
   const signIn = async (email: string, password: string) => {

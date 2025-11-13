@@ -50,8 +50,6 @@ DECLARE
   v_room_id uuid;
   i int;
   v_student_id uuid;
-  v_student_email text;
-  v_student_password text;
   v_result json;
 BEGIN
   -- Create or find school
@@ -97,51 +95,56 @@ BEGIN
   INSERT INTO public.class_members (class_id, user_id, role_in_class)
   VALUES (v_class_id, p_creator_id, 'guardian');
 
-  -- Create default "general" room for the class
+  -- Create default "Klassechatten" room for the class
   INSERT INTO public.rooms (class_id, name, type, created_by)
-  VALUES (v_class_id, 'general', 'general', p_creator_id)
+  VALUES (v_class_id, 'Klassechatten', 'general', p_creator_id)
   RETURNING id INTO v_room_id;
 
   -- Create placeholder students
+  -- We create auth.users entries, and the handle_new_user trigger will automatically create profiles
   FOR i IN 1..p_student_count LOOP
-    -- Generate temporary credentials for placeholder
-    v_student_email := 'placeholder_' || gen_random_uuid()::text || '@klassechatten.temp';
-    v_student_password := gen_random_uuid()::text;
-
-    -- Create auth user (placeholder)
+    -- Generate a unique placeholder ID
+    v_student_id := gen_random_uuid();
+    
+    -- Insert into auth.users with metadata that tells the trigger this is a placeholder
     INSERT INTO auth.users (
+      instance_id,
+      id,
+      aud,
+      role,
       email,
       encrypted_password,
       email_confirmed_at,
       raw_app_meta_data,
       raw_user_meta_data,
-      aud,
-      role
+      created_at,
+      updated_at,
+      confirmation_token,
+      recovery_token,
+      email_change_token_new
     )
     VALUES (
-      v_student_email,
-      crypt(v_student_password, gen_salt('bf')),
+      '00000000-0000-0000-0000-000000000000',
+      v_student_id,
+      'authenticated',
+      'authenticated',
+      'placeholder_' || v_student_id::text || '@temp.klassechatten.dk',
+      crypt('placeholder_password_' || v_student_id::text, gen_salt('bf')),
       now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
-      '{}'::jsonb,
-      'authenticated',
-      'authenticated'
-    )
-    RETURNING id INTO v_student_id;
-
-    -- Create placeholder profile
-    INSERT INTO public.profiles (
-      user_id,
-      role,
-      display_name,
-      is_placeholder
-    )
-    VALUES (
-      v_student_id,
-      'child',
-      'Klassekammerat ' || i,
-      true
+      jsonb_build_object(
+        'role', 'child',
+        'display_name', 'Elev ' || i,
+        'is_placeholder', true
+      ),
+      now(),
+      now(),
+      '',
+      '',
+      ''
     );
+
+    -- The handle_new_user trigger creates the profile automatically with correct metadata
 
     -- Add placeholder student to class
     INSERT INTO public.class_members (class_id, user_id, role_in_class)
@@ -211,7 +214,7 @@ BEGIN
   SET user_id = p_new_user_id
   WHERE class_id = v_class_id AND user_id = v_placeholder_id;
 
-  -- Delete the placeholder auth user (no longer needed)
+  -- Delete the placeholder profile and auth.users (CASCADE will handle it)
   DELETE FROM auth.users WHERE id = v_placeholder_id;
 
   -- Return success info
@@ -231,6 +234,7 @@ GRANT EXECUTE ON FUNCTION generate_invite_code TO authenticated;
 
 -- Update RLS policies to handle placeholders
 -- Profiles: Users can see placeholders in their classes
+DROP POLICY IF EXISTS "Users can view class members including placeholders" ON public.profiles;
 CREATE POLICY "Users can view class members including placeholders"
 ON public.profiles FOR SELECT
 USING (

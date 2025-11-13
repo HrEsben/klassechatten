@@ -1,31 +1,31 @@
 -- Add image_url column to messages table
-alter table messages add column if not exists image_url text;
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS image_url text;
 
 -- Create storage bucket for chat images
-insert into storage.buckets (id, name, public)
-values ('chat-images', 'chat-images', true)
-on conflict (id) do nothing;
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('chat-images', 'chat-images', true)
+ON CONFLICT (id) DO NOTHING;
 
 -- Storage policies: Allow authenticated users to upload
-create policy "Authenticated users can upload images"
-on storage.objects for insert
-to authenticated
-with check (bucket_id = 'chat-images');
+DROP POLICY IF EXISTS "Authenticated users can upload images" ON storage.objects;
+CREATE POLICY "Authenticated users can upload images"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'chat-images');
 
 -- Allow public read access to images
-create policy "Public can view images"
-on storage.objects for select
-to public
-using (bucket_id = 'chat-images');
+DROP POLICY IF EXISTS "Public can view images" ON storage.objects;
+CREATE POLICY "Public can view images"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'chat-images');
 
 -- Allow users to delete their own images
-create policy "Users can delete own images"
-on storage.objects for delete
-to authenticated
-using (
+DROP POLICY IF EXISTS "Users can delete own images" ON storage.objects;
+CREATE POLICY "Users can delete own images"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (
   bucket_id = 'chat-images' 
-  and auth.uid()::text = (storage.foldername(name))[1]
+  AND auth.uid()::text = (storage.foldername(name))[1]
 );
-
--- Update messages RLS to include image_url
--- (The existing RLS policies already cover this column)

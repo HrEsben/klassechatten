@@ -1,20 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-server';
-import { getUserFromRequest } from '@/lib/supabase-auth';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = supabaseAdmin;
     
-    // Get current user
-    const user = await getUserFromRequest();
+    // Get access token from Authorization header
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
     
-    if (!user) {
+    if (!token) {
+      console.error('Authentication failed: No token in Authorization header');
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized - Please make sure you are logged in' },
         { status: 401 }
       );
     }
+
+    // Verify the token and get user
+    const authClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+    
+    if (authError || !user) {
+      console.error('Authentication failed:', authError);
+      return NextResponse.json(
+        { error: 'Unauthorized - Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+
+    console.log('User authenticated:', user.id, user.email);
 
     // Get request body
     const body = await request.json();
@@ -28,9 +48,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (gradeLevel < 0 || gradeLevel > 9) {
+    if (gradeLevel < 0 || gradeLevel > 10) {
       return NextResponse.json(
-        { error: 'Grade level must be between 0 and 9' },
+        { error: 'Grade level must be between 0 and 10' },
         { status: 400 }
       );
     }

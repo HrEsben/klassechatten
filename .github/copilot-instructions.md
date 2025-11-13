@@ -738,14 +738,14 @@ shadow-lg  // Standard card shadow (only shadow used in the system)
 
 ## 🎯 Next Features (Roadmap)
 
-- [ ] Typing indicators
-- [ ] Read receipts
+- [X] Typing indicators
+- [X] Read receipts
 - [ ] Message reactions (emoji)
 - [ ] Image/file uploads
 - [ ] Push notifications
 - [ ] Teacher moderation dashboard
 - [ ] Analytics dashboard
-- [ ] User presence (online/offline)
+- [X] User presence (online/offline)
 - [ ] Thread support
 - [ ] Search messages
-- [ ] Dark mode
+- [X] Dark mode

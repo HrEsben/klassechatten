@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -12,6 +13,23 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   
   const { signIn, signUp } = useAuth();
+
+  const checkNeedsOnboarding = async (userId: string): Promise<boolean> => {
+    // Check if user has any class memberships
+    const { data, error } = await supabase
+      .from('class_members')
+      .select('class_id')
+      .eq('user_id', userId)
+      .limit(1);
+
+    if (error) {
+      console.error('Error checking class membership:', error);
+      return false;
+    }
+
+    // If no class memberships, user needs onboarding
+    return !data || data.length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,10 +45,11 @@ export default function LoginForm() {
           setError(error.message);
           setLoading(false);
         } else {
-          console.log('Sign up successful, redirecting...');
+          console.log('Sign up successful, redirecting to onboarding...');
           // Small delay to let auth state propagate
           await new Promise(resolve => setTimeout(resolve, 1000));
-          window.location.href = '/';
+          // New users always go to onboarding
+          window.location.href = '/onboarding';
         }
       } else {
         console.log('Attempting sign in...');
@@ -40,10 +59,18 @@ export default function LoginForm() {
           setError(error.message);
           setLoading(false);
         } else {
-          console.log('Sign in successful, redirecting...');
+          console.log('Sign in successful, checking onboarding status...');
           // Small delay to let auth state propagate
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          window.location.href = '/';
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Get current user
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const needsOnboarding = await checkNeedsOnboarding(user.id);
+            window.location.href = needsOnboarding ? '/onboarding' : '/';
+          } else {
+            window.location.href = '/';
+          }
         }
       }
     } catch (err) {

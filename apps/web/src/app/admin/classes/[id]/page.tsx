@@ -12,11 +12,7 @@ import { useState } from 'react';
 export default function ClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   
-  return (
-    <AdminLayout>
-      <ClassDetailContent classId={id} />
-    </AdminLayout>
-  );
+  return <ClassDetailContent classId={id} />;
 }
 
 function ClassDetailContent({ classId }: { classId: string }) {
@@ -100,26 +96,30 @@ function ClassDetailContent({ classId }: { classId: string }) {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-4">
-          <span className="loading loading-ball loading-lg text-primary"></span>
-          <p className="text-base-content/60 font-medium">Indlæser klassedetaljer...</p>
+      <AdminLayout>
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <div className="flex flex-col items-center gap-4">
+            <span className="loading loading-ball loading-lg text-primary"></span>
+            <p className="text-base-content/60 font-medium">Indlæser klassedetaljer...</p>
+          </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   if (error || !classData) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="text-center space-y-4">
-          <p className="text-error font-medium">Fejl ved indlæsning af klasse</p>
-          <p className="text-base-content/60 text-sm">{error}</p>
-          <button onClick={() => router.back()} className="btn btn-ghost">
-            Gå tilbage
-          </button>
+      <AdminLayout>
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <div className="text-center space-y-4">
+            <p className="text-error font-medium">Fejl ved indlæsning af klasse</p>
+            <p className="text-base-content/60 text-sm">{error}</p>
+            <button onClick={() => router.back()} className="btn btn-ghost">
+              Gå tilbage
+            </button>
+          </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
@@ -128,7 +128,8 @@ function ClassDetailContent({ classId }: { classId: string }) {
   const parents = members.filter(m => m.role_in_class === 'guardian');
 
   return (
-    <div className="space-y-8">
+    <AdminLayout classData={{ name: classData.label, school_name: classData.school_name }}>
+      <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center gap-4">
         <button
@@ -419,6 +420,7 @@ function ClassDetailContent({ classId }: { classId: string }) {
           <div className="modal-backdrop bg-base-content/50" onClick={() => setShowAddModal(false)}></div>
         </div>
       )}
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

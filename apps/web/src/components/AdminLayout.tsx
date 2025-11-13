@@ -3,8 +3,15 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import Breadcrumbs from './Breadcrumbs';
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({ 
+  children,
+  classData 
+}: { 
+  children: React.ReactNode;
+  classData?: { name: string; school_name?: string };
+}) {
   const { user, signOut } = useAuth();
   const router = useRouter();
   const { profile, roleLabel } = useUserProfile();
@@ -68,6 +75,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main Content Area */}
       <main className="flex-1 py-8 bg-base-300">
         <div className="w-full max-w-7xl mx-auto px-12">
+          {/* Breadcrumb Navigation */}
+          <div className="mb-6">
+            <Breadcrumbs classData={classData} />
+          </div>
+          
           {children}
         </div>
       </main>

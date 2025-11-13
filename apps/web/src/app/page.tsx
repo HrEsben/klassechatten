@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ClassRoomBrowser from '@/components/ClassRoomBrowser';
+import AdminDashboard from '@/components/AdminDashboard';
 import { useUserClasses } from '@/hooks/useUserClasses';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
@@ -213,25 +214,13 @@ function HomePage() {
         <div className="w-full max-w-7xl mx-auto px-12">
           <Suspense fallback={
             <div className="flex justify-center items-center min-h-[60vh]">
-              <div className="flex flex-col items-center gap-8">
-                {/* Custom Loading Animation */}
-                <div className="relative">
-                  <div className="w-16 h-16 border-4 border-base-content/10 border-t-primary animate-spin"></div>
-                </div>
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-widest text-base-content/40">
-                    Indlæser
-                  </span>
-                  <div className="flex gap-1">
-                    <div className="w-1.5 h-1.5 bg-primary animate-pulse"></div>
-                    <div className="w-1.5 h-1.5 bg-primary animate-pulse delay-75"></div>
-                    <div className="w-1.5 h-1.5 bg-primary animate-pulse delay-150"></div>
-                  </div>
-                </div>
+              <div className="flex flex-col items-center gap-4">
+                <span className="loading loading-ball loading-lg text-primary"></span>
+                <p className="text-base-content/60 font-medium">Indlæser...</p>
               </div>
             </div>
           }>
-            <ClassRoomBrowser />
+            {profile?.role === 'admin' ? <AdminDashboard /> : <ClassRoomBrowser />}
           </Suspense>
         </div>
       </main>

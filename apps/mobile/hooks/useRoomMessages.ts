@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../utils/supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -48,6 +48,14 @@ export function useRoomMessages({
   const [error, setError] = useState<string | null>(null);
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  
+  // Track reconnection state
+  const retryCountRef = useRef(0);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isReconnectingRef = useRef(false);
+  const maxRetries = 5;
+  const baseDelay = 1000;
 
   // Combine real and optimistic messages
   const allMessages = [...messages, ...optimisticMessages];
@@ -98,7 +106,6 @@ export function useRoomMessages({
     
     try {
       setLoading(true);
-      setError(null);
 
       const { data, error: fetchError } = await supabase
         .from('messages')
@@ -123,6 +130,7 @@ export function useRoomMessages({
 
       // Reverse to show oldest first
       setMessages(data ? data.reverse() : []);
+      setError(null); // Clear error on successful load
     } catch (err) {
       console.error('Error loading messages:', err);
       setError(err instanceof Error ? err.message : 'Failed to load messages');
@@ -130,6 +138,69 @@ export function useRoomMessages({
       setLoading(false);
     }
   }, [roomId, limit, enabled]);
+
+  // Calculate exponential backoff delay
+  const getBackoffDelay = useCallback((retryCount: number): number => {
+    const delay = Math.min(baseDelay * Math.pow(2, retryCount), 30000);
+    const jitter = Math.random() * 1000;
+    return delay + jitter;
+  }, [baseDelay]);
+
+  // Clear retry timeout
+  const clearRetryTimeout = useCallback(() => {
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
+    }
+  }, []);
+
+  // Attempt reconnection
+  const attemptReconnect = useCallback(async (currentChannel: RealtimeChannel) => {
+    if (isReconnectingRef.current) return;
+
+    if (retryCountRef.current >= maxRetries) {
+      console.warn('Max reconnection attempts reached');
+      setIsReconnecting(false);
+      setError('Connection lost. Please refresh the app.');
+      return;
+    }
+
+    isReconnectingRef.current = true;
+    retryCountRef.current += 1;
+    setIsReconnecting(true);
+
+    console.log(`🔄 Attempting reconnection (${retryCountRef.current}/${maxRetries})...`);
+
+    try {
+      // Unsubscribe current channel
+      await currentChannel.unsubscribe();
+      
+      // Small delay before resubscribing
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Reload messages
+      await loadMessages();
+      
+      console.log('✅ Reconnection successful, messages reloaded');
+      
+      retryCountRef.current = 0;
+      isReconnectingRef.current = false;
+      setIsReconnecting(false);
+      setError(null);
+      
+    } catch (err) {
+      console.error('❌ Reconnection failed:', err);
+      isReconnectingRef.current = false;
+      
+      // Schedule next retry
+      const delay = getBackoffDelay(retryCountRef.current);
+      console.log(`⏱️ Next retry in ${Math.round(delay / 1000)}s`);
+      
+      retryTimeoutRef.current = setTimeout(() => {
+        attemptReconnect(currentChannel);
+      }, delay);
+    }
+  }, [loadMessages, getBackoffDelay, maxRetries]);
 
   // Subscribe to realtime updates
   useEffect(() => {
@@ -269,11 +340,26 @@ export function useRoomMessages({
         }
       )
       .subscribe((status) => {
+        console.log('📡 Subscription status:', status);
+        
         if (status === 'SUBSCRIBED') {
-          console.log(`Subscribed to room ${roomId}`);
+          console.log(`✅ Subscribed to room ${roomId}`);
+          setIsConnected(true);
+          setIsReconnecting(false);
+          setError(null);
+          retryCountRef.current = 0;
+          clearRetryTimeout();
         } else if (status === 'CHANNEL_ERROR') {
-          console.error(`Error subscribing to room ${roomId}`);
-          setError('Failed to connect to realtime');
+          console.warn(`⚠️ Channel error for room ${roomId}, attempting reconnection...`);
+          setIsConnected(false);
+          attemptReconnect(realtimeChannel);
+        } else if (status === 'TIMED_OUT') {
+          console.warn(`⏱️ Connection timed out for room ${roomId}, attempting reconnection...`);
+          setIsConnected(false);
+          attemptReconnect(realtimeChannel);
+        } else if (status === 'CLOSED') {
+          console.log(`🔌 Channel closed for room ${roomId}`);
+          setIsConnected(false);
         }
       });
 
@@ -281,10 +367,13 @@ export function useRoomMessages({
 
     // Cleanup
     return () => {
-      console.log(`Unsubscribing from room ${roomId}`);
+      console.log(`🔌 Unsubscribing from room ${roomId}`);
+      clearRetryTimeout();
+      retryCountRef.current = 0;
+      isReconnectingRef.current = false;
       realtimeChannel.unsubscribe();
     };
-  }, [roomId, enabled, loadMessages]);
+  }, [roomId, enabled, loadMessages, attemptReconnect, clearRetryTimeout]);
 
   const refresh = useCallback(() => {
     loadMessages();
@@ -296,6 +385,7 @@ export function useRoomMessages({
     error,
     refresh,
     isConnected,
+    isReconnecting,
     addOptimisticMessage,
     updateOptimisticMessage,
     removeOptimisticMessage,

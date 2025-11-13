@@ -10,6 +10,7 @@ import { getRelativeTime } from '@/lib/time';
 import Avatar from './Avatar';
 import OnlineUsers from './OnlineUsers';
 import UsersSidebar from './UsersSidebar';
+import { ConnectionStatus } from './ConnectionStatus';
 
 interface ChatRoomProps {
   roomId: string;
@@ -52,8 +53,9 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   const { 
     messages, 
     loading, 
-    error, 
-    isConnected, 
+    error,
+    isConnected,
+    isReconnecting,
     refresh,
     addOptimisticMessage, 
     updateOptimisticMessage 

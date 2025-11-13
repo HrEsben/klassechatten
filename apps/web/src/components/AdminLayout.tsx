@@ -7,14 +7,16 @@ import Breadcrumbs from './Breadcrumbs';
 
 export default function AdminLayout({ 
   children,
-  classData 
+  classData,
+  classId
 }: { 
   children: React.ReactNode;
   classData?: { name: string; school_name?: string };
+  classId?: string;
 }) {
   const { user, signOut } = useAuth();
   const router = useRouter();
-  const { profile, roleLabel, isClassAdmin } = useUserProfile();
+  const { profile, roleLabel, isClassAdmin } = useUserProfile(classId);
 
   const handleSignOut = async () => {
     await signOut();

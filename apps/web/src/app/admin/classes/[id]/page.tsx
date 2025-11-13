@@ -102,7 +102,7 @@ function ClassDetailContent({ classId }: { classId: string }) {
 
   if (loading) {
     return (
-      <AdminLayout>
+      <AdminLayout classId={classId}>
         <div className="flex justify-center items-center min-h-[60vh]">
           <div className="flex flex-col items-center gap-4">
             <span className="loading loading-ball loading-lg text-primary"></span>
@@ -115,7 +115,7 @@ function ClassDetailContent({ classId }: { classId: string }) {
 
   if (error || !classData) {
     return (
-      <AdminLayout>
+      <AdminLayout classId={classId}>
         <div className="flex justify-center items-center min-h-[60vh]">
           <div className="text-center space-y-4">
             <p className="text-error font-medium">Fejl ved indlæsning af klasse</p>
@@ -139,7 +139,10 @@ function ClassDetailContent({ classId }: { classId: string }) {
   );
 
   return (
-    <AdminLayout classData={{ name: classData.label, school_name: classData.school_name }}>
+    <AdminLayout 
+      classId={classId} 
+      classData={{ name: classData.label, school_name: classData.school_name }}
+    >
       <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center gap-4">

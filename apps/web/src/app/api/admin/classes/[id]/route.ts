@@ -77,6 +77,41 @@ export async function GET(
       })
     );
 
+    // Fetch guardian relationships for students
+    const students = membersWithDetails.filter(m => m.role_in_class === 'child');
+    const guardianRelationships = await Promise.all(
+      students.map(async (student) => {
+        const { data: links } = await supabaseAdmin
+          .from('guardian_links')
+          .select('guardian_user_id')
+          .eq('child_user_id', student.user_id);
+        
+        return {
+          student_id: student.user_id,
+          guardian_ids: links?.map(l => l.guardian_user_id) || []
+        };
+      })
+    );
+
+    // Build guardian map: student_id -> guardian members
+    const guardianMap: Record<string, any[]> = {};
+    guardianRelationships.forEach(rel => {
+      guardianMap[rel.student_id] = membersWithDetails.filter(m => 
+        rel.guardian_ids.includes(m.user_id)
+      );
+    });
+
+    // Attach guardians to students
+    const membersWithGuardians = membersWithDetails.map(member => {
+      if (member.role_in_class === 'child') {
+        return {
+          ...member,
+          guardians: guardianMap[member.user_id] || []
+        };
+      }
+      return member;
+    });
+
     // Fetch rooms
     const { data: rooms } = await supabaseAdmin
       .from('rooms')
@@ -93,7 +128,7 @@ export async function GET(
         created_at: classData.created_at,
         school_name: (classData.schools as any)?.name || null,
       },
-      members: membersWithDetails,
+      members: membersWithGuardians,
       rooms: rooms || [],
     });
 

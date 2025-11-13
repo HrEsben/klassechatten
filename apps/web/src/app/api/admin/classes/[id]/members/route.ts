@@ -8,7 +8,7 @@ export async function POST(
   try {
     const { id: classId } = await params;
     const body = await request.json();
-    const { email, role_in_class } = body;
+    const { email, role_in_class, display_name, parent_id } = body;
 
     if (!email || !role_in_class) {
       return NextResponse.json(
@@ -51,6 +51,14 @@ export async function POST(
       );
     }
 
+    // Update display name if provided
+    if (display_name) {
+      await supabaseAdmin
+        .from('profiles')
+        .update({ display_name })
+        .eq('user_id', user.id);
+    }
+
     // Add user to class
     const { error: insertError } = await supabaseAdmin
       .from('class_members')
@@ -67,6 +75,23 @@ export async function POST(
         { error: 'Failed to add member to class' },
         { status: 500 }
       );
+    }
+
+    // If this is a child and a parent is selected, create guardian link
+    if (role_in_class === 'child' && parent_id) {
+      const { error: linkError } = await supabaseAdmin
+        .from('guardian_links')
+        .insert({
+          child_user_id: user.id,
+          guardian_user_id: parent_id,
+          relationship: 'parent',
+          consent_status: 'granted',
+        });
+
+      if (linkError) {
+        console.error('Error creating guardian link:', linkError);
+        // Don't fail the whole operation if guardian link fails
+      }
     }
 
     return NextResponse.json({ success: true });

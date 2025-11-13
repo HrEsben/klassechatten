@@ -10,6 +10,7 @@ interface ClassMember {
   profile_role: string;
   joined_at: string;
   status: string;
+  guardians?: ClassMember[]; // For students, list of their guardians
 }
 
 interface ClassRoom {
@@ -86,12 +87,22 @@ export function useClassDetails(classId: string) {
     }
   };
 
-  const addMember = async (email: string, roleInClass: 'child' | 'guardian' | 'adult') => {
+  const addMember = async (
+    email: string, 
+    roleInClass: 'child' | 'guardian' | 'adult',
+    displayName?: string,
+    parentId?: string
+  ) => {
     try {
       const response = await fetch(`/api/admin/classes/${classId}/members`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, role_in_class: roleInClass }),
+        body: JSON.stringify({ 
+          email, 
+          role_in_class: roleInClass,
+          display_name: displayName,
+          parent_id: parentId
+        }),
       });
 
       if (!response.ok) {

@@ -8,12 +8,16 @@ interface Reaction {
   user_id: string;
   emoji: string;
   created_at: string;
+  profiles?: {
+    display_name: string;
+  };
 }
 
-interface ReactionGroup {
+export interface ReactionGroup {
   emoji: string;
   count: number;
   users: string[]; // Array of user IDs who reacted
+  userNames: string[]; // Array of display names
   hasReacted: boolean; // Whether current user has reacted with this emoji
 }
 
@@ -36,9 +40,12 @@ export function useReactions({ messageId, currentUserId, enabled = true }: UseRe
     
     reactionsList.forEach((reaction) => {
       const existing = groups.get(reaction.emoji);
+      const displayName = reaction.profiles?.display_name || 'Ukendt bruger';
+      
       if (existing) {
         existing.count++;
         existing.users.push(reaction.user_id);
+        existing.userNames.push(displayName);
         if (currentUserId && reaction.user_id === currentUserId) {
           existing.hasReacted = true;
         }
@@ -47,6 +54,7 @@ export function useReactions({ messageId, currentUserId, enabled = true }: UseRe
           emoji: reaction.emoji,
           count: 1,
           users: [reaction.user_id],
+          userNames: [displayName],
           hasReacted: currentUserId ? reaction.user_id === currentUserId : false,
         });
       }
@@ -61,6 +69,7 @@ export function useReactions({ messageId, currentUserId, enabled = true }: UseRe
     
     try {
       setLoading(true);
+      // Fetch reactions without join - we'll get display names from profiles table separately if needed
       const { data, error: fetchError } = await supabase
         .from('reactions')
         .select('*')
@@ -80,8 +89,33 @@ export function useReactions({ messageId, currentUserId, enabled = true }: UseRe
       }
 
       const reactionsData = data || [];
-      setReactions(reactionsData);
-      setReactionGroups(groupReactions(reactionsData));
+      
+      // Fetch user display names for reactions
+      if (reactionsData.length > 0) {
+        const userIds = [...new Set(reactionsData.map(r => r.user_id))];
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, display_name')
+          .in('user_id', userIds);
+        
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+        }
+        
+        // Merge display names into reactions
+        const profileMap = new Map(profilesData?.map(p => [p.user_id, p.display_name]) || []);
+        const reactionsWithProfiles = reactionsData.map(r => ({
+          ...r,
+          profiles: { display_name: profileMap.get(r.user_id) || 'Ukendt bruger' }
+        }));
+        
+        setReactions(reactionsWithProfiles);
+        setReactionGroups(groupReactions(reactionsWithProfiles));
+      } else {
+        setReactions([]);
+        setReactionGroups([]);
+      }
+      
       setError(null);
     } catch (err) {
       console.error('Error fetching reactions:', err, {
@@ -109,28 +143,26 @@ export function useReactions({ messageId, currentUserId, enabled = true }: UseRe
           message_id: messageId,
           user_id: currentUserId,
           emoji,
-        });
+        })
+        .select();
 
-      if (insertError) throw insertError;
-      
-      // Optimistic update
-      const newReaction: Reaction = {
-        id: Date.now(), // Temporary ID
-        message_id: messageId,
-        user_id: currentUserId,
-        emoji,
-        created_at: new Date().toISOString(),
-      };
-      
-      const updatedReactions = [...reactions, newReaction];
-      setReactions(updatedReactions);
-      setReactionGroups(groupReactions(updatedReactions));
+      if (insertError) {
+        // If duplicate key error, silently ignore (user already has this reaction)
+        if (insertError.code === '23505') {
+          console.log('Reaction already exists, ignoring duplicate');
+          return;
+        }
+        throw insertError;
+      }
+
+      // Refetch to get updated data with profile info
+      await fetchReactions();
     } catch (err) {
       console.error('Error adding reaction:', err);
       // Revert optimistic update on error
       await fetchReactions();
     }
-  }, [messageId, currentUserId, reactions, groupReactions, fetchReactions]);
+  }, [messageId, currentUserId, fetchReactions]);
 
   // Remove a reaction
   const removeReaction = useCallback(async (emoji: string) => {

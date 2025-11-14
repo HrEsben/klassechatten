@@ -54,26 +54,21 @@ export default function ReactionPicker({ onSelect, onClose, position }: Reaction
   const handleEmojiClick = (emoji: string) => {
     setSelectedEmoji(emoji);
     onSelect(emoji);
-    // Small delay before closing to show selection
-    setTimeout(() => {
-      onClose();
-    }, 150);
+    // Immediate close for smooth UX
+    onClose();
   };
 
-  const positionStyle = position
-    ? {
-        position: 'fixed' as const,
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        transform: 'translate(-50%, -100%)',
-        marginTop: '-8px',
-      }
-    : {};
+  const positionStyle = {
+    position: 'absolute' as const,
+    top: '0',
+    right: 'calc(100% + 8px)', // Position to the left of the message bubble with 8px gap
+    zIndex: 9999,
+  };
 
   return (
     <div
       ref={pickerRef}
-      className="bg-base-100 border-2 border-base-content/10 shadow-lg p-4 z-50"
+      className="bg-base-100 border-2 border-base-content/10 p-4 w-64"
       style={positionStyle}
     >
       {/* Header */}

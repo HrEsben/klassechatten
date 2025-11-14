@@ -40,12 +40,12 @@ export default function Message({
   });
 
   const handleAddReactionClick = (event: React.MouseEvent) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    setPickerPosition({
-      x: rect.left + rect.width / 2,
-      y: rect.top,
-    });
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Just toggle the picker - position it absolutely in CSS
     setShowReactionPicker(true);
+    setPickerPosition({ x: 0, y: 0 }); // Dummy values, we'll use CSS positioning
   };
 
   const handleReactionSelect = (emoji: string) => {
@@ -56,7 +56,7 @@ export default function Message({
   };
 
   return (
-    <div className={`chat ${isOwnMessage ? 'chat-end' : 'chat-start'} ${isLastRead ? 'relative' : ''}`}>
+    <div className={`chat ${isOwnMessage ? 'chat-end' : 'chat-start'} relative`}>
       {/* Last Read Indicator */}
       {isLastRead && (
         <div className="absolute -top-12 left-0 right-0 flex items-center gap-3 z-10 px-4">
@@ -97,53 +97,61 @@ export default function Message({
         {isOwnMessage ? 'Dig' : (msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger')}
       </div>
 
-      {/* Use DaisyUI indicator component to attach reactions to bubble */}
-      <div className="indicator">
-        {/* Reactions as indicator item - positioned at bottom */}
-        {messageId && !isOptimistic && (
-          <div className="indicator-item indicator-bottom indicator-center">
+      <div
+        className={`chat-bubble relative ${isOwnMessage ? 'chat-bubble-primary' : 'chat-bubble-neutral'} ${
+          isOptimistic ? 'opacity-70' : ''
+        } ${hasError ? 'border-2 border-error' : ''} ${msg.image_url && !msg.body ? 'p-0' : ''} ${
+          isOwnMessage ? 'dashed-line-right' : 'dashed-line-left'
+        }`}
+      >
+        {msg.image_url && (
+          <img
+            src={msg.image_url}
+            alt="Uploaded image"
+            onClick={() => onImageClick(msg.image_url || '')}
+            className={`max-w-xs w-full h-auto object-cover cursor-pointer hover:brightness-90 transition-all block ${isOptimistic && isLoading ? 'opacity-50' : ''} ${msg.body ? 'mb-3' : ''}`}
+            onError={e => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'320\' height=\'240\'><rect width=\'100%\' height=\'100%\' fill=\'#f3f4f6\'/><text x=\'50%\' y=\'50%\' text-anchor=\'middle\' dy=\'.3em\' font-size=\'16\' fill=\'#9ca3af\'>Billede fejler</text></svg>';
+            }}
+          />
+        )}
+        {msg.body && <div className="whitespace-pre-wrap px-1">{msg.body}</div>}
+        
+        {/* Reactions at bottom of bubble */}
+        {messageId && !isOptimistic && reactionGroups.length > 0 && (
+          <div className="mt-2 pt-2 border-t-2 border-base-content/10">
             <ReactionsDisplay
               reactions={reactionGroups}
               onToggle={toggleReaction}
-              onAddClick={handleAddReactionClick}
             />
           </div>
         )}
-
-        <div
-          className={`chat-bubble relative ${isOwnMessage ? 'chat-bubble-primary' : 'chat-bubble-neutral'} ${
-            isOptimistic ? 'opacity-70' : ''
-          } ${hasError ? 'border-2 border-error' : ''} ${msg.image_url && !msg.body ? 'p-0' : ''} ${
-            isOwnMessage ? 'dashed-line-right' : 'dashed-line-left'
-          }`}
-        >
-          {msg.image_url && (
-            <img
-              src={msg.image_url}
-              alt="Uploaded image"
-              onClick={() => onImageClick(msg.image_url || '')}
-              className={`max-w-xs w-full h-auto object-cover cursor-pointer hover:brightness-90 transition-all block ${isOptimistic && isLoading ? 'opacity-50' : ''} ${msg.body ? 'mb-3' : ''}`}
-              onError={e => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'320\' height=\'240\'><rect width=\'100%\' height=\'100%\' fill=\'#f3f4f6\'/><text x=\'50%\' y=\'50%\' text-anchor=\'middle\' dy=\'.3em\' font-size=\'16\' fill=\'#9ca3af\'>Billede fejler</text></svg>';
-              }}
-            />
-          )}
-          {msg.body && <div className="whitespace-pre-wrap px-1">{msg.body}</div>}
-        </div>
+        
+        {/* Reaction Picker - positioned absolutely relative to this bubble */}
+        {showReactionPicker && pickerPosition && (
+          <ReactionPicker
+            onSelect={handleReactionSelect}
+            onClose={() => setShowReactionPicker(false)}
+            position={pickerPosition}
+          />
+        )}
       </div>
 
-      {/* Reaction Picker */}
-      {showReactionPicker && pickerPosition && (
-        <ReactionPicker
-          onSelect={handleReactionSelect}
-          onClose={() => setShowReactionPicker(false)}
-          position={pickerPosition}
-        />
-      )}
-
-      <div className="chat-footer opacity-90">
+      <div className="chat-footer opacity-90 flex items-center gap-2">
         <time className="text-xs">{getRelativeTime(msg.created_at)}</time>
+        
+        {/* Add reaction button in footer */}
+        {messageId && !isOptimistic && (
+          <button
+            onClick={handleAddReactionClick}
+            className="btn btn-xs px-2 h-5 min-h-5 bg-transparent border-0 hover:bg-accent/20 hover:text-accent text-base-content/60 transition-all duration-200"
+            title="Tilføj reaktion"
+            type="button"
+          >
+            <span className="text-sm font-black">+</span>
+          </button>
+        )}
         {isOptimistic && (
           <span className="ml-2 text-xs">{isLoading ? 'Sender...' : hasError ? 'Fejlet' : 'Sendt'}</span>
         )}

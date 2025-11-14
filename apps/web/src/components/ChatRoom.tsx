@@ -11,6 +11,7 @@ import Avatar from './Avatar';
 import OnlineUsers from './OnlineUsers';
 import UsersSidebar from './UsersSidebar';
 import { ConnectionStatus } from './ConnectionStatus';
+import Message from './Message';
 
 interface ChatRoomProps {
   roomId: string;
@@ -455,9 +456,6 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         ) : (
           messages.map((msg) => {
             const isOwnMessage = msg.user_id === user?.id;
-            const isOptimistic = msg.isOptimistic;
-            const isLoading = msg.isLoading;
-            const hasError = msg.hasError;
             const isLastRead = msg.id === lastReadMessageId;
 
             return (
@@ -468,95 +466,15 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
                     messageRefs.current.set(msg.id, el);
                   }
                 }}
-                className={`chat ${isOwnMessage ? 'chat-end' : 'chat-start'} ${
-                  isLastRead ? 'relative' : ''
-                }`}
               >
-                {/* Last Read Indicator */}
-                {isLastRead && (
-                  <div className="absolute -top-12 left-0 right-0 flex items-center gap-3 z-10 px-4">
-                    {/* Left dashed line */}
-                    <div className="flex-1 border-t-2 border-dashed border-info/30"></div>
-                    
-                    {/* Center badge with link */}
-                    <div className="flex items-center gap-2 bg-info/90 text-info-content px-4 py-1.5 text-xs font-medium uppercase tracking-wider shadow-lg">
-                      <div className="w-1 h-1 bg-info-content rounded-full"></div>
-                      <span>Sidst læst</span>
-                      <div className="w-1 h-1 bg-info-content rounded-full"></div>
-                      {/* Jump to latest button */}
-                      <button
-                        onClick={() => scrollToBottom(true)}
-                        className="ml-2 text-info-content/70 hover:text-info-content transition-colors"
-                        title="Gå til seneste besked"
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                        </svg>
-                      </button>
-                    </div>
-                    
-                    {/* Right dashed line */}
-                    <div className="flex-1 border-t-2 border-dashed border-info/30"></div>
-                  </div>
-                )}
-                
-                {/* Avatar */}
-                <div className="chat-image avatar">
-                  <Avatar
-                    user={{
-                      display_name:
-                        isOwnMessage 
-                          ? 'Dig'
-                          : (msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger'),
-                      avatar_url: isOwnMessage ? user?.user_metadata?.avatar_url : msg.profiles?.avatar_url,
-                      avatar_color: isOwnMessage ? user?.user_metadata?.avatar_color : msg.profiles?.avatar_color,
-                    }}
-                    size="sm"
-                  />
-                </div>
-
-                <div className="chat-header">
-                  {isOwnMessage ? 'Dig' : (msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger')}
-                </div>
-
-                <div
-                  className={`chat-bubble relative ${isOwnMessage ? 'chat-bubble-primary' : 'chat-bubble-neutral'} ${
-                    isOptimistic ? 'opacity-70' : ''
-                  } ${hasError ? 'border-2 border-error' : ''} ${msg.image_url && !msg.body ? 'p-0' : ''} ${
-                    isOwnMessage ? 'dashed-line-right' : 'dashed-line-left'
-                  }`}
-                >
-                  {msg.image_url && (
-                    <img
-                      src={msg.image_url}
-                      alt="Uploaded image"
-                      onClick={() => setEnlargedImageUrl(msg.image_url || null)}
-                      className={`max-w-xs w-full h-auto object-cover cursor-pointer hover:brightness-90 transition-all block ${isOptimistic && isLoading ? 'opacity-50' : ''} ${msg.body ? 'mb-3' : ''}`}
-                      onError={e => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'320\' height=\'240\'><rect width=\'100%\' height=\'100%\' fill=\'#f3f4f6\'/><text x=\'50%\' y=\'50%\' text-anchor=\'middle\' dy=\'.3em\' font-size=\'16\' fill=\'#9ca3af\'>Billede fejler</text></svg>';
-                      }}
-                    />
-                  )}
-                  {msg.body && <div className="whitespace-pre-wrap px-1">{msg.body}</div>}
-                </div>
-
-                <div className="chat-footer opacity-90">
-                  <time className="text-xs">{getRelativeTime(msg.created_at)}</time>
-                  {isOptimistic && (
-                    <span className="ml-2 text-xs">{isLoading ? 'Sender...' : hasError ? 'Fejlet' : 'Sendt'}</span>
-                  )}
-                  {hasError && (
-                    <div className="text-error italic mt-1 text-xs">Besked kunne ikke sendes. Prøv igen.</div>
-                  )}
-                  {msg.edited_at && (
-                    <div className="ml-2">(redigeret)</div>
-                  )}
-                  {/* Read receipts - only show for own messages and non-optimistic messages */}
-                  {isOwnMessage && !isOptimistic && msg.read_receipts && msg.read_receipts.length > 0 && (
-                    <div className="ml-2">✓✓ Læst af {msg.read_receipts.length}</div>
-                  )}
-                </div>
+                <Message
+                  message={msg}
+                  isOwnMessage={isOwnMessage}
+                  isLastRead={isLastRead}
+                  onImageClick={setEnlargedImageUrl}
+                  onScrollToBottom={() => scrollToBottom(true)}
+                  currentUserId={user?.id}
+                />
               </div>
             );
           })

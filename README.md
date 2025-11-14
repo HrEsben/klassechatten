@@ -106,6 +106,7 @@ Shared business logic including:
   - Content moderation
   - Real-time chat with backfill
   - OpenAI moderation integration
+  - Emoji reactions to messages
 - **Port**: 3000 (default)
 
 ### Mobile App (`apps/mobile`)
@@ -116,6 +117,7 @@ Shared business logic including:
   - Real-time chat
   - Push notifications
   - Offline support
+  - Emoji reactions to messages
 
 ## 🛠️ Development Tools
 

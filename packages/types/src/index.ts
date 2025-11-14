@@ -44,6 +44,22 @@ export enum ChatRoomType {
   GROUP = 'GROUP',
 }
 
+// Reaction types
+export interface Reaction {
+  id: number;
+  message_id: number;
+  user_id: string;
+  emoji: string;
+  created_at: string;
+}
+
+export interface ReactionGroup {
+  emoji: string;
+  count: number;
+  users: string[]; // Array of user IDs who reacted
+  hasReacted: boolean; // Whether current user has reacted with this emoji
+}
+
 // API Response types
 export interface ApiResponse<T = unknown> {
   success: boolean;

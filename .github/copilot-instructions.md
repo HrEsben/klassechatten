@@ -740,8 +740,8 @@ shadow-lg  // Standard card shadow (only shadow used in the system)
 
 - [X] Typing indicators
 - [X] Read receipts
-- [ ] Message reactions (emoji)
-- [ ] Image/file uploads
+- [X] Message reactions (emoji)
+- [X] Image/file uploads
 - [ ] Push notifications
 - [ ] Teacher moderation dashboard
 - [ ] Analytics dashboard

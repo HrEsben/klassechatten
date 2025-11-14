@@ -17,9 +17,12 @@ import { useRoomMessages } from '../hooks/useRoomMessages';
 import { useSendMessage } from '../hooks/useSendMessage';
 import { useRoomPresence } from '../hooks/useRoomPresence';
 import { useReadReceipts } from '../hooks/useReadReceipts';
+import { useReactions } from '../hooks/useReactions';
 import { useAuth } from '../contexts/AuthContext';
 import { getRelativeTime } from '../utils/time';
 import Avatar from './Avatar';
+import MessageItem from './MessageItem';
+import ReactionPickerWithHook from './ReactionPickerWithHook';
 
 interface ChatRoomProps {
   roomId: string;
@@ -36,6 +39,8 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [previousMessageCount, setPreviousMessageCount] = useState(0);
   const [enlargedImageUri, setEnlargedImageUri] = useState<string | null>(null);
+  const [reactionPickerVisible, setReactionPickerVisible] = useState(false);
+  const [reactionPickerMessageId, setReactionPickerMessageId] = useState<number | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | number | null>(null);
 
@@ -304,124 +309,25 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
 
   const renderMessage = ({ item }: { item: any }) => {
     const isOwnMessage = item.user_id === user?.id;
-    const isOptimistic = item.isOptimistic;
-    const isLoading = item.isLoading;
-    const hasError = item.hasError;
-    
-    // Debug logging for images
-    if (item.image_url) {
-      console.log('Rendering message with image:', { id: item.id, image_url: item.image_url, body: item.body });
-    }
-    
+
     return (
-      <View style={[
-        styles.messageContainer,
-        isOwnMessage ? styles.ownMessage : styles.otherMessage,
-        isOptimistic && styles.optimisticMessage,
-        hasError && styles.errorMessage
-      ]}>
-        <View style={styles.messageRow}>
-          {/* Avatar - only show for other users */}
-          {!isOwnMessage && (
-            <Avatar 
-              user={{
-                display_name: item.profiles?.display_name || 'Ukendt bruger',
-                avatar_url: item.profiles?.avatar_url,
-                avatar_color: item.profiles?.avatar_color,
-              }}
-              size={32}
-              style={styles.messageAvatar}
-            />
-          )}
-          
-          <View style={[styles.messageContent, isOwnMessage && styles.ownMessageContent]}>
-            <View style={styles.messageHeader}>
-              <Text style={[
-                styles.messageSender,
-                isOwnMessage && styles.ownMessageText
-              ]}>
-                {isOwnMessage ? 'Dig' : (item.profiles?.display_name || 'Ukendt bruger')}
-              </Text>
-              {/* Loading/Error indicators */}
-              {isLoading && (
-                <ActivityIndicator 
-                  size="small" 
-                  color={isOwnMessage ? '#fff' : '#007bff'} 
-                  style={styles.messageStatus}
-                />
-              )}
-              {hasError && (
-                <TouchableOpacity 
-                  onPress={() => {
-                    Alert.alert(
-                      'Besked fejlet',
-                      'Beskeden kunne ikke sendes. Prøv igen.',
-                      [
-                        { text: 'OK' },
-                        { text: 'Prøv igen', onPress: () => {
-                          // Remove failed optimistic message
-                          removeOptimisticMessage(item.id);
-                          // Set message text back for retry
-                          if (item.body) setMessageText(item.body);
-                          if (item.image_url) setSelectedImageUri(item.image_url);
-                        }}
-                      ]
-                    );
-                  }}
-                  style={styles.messageStatus}
-                >
-                  <Text style={styles.errorIcon}>❌</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-        {item.image_url && (
-          <TouchableOpacity 
-            onPress={() => setEnlargedImageUri(item.image_url)}
-            activeOpacity={0.8}
-          >
-            <Image 
-              source={{ uri: item.image_url }}
-              style={styles.messageImageThumbnail}
-              resizeMode="cover"
-              onLoad={() => console.log('Image loaded successfully:', item.image_url)}
-              onError={(e) => console.error('Image load error:', e.nativeEvent.error, item.image_url)}
-            />
-          </TouchableOpacity>
-        )}
-        {item.body && (
-          <Text style={[
-            styles.messageBody,
-            isOwnMessage && styles.ownMessageText
-          ]}>
-            {item.body}
-          </Text>
-        )}
-        {item.edited_at && (
-          <Text style={[
-            styles.editedLabel,
-            isOwnMessage && styles.ownMessageText
-          ]}>
-            (redigeret)
-          </Text>
-        )}
-        {/* Time and read receipts footer */}
-        <View style={styles.messageFooter}>
-          <Text style={[
-            styles.messageTime,
-            isOwnMessage && styles.ownMessageText
-          ]}>
-            {getRelativeTime(item.created_at)}
-          </Text>
-          {/* Read receipts - only show for own messages */}
-          {isOwnMessage && item.read_receipts && item.read_receipts.length > 0 && (
-            <Text style={[styles.readReceipt, styles.ownMessageText]}>
-              ✓✓ Læst af {item.read_receipts.length}
-            </Text>
-          )}
-        </View>
-          </View>
-        </View>
-      </View>
+      <MessageItem
+        item={item}
+        isOwnMessage={isOwnMessage}
+        currentUserId={user?.id}
+        onImagePress={setEnlargedImageUri}
+        onErrorRetry={(failedItem) => {
+          // Remove failed optimistic message
+          removeOptimisticMessage(failedItem.id);
+          // Set message text back for retry
+          if (failedItem.body) setMessageText(failedItem.body);
+          if (failedItem.image_url) setSelectedImageUri(failedItem.image_url);
+        }}
+        onReactionPickerOpen={(messageId) => {
+          setReactionPickerMessageId(messageId);
+          setReactionPickerVisible(true);
+        }}
+      />
     );
   };
 
@@ -611,6 +517,19 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
+
+      {/* Reaction Picker Modal */}
+      {reactionPickerMessageId && (
+        <ReactionPickerWithHook
+          visible={reactionPickerVisible}
+          messageId={reactionPickerMessageId}
+          currentUserId={user?.id}
+          onClose={() => {
+            setReactionPickerVisible(false);
+            setReactionPickerMessageId(null);
+          }}
+        />
+      )}
     </KeyboardAvoidingView>
   );
 }

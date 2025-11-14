@@ -33,7 +33,7 @@ function HomePage() {
   return (
     <div className="min-h-screen bg-base-300 flex flex-col">
       {/* Edgy Berlin Header */}
-      <header className="bg-base-100 border-b-2 border-base-content/10">
+      <header className="sticky top-0 z-50 bg-base-100 border-b-2 border-base-content/10">
         <div className="w-full px-4 lg:px-0 lg:grid lg:grid-cols-[256px_1fr]">
           <div className="flex items-center justify-between py-4 lg:justify-end lg:pl-12">
             {/* Logo/Brand with accent bar - right aligned on desktop */}

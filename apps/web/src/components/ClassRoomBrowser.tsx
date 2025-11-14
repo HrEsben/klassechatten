@@ -92,7 +92,7 @@ export default function ClassRoomBrowser() {
   // If a room is selected, show the chat
   if (selectedRoomId) {
     return (
-      <div className="fixed inset-0 top-[73px] bottom-0 lg:bottom-[57px] bg-base-300">
+      <div className="h-full bg-base-300">
         <ChatRoom 
           roomId={selectedRoomId}
           onBack={handleBack}

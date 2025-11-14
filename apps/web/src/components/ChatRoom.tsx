@@ -363,7 +363,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   }
 
   return (
-    <div className="drawer lg:drawer-open flex h-full">
+    <div className="drawer lg:drawer-open h-full">
       <input id="users-drawer" type="checkbox" className="drawer-toggle" />
       
       {/* Sidebar - now on the left */}
@@ -376,10 +376,10 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         />
       </div>
 
-      {/* Main Content */}
-      <div className="drawer-content flex flex-col flex-1 min-w-0 bg-base-100/80 backdrop-blur-sm">
-        {/* Header - fixed height to match sidebar header */}
-        <div className="flex-none bg-base-100/60 border-b border-primary/10 px-4 h-[57px] flex items-center">
+      {/* Main Content - Following DaisyUI drawer pattern */}
+      <div className="drawer-content flex flex-col h-full min-w-0 bg-base-100/80 backdrop-blur-sm overflow-hidden">
+        {/* Header - flex-none keeps it at top */}
+        <div className="flex-none bg-base-100/60 border-b border-primary/10 px-4 h-[57px] flex items-center z-30">
           <div className="flex items-center gap-4">
             {/* Sidebar toggle for mobile */}
             <label htmlFor="users-drawer" className="btn btn-square btn-ghost btn-sm lg:hidden text-base-content">
@@ -441,11 +441,11 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           </div>
         </div>
 
-      {/* Messages */}
+      {/* Messages - scrollable area between header and input */}
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-transparent min-h-0"
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-transparent min-h-0 relative"
       >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
@@ -484,7 +484,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         {showScrollToBottom && (
           <button
             onClick={() => scrollToBottom(true)}
-            className="fixed bottom-24 right-6 w-10 h-10 bg-primary/90 hover:bg-primary text-primary-content flex items-center justify-center shadow-lg z-10 transition-all duration-200"
+            className="absolute bottom-6 right-6 w-10 h-10 bg-primary/90 hover:bg-primary text-primary-content flex items-center justify-center shadow-lg z-10 transition-all duration-200"
             title={unreadCount > 0 ? `${unreadCount} nye beskeder` : 'Gå til bunden'}
           >
             {unreadCount > 0 ? (
@@ -505,20 +505,22 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         )}
       </div>
 
-      {/* Typing Indicator */}
-      {typingUsers.length > 0 && (
-        <div className="flex-none px-4 py-2 text-xs text-base-content/40 font-mono bg-base-100/30">
-          {typingUsers.length === 1
-            ? `${typingUsers[0]?.display_name || 'Someone'} typing...`
-            : typingUsers.length === 2
-            ? `${typingUsers[0]?.display_name || 'Someone'} and ${typingUsers[1]?.display_name || 'someone'} typing...`
-            : `${typingUsers.length} people typing...`}
-        </div>
-      )}
+      {/* Bottom section - fixed at bottom with typing, suggestions, alerts, and input */}
+      <div className="flex-none flex flex-col z-20">
+        {/* Typing Indicator */}
+        {typingUsers.length > 0 && (
+          <div className="px-4 py-2 text-xs text-base-content/40 font-mono bg-base-100/30">
+            {typingUsers.length === 1
+              ? `${typingUsers[0]?.display_name || 'Someone'} typing...`
+              : typingUsers.length === 2
+              ? `${typingUsers[0]?.display_name || 'Someone'} and ${typingUsers[1]?.display_name || 'someone'} typing...`
+              : `${typingUsers.length} people typing...`}
+          </div>
+        )}
 
-      {/* Suggestion Dialog */}
-      {showSuggestion && (
-        <div className="flex-none px-4 py-4 bg-warning/5 border-t border-warning/20">
+        {/* Suggestion Dialog */}
+        {showSuggestion && (
+          <div className="px-4 py-4 bg-warning/5 border-t border-warning/20">
           <div className="font-mono text-xs uppercase tracking-wider text-warning mb-3">Besked markeret</div>
           <p className="text-sm text-base-content/70 mb-3 font-light">
             Indhold blev markeret. Alternativ formulering:
@@ -576,7 +578,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       )}
 
       {/* Input - Always visible at bottom */}
-      <div className="flex-none px-4 py-4 border-t border-primary/10 bg-base-100/90 backdrop-blur-md">
+      <div className="px-4 py-4 border-t border-primary/10 bg-base-100/90 backdrop-blur-md">
         {/* Image Preview */}
         {imagePreview && (
           <div className="mb-4 relative inline-block">
@@ -633,6 +635,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             {uploading ? 'Uploader' : sending ? 'Sender' : 'Send'}
           </button>
         </div>
+      </div>
       </div>
 
       {/* Enlarged Image Modal - Lightbox */}

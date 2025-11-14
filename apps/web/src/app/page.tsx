@@ -31,7 +31,7 @@ function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-base-300 flex flex-col">
+    <div className={`bg-base-300 flex flex-col ${isInChatRoom ? 'h-screen overflow-hidden' : 'min-h-screen'}`}>
       {/* Edgy Berlin Header */}
       <header className="sticky top-0 z-50 bg-base-100 border-b-2 border-base-content/10">
         <div className="w-full px-4 lg:px-0 lg:grid lg:grid-cols-[256px_1fr]">
@@ -214,8 +214,8 @@ function HomePage() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 py-8 bg-base-300">
-        <div className="w-full max-w-7xl mx-auto px-12">
+      <main className={`flex-1 bg-base-300 ${isInChatRoom ? 'overflow-hidden' : ''}`}>
+        <div className={`h-full ${isInChatRoom ? '' : 'w-full max-w-7xl mx-auto px-12 py-8'}`}>
           <Suspense fallback={
             <div className="flex justify-center items-center min-h-[60vh]">
               <div className="flex flex-col items-center gap-4">

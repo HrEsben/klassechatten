@@ -31,9 +31,9 @@ function HomePage() {
   };
 
   return (
-    <div className={`bg-base-300 flex flex-col ${isInChatRoom ? 'h-screen overflow-hidden' : 'min-h-screen'}`}>
+    <div className="flex flex-col h-svh bg-base-300">
       {/* Edgy Berlin Header */}
-      <header className="sticky top-0 z-50 bg-base-100 border-b-2 border-base-content/10">
+      <header className="sticky top-0 z-50 shrink-0 bg-base-100 border-b-2 border-base-content/10">
         <div className="w-full px-4 lg:px-0 lg:grid lg:grid-cols-[256px_1fr]">
           <div className="flex items-center justify-between py-4 lg:justify-end lg:pl-12">
             {/* Logo/Brand with accent bar - right aligned on desktop */}
@@ -214,8 +214,8 @@ function HomePage() {
       </header>
 
       {/* Main Content Area */}
-      <main className={`flex-1 bg-base-300 ${isInChatRoom ? 'overflow-hidden' : ''}`}>
-        <div className={`h-full ${isInChatRoom ? '' : 'w-full max-w-7xl mx-auto px-12 py-8'}`}>
+      <main className="flex-1 min-h-0 bg-base-300">
+        <div className={`h-full ${isInChatRoom ? '' : 'overflow-y-auto w-full max-w-7xl mx-auto px-12 py-8'}`}>
           <Suspense fallback={
             <div className="flex justify-center items-center min-h-[60vh]">
               <div className="flex flex-col items-center gap-4">
@@ -229,8 +229,8 @@ function HomePage() {
         </div>
       </main>
 
-      {/* Footer with geometric pattern - hidden on small screens when in chat room */}
-      <footer className={`bg-base-100 border-t-2 border-base-content/10 relative z-50 ${isInChatRoom ? 'hidden lg:block' : ''}`}>
+      {/* Footer with geometric pattern - hidden on small screens, shown on md+ */}
+      <footer className="hidden md:block shrink-0 bg-base-100 border-t-2 border-base-content/10 relative z-50">
         <div className="w-full px-12 py-4 lg:grid lg:grid-cols-[256px_1fr] lg:px-0">
           <div className="flex justify-between items-center lg:flex-col lg:items-end">
             <div className="text-xs font-mono text-base-content/40 uppercase tracking-wider">

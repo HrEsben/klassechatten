@@ -376,10 +376,10 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         />
       </div>
 
-      {/* Main Content - Following DaisyUI drawer pattern */}
-      <div className="drawer-content flex flex-col h-full min-w-0 bg-base-100/80 backdrop-blur-sm overflow-hidden">
-        {/* Header - flex-none keeps it at top */}
-        <div className="flex-none bg-base-100/60 border-b border-primary/10 px-4 h-[57px] flex items-center z-30">
+      {/* Main Content - Following mobile-first pattern */}
+      <div className="drawer-content flex flex-col h-full min-w-0 bg-base-100/80 backdrop-blur-sm">
+        {/* Header - sticky at top */}
+        <div className="sticky top-0 z-30 shrink-0 bg-base-100/60 border-b border-primary/10 px-4 h-[57px] flex items-center">
           <div className="flex items-center gap-4">
             {/* Sidebar toggle for mobile */}
             <label htmlFor="users-drawer" className="btn btn-square btn-ghost btn-sm lg:hidden text-base-content">
@@ -441,11 +441,11 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           </div>
         </div>
 
-      {/* Messages - scrollable area between header and input */}
+      {/* Messages - chat-scroll area */}
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-transparent min-h-0 relative"
+        className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4 bg-transparent relative"
       >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
@@ -505,8 +505,8 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         )}
       </div>
 
-      {/* Bottom section - fixed at bottom with typing, suggestions, alerts, and input */}
-      <div className="flex-none flex flex-col z-20">
+      {/* Bottom section - sticky at bottom with input */}
+      <div className="sticky bottom-0 z-20 shrink-0 flex flex-col">
         {/* Typing Indicator */}
         {typingUsers.length > 0 && (
           <div className="px-4 py-2 text-xs text-base-content/40 font-mono bg-base-100/30">

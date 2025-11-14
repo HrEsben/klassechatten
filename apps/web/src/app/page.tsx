@@ -21,6 +21,9 @@ function HomePage() {
   const selectedClass = classes.find(c => c.id === classParam);
   const selectedRoom = selectedClass?.rooms.find(r => r.id === roomParam);
   const { profile, roleLabel, isClassAdmin } = useUserProfile(classParam || undefined);
+  
+  // Check if we're in a chat room for footer visibility
+  const isInChatRoom = !!roomParam;
 
   const handleSignOut = async () => {
     await signOut();
@@ -226,8 +229,8 @@ function HomePage() {
         </div>
       </main>
 
-      {/* Footer with geometric pattern */}
-      <footer className="bg-base-100 border-t-2 border-base-content/10 relative z-50">
+      {/* Footer with geometric pattern - hidden on small screens when in chat room */}
+      <footer className={`bg-base-100 border-t-2 border-base-content/10 relative z-50 ${isInChatRoom ? 'hidden lg:block' : ''}`}>
         <div className="w-full px-12 py-4 lg:grid lg:grid-cols-[256px_1fr] lg:px-0">
           <div className="flex justify-between items-center lg:flex-col lg:items-end">
             <div className="text-xs font-mono text-base-content/40 uppercase tracking-wider">

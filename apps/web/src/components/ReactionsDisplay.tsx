@@ -23,7 +23,7 @@ export default function ReactionsDisplay({
   }
 
   return (
-    <div className="flex flex-wrap gap-1 items-center mt-1">
+    <div className="flex flex-wrap gap-1 items-center bg-base-100/95 backdrop-blur-sm border-2 border-base-content/10 shadow-lg px-2 py-1">
       {reactions.map((reaction) => (
         <button
           key={reaction.emoji}

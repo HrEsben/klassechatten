@@ -97,36 +97,41 @@ export default function Message({
         {isOwnMessage ? 'Dig' : (msg.profiles?.display_name || msg.user?.user_metadata?.display_name || msg.user?.email || 'Ukendt bruger')}
       </div>
 
-      <div
-        className={`chat-bubble relative ${isOwnMessage ? 'chat-bubble-primary' : 'chat-bubble-neutral'} ${
-          isOptimistic ? 'opacity-70' : ''
-        } ${hasError ? 'border-2 border-error' : ''} ${msg.image_url && !msg.body ? 'p-0' : ''} ${
-          isOwnMessage ? 'dashed-line-right' : 'dashed-line-left'
-        }`}
-      >
-        {msg.image_url && (
-          <img
-            src={msg.image_url}
-            alt="Uploaded image"
-            onClick={() => onImageClick(msg.image_url || '')}
-            className={`max-w-xs w-full h-auto object-cover cursor-pointer hover:brightness-90 transition-all block ${isOptimistic && isLoading ? 'opacity-50' : ''} ${msg.body ? 'mb-3' : ''}`}
-            onError={e => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'320\' height=\'240\'><rect width=\'100%\' height=\'100%\' fill=\'#f3f4f6\'/><text x=\'50%\' y=\'50%\' text-anchor=\'middle\' dy=\'.3em\' font-size=\'16\' fill=\'#9ca3af\'>Billede fejler</text></svg>';
-            }}
-          />
+      {/* Use DaisyUI indicator component to attach reactions to bubble */}
+      <div className="indicator">
+        {/* Reactions as indicator item - positioned at bottom */}
+        {messageId && !isOptimistic && (
+          <div className="indicator-item indicator-bottom indicator-center">
+            <ReactionsDisplay
+              reactions={reactionGroups}
+              onToggle={toggleReaction}
+              onAddClick={handleAddReactionClick}
+            />
+          </div>
         )}
-        {msg.body && <div className="whitespace-pre-wrap px-1">{msg.body}</div>}
-      </div>
 
-      {/* Reactions - positioned right after the bubble */}
-      {messageId && !isOptimistic && (
-        <ReactionsDisplay
-          reactions={reactionGroups}
-          onToggle={toggleReaction}
-          onAddClick={handleAddReactionClick}
-        />
-      )}
+        <div
+          className={`chat-bubble relative ${isOwnMessage ? 'chat-bubble-primary' : 'chat-bubble-neutral'} ${
+            isOptimistic ? 'opacity-70' : ''
+          } ${hasError ? 'border-2 border-error' : ''} ${msg.image_url && !msg.body ? 'p-0' : ''} ${
+            isOwnMessage ? 'dashed-line-right' : 'dashed-line-left'
+          }`}
+        >
+          {msg.image_url && (
+            <img
+              src={msg.image_url}
+              alt="Uploaded image"
+              onClick={() => onImageClick(msg.image_url || '')}
+              className={`max-w-xs w-full h-auto object-cover cursor-pointer hover:brightness-90 transition-all block ${isOptimistic && isLoading ? 'opacity-50' : ''} ${msg.body ? 'mb-3' : ''}`}
+              onError={e => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'320\' height=\'240\'><rect width=\'100%\' height=\'100%\' fill=\'#f3f4f6\'/><text x=\'50%\' y=\'50%\' text-anchor=\'middle\' dy=\'.3em\' font-size=\'16\' fill=\'#9ca3af\'>Billede fejler</text></svg>';
+              }}
+            />
+          )}
+          {msg.body && <div className="whitespace-pre-wrap px-1">{msg.body}</div>}
+        </div>
+      </div>
 
       {/* Reaction Picker */}
       {showReactionPicker && pickerPosition && (

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import ColoredEmoji from './ColoredEmoji';
 
 interface ReactionPickerProps {
   onSelect: (emoji: string) => void;
@@ -104,14 +105,13 @@ export default function ReactionPicker({ onSelect, onClose, position }: Reaction
             onClick={() => handleEmojiClick(emoji)}
             className={`
               btn btn-ghost btn-square btn-sm
-              text-2xl
               hover:bg-primary/20
               transition-all duration-200
               ${selectedEmoji === emoji ? 'bg-primary/30 scale-110' : ''}
             `}
             title={emoji}
           >
-            {emoji}
+            <ColoredEmoji emoji={emoji} size={24} />
           </button>
         ))}
       </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import NotoEmoji from './NotoEmoji';
 import type { ReactionGroup } from '../hooks/useReactions';
 
 interface ReactionsDisplayProps {
@@ -40,7 +41,7 @@ export default function ReactionsDisplay({
                 }
               `}
             >
-              <span className="text-xs leading-none">{reaction.emoji}</span>
+              <NotoEmoji emoji={reaction.emoji} size={12} />
               <span className="text-xs font-bold leading-none text-base-content/50">{reaction.count}</span>
             </button>
             
@@ -48,7 +49,7 @@ export default function ReactionsDisplay({
             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
               <div className="bg-base-content text-base-100 px-3 py-2 border-2 border-base-content shadow-lg whitespace-nowrap">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg leading-none">{reaction.emoji}</span>
+                  <NotoEmoji emoji={reaction.emoji} size={18} />
                   <span className="text-xs font-black uppercase tracking-wider">
                     × {reaction.count}
                   </span>

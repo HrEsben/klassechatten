@@ -56,7 +56,7 @@ export default function Message({
   };
 
   return (
-    <div className={`chat ${isOwnMessage ? 'chat-end' : 'chat-start'} relative`}>
+    <div className={`chat ${isOwnMessage ? 'chat-end' : 'chat-start'} relative group`}>
       {/* Last Read Indicator */}
       {isLastRead && (
         <div className="absolute -top-12 left-0 right-0 flex items-center gap-3 z-10 px-4">
@@ -118,16 +118,6 @@ export default function Message({
         )}
         {msg.body && <div className="whitespace-pre-wrap px-1">{msg.body}</div>}
         
-        {/* Reactions at bottom of bubble */}
-        {messageId && !isOptimistic && reactionGroups.length > 0 && (
-          <div className="mt-2 pt-2 border-t-2 border-base-content/10">
-            <ReactionsDisplay
-              reactions={reactionGroups}
-              onToggle={toggleReaction}
-            />
-          </div>
-        )}
-        
         {/* Reaction Picker - positioned absolutely relative to this bubble */}
         {showReactionPicker && pickerPosition && (
           <ReactionPicker
@@ -138,32 +128,47 @@ export default function Message({
         )}
       </div>
 
-      <div className="chat-footer opacity-90 flex items-center gap-2">
-        <time className="text-xs">{getRelativeTime(msg.created_at)}</time>
-        
-        {/* Add reaction button in footer */}
-        {messageId && !isOptimistic && (
-          <button
-            onClick={handleAddReactionClick}
-            className="btn btn-xs px-2 h-5 min-h-5 bg-transparent border-0 hover:bg-accent/20 hover:text-accent text-base-content/60 transition-all duration-200"
-            title="Tilføj reaktion"
-            type="button"
-          >
-            <span className="text-sm font-black">+</span>
-          </button>
-        )}
-        {isOptimistic && (
-          <span className="ml-2 text-xs">{isLoading ? 'Sender...' : hasError ? 'Fejlet' : 'Sendt'}</span>
-        )}
-        {hasError && (
-          <div className="text-error italic mt-1 text-xs">Besked kunne ikke sendes. Prøv igen.</div>
-        )}
-        {msg.edited_at && (
-          <div className="ml-2">(redigeret)</div>
-        )}
-        {isOwnMessage && !isOptimistic && msg.read_receipts && msg.read_receipts.length > 0 && (
-          <div className="ml-2">✓✓ Læst af {msg.read_receipts.length}</div>
-        )}
+      <div className="chat-footer opacity-90">
+        <div className={`flex flex-col gap-1 ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+          <div className={`flex items-center gap-2 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
+            <time className="text-xs">{getRelativeTime(msg.created_at)}</time>
+            
+            {isOptimistic && (
+              <span className="text-xs">{isLoading ? 'Sender...' : hasError ? 'Fejlet' : 'Sendt'}</span>
+            )}
+            {hasError && (
+              <div className="text-error italic mt-1 text-xs">Besked kunne ikke sendes. Prøv igen.</div>
+            )}
+            {msg.edited_at && (
+              <div>(redigeret)</div>
+            )}
+            {isOwnMessage && !isOptimistic && msg.read_receipts && msg.read_receipts.length > 0 && (
+              <div className="tooltip" data-tip={`Læst af ${msg.read_receipts.length}`}>
+                ✓
+              </div>
+            )}
+          </div>
+          
+          {/* Reactions on new line with + button after them */}
+          {messageId && !isOptimistic && (
+            <div className={`flex items-center gap-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
+              {reactionGroups.length > 0 && (
+                <ReactionsDisplay
+                  reactions={reactionGroups}
+                  onToggle={toggleReaction}
+                />
+              )}
+              <button
+                onClick={handleAddReactionClick}
+                className="btn btn-xs px-2 h-5 min-h-5 bg-transparent border-0 hover:bg-accent/20 hover:text-accent text-base-content/60 transition-all duration-200 lg:opacity-0 lg:invisible lg:group-hover:opacity-100 lg:group-hover:visible"
+                title="Tilføj reaktion"
+                type="button"
+              >
+                <span className="text-sm font-black">+</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

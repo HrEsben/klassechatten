@@ -27,26 +27,27 @@ export default function ReactionsDisplay({
     <div className="flex flex-wrap gap-0.5 items-center">
       {visibleReactions.map((reaction) => {
         return (
-          <div key={reaction.emoji} className="group relative inline-block">
+          <div key={reaction.emoji} className="relative inline-block">
             <button
               onClick={() => onToggle(reaction.emoji)}
               className={`
-                flex items-center gap-0.5 px-1.5 h-5
-                border-2 transition-all duration-150
+                peer relative
+                flex items-center gap-1 px-1.5 h-5
+                border transition-all duration-150
                 animate-in fade-in zoom-in-95
                 ${
                   reaction.hasReacted
-                    ? 'bg-primary/20 border-primary text-base-content hover:bg-primary/30 hover:scale-105'
-                    : 'bg-transparent border-base-content/10 text-base-content/70 hover:border-base-content/20 hover:bg-base-200/50 hover:scale-105'
+                    ? 'bg-primary/5 border-primary/20 text-base-content hover:bg-primary/10 hover:scale-105'
+                    : 'bg-transparent border-base-content/5 text-base-content/60 hover:border-base-content/10 hover:bg-base-200/20 hover:scale-105'
                 }
               `}
             >
-              <NotoEmoji emoji={reaction.emoji} size={12} />
-              <span className="text-xs font-bold leading-none text-base-content/50">{reaction.count}</span>
+              <NotoEmoji emoji={reaction.emoji} size={14} />
+              <span className="text-[10px] font-bold leading-none text-base-content/40">{reaction.count}</span>
             </button>
             
             {/* Custom Berlin Edgy Tooltip */}
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 invisible peer-hover:opacity-100 peer-hover:visible transition-all duration-200 z-50 pointer-events-none">
               <div className="bg-base-content text-base-100 px-3 py-2 border-2 border-base-content shadow-lg whitespace-nowrap">
                 <div className="flex items-center gap-2 mb-1">
                   <NotoEmoji emoji={reaction.emoji} size={18} />

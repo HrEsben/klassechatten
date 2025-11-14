@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,23 +6,26 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
   Modal,
   Image,
   Alert,
+  Keyboard,
+  KeyboardAvoidingView,
 } from 'react-native';
+import Svg, { Path, Line } from 'react-native-svg';
 import { useRoomMessages } from '../hooks/useRoomMessages';
 import { useSendMessage } from '../hooks/useSendMessage';
 import { useRoomPresence } from '../hooks/useRoomPresence';
 import { useReadReceipts } from '../hooks/useReadReceipts';
-import { useReactions } from '../hooks/useReactions';
+import { useRoomReactions } from '../hooks/useRoomReactions';
 import { useAuth } from '../contexts/AuthContext';
 import { getRelativeTime } from '../utils/time';
 import Avatar from './Avatar';
 import MessageItem from './MessageItem';
 import ReactionPickerWithHook from './ReactionPickerWithHook';
+import { colors, spacing, typography, borders, buttonSizes, shadows } from '../constants/theme';
 
 interface ChatRoomProps {
   roomId: string;
@@ -43,6 +46,7 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
   const [reactionPickerMessageId, setReactionPickerMessageId] = useState<number | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | number | null>(null);
+  const inputRef = useRef<TextInput>(null);
 
   const { user } = useAuth();
   const { 
@@ -68,11 +72,32 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
     enabled: !!user,
   });
 
+  // Memoize message IDs string to detect actual changes
+  const messageIdsString = useMemo(() => {
+    return messages.map(m => m.id).join(',');
+  }, [messages]);
+
+  // Memoize message info for read receipts to prevent re-renders
+  const messageInfo = useMemo(() => {
+    return messages.map(m => ({ id: m.id, user_id: m.user_id }));
+  }, [messageIdsString]);
+
   // Read receipts
   useReadReceipts({
     roomId,
     userId: user?.id || '',
-    messages: messages.map(m => ({ id: m.id, user_id: m.user_id })),
+    messages: messageInfo,
+    enabled: !!user,
+  });
+
+  // Room-level reactions subscription
+  const { 
+    getReactionsForMessage, 
+    toggleReaction, 
+    loading: reactionsLoading 
+  } = useRoomReactions({
+    roomId,
+    currentUserId: user?.id,
     enabled: !!user,
   });
 
@@ -93,6 +118,30 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
 
     fetchRoomDetails();
   }, [roomId]);
+
+  // Helper function to scroll to bottom with proper offset
+  const scrollToBottomWithOffset = (animated = true) => {
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated });
+    }, 50);
+  };
+
+  // Handle keyboard events - scroll to bottom when keyboard appears
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => {
+        // Small delay to ensure layout has adjusted
+        setTimeout(() => {
+          scrollToBottomWithOffset(true);
+        }, 100);
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+    };
+  }, []);
 
   // Handle typing indicator
   const handleInputChange = (value: string) => {
@@ -129,7 +178,7 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
 
   // Jump to bottom function
   const jumpToBottom = () => {
-    flatListRef.current?.scrollToEnd({ animated: true });
+    scrollToBottomWithOffset(true);
     setUnreadCount(0);
     setShowJumpToBottom(false);
   };
@@ -156,9 +205,7 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
   // Auto-scroll to bottom when new messages arrive or on initial load
   useEffect(() => {
     if (messages.length > 0 && !loading && isNearBottom) {
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: false });
-      }, 100);
+      scrollToBottomWithOffset(false);
     }
   }, [messages.length, loading, isNearBottom]);
 
@@ -290,6 +337,40 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
     handleRemoveImage();
   };
 
+  // Memoize callback functions to prevent MessageItem re-renders
+  const handleImagePress = useCallback((url: string) => {
+    setEnlargedImageUri(url);
+  }, []);
+
+  const handleErrorRetry = useCallback((failedItem: any) => {
+    removeOptimisticMessage(failedItem.id);
+    if (failedItem.body) setMessageText(failedItem.body);
+    if (failedItem.image_url) setSelectedImageUri(failedItem.image_url);
+  }, [removeOptimisticMessage]);
+
+  const handleReactionPickerOpen = useCallback((messageId: number) => {
+    setReactionPickerMessageId(messageId);
+    setReactionPickerVisible(true);
+  }, []);
+
+  const renderMessage = useCallback(({ item }: { item: any }) => {
+    const isOwnMessage = item.user_id === user?.id;
+    const messageReactions = getReactionsForMessage(item.id || 0);
+
+    return (
+      <MessageItem
+        item={item}
+        isOwnMessage={isOwnMessage}
+        currentUserId={user?.id}
+        reactions={messageReactions}
+        onImagePress={handleImagePress}
+        onErrorRetry={handleErrorRetry}
+        onReactionPickerOpen={handleReactionPickerOpen}
+        onToggleReaction={toggleReaction}
+      />
+    );
+  }, [user?.id, getReactionsForMessage, toggleReaction, handleImagePress, handleErrorRetry, handleReactionPickerOpen]);
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -307,92 +388,140 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
     );
   }
 
-  const renderMessage = ({ item }: { item: any }) => {
-    const isOwnMessage = item.user_id === user?.id;
-
-    return (
-      <MessageItem
-        item={item}
-        isOwnMessage={isOwnMessage}
-        currentUserId={user?.id}
-        onImagePress={setEnlargedImageUri}
-        onErrorRetry={(failedItem) => {
-          // Remove failed optimistic message
-          removeOptimisticMessage(failedItem.id);
-          // Set message text back for retry
-          if (failedItem.body) setMessageText(failedItem.body);
-          if (failedItem.image_url) setSelectedImageUri(failedItem.image_url);
-        }}
-        onReactionPickerOpen={(messageId) => {
-          setReactionPickerMessageId(messageId);
-          setReactionPickerVisible(true);
-        }}
-      />
-    );
-  };
-
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
-      {/* Header */}
-      {showHeader && (
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.headerTitle}>{roomName}</Text>
-            {onlineCount > 0 && (
-              <Text style={styles.onlineCount}>{onlineCount} online</Text>
+    <>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 130 : 0}
+      >
+        <View style={styles.container}>
+          {/* Header */}
+          {showHeader && (
+            <View style={styles.header}>
+              <View>
+                <Text style={styles.headerTitle}>{roomName}</Text>
+                {onlineCount > 0 && (
+                  <Text style={styles.onlineCount}>{onlineCount} online</Text>
+                )}
+              </View>
+              <View style={[
+                styles.statusIndicator,
+                { backgroundColor: isConnected ? '#28a745' : '#ffc107' }
+              ]} />
+            </View>
+          )}
+
+          {/* Messages List */}
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={(item) => item.id.toString()}
+            style={{ flex: 1 }}
+            contentContainerStyle={styles.messagesList}
+            contentInset={{ bottom: 60 }}
+            contentOffset={{ x: 0, y: -60 }}
+            onScroll={handleScroll}
+            scrollEventThrottle={100}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+            onContentSizeChange={() => {
+              if (!loading && messages.length > 0 && isNearBottom) {
+                scrollToBottomWithOffset(false);
+              }
+            }}
+            onLayout={() => {
+              if (!loading && messages.length > 0) {
+                scrollToBottomWithOffset(false);
+              }
+            }}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>
+                Ingen beskeder endnu. Send den første!
+              </Text>
+            }
+          />
+
+          {/* Typing Indicator */}
+          {typingUsers.length > 0 && (
+            <View style={styles.typingContainer}>
+              <Text style={styles.typingText}>
+                {typingUsers.length === 1
+                  ? `${typingUsers[0]?.display_name || 'Nogen'} skriver...`
+                  : typingUsers.length === 2
+                  ? `${typingUsers[0]?.display_name || 'Nogen'} og ${typingUsers[1]?.display_name || 'nogen'} skriver...`
+                  : `${typingUsers.length} personer skriver...`}
+              </Text>
+            </View>
+          )}
+
+          {/* Input Area */}
+          <View style={styles.inputContainer}>
+            {selectedImageUri && (
+              <View style={styles.imagePreviewContainer}>
+                <Image 
+                  source={{ uri: selectedImageUri }}
+                  style={styles.imagePreview}
+                  resizeMode="cover"
+                />
+                <TouchableOpacity 
+                  style={styles.removeImageButton}
+                  onPress={handleRemoveImage}
+                >
+                  <Text style={styles.removeImageText}>×</Text>
+                </TouchableOpacity>
+              </View>
             )}
+            <View style={styles.inputRow}>
+              <TouchableOpacity
+                style={styles.imageButton}
+                onPress={handleImagePick}
+                disabled={sending || uploading}
+              >
+                <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.baseContent} strokeWidth="1.5">
+                  <Path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" strokeLinecap="round" strokeLinejoin="round" />
+                </Svg>
+              </TouchableOpacity>
+              <TextInput
+                ref={inputRef}
+                style={styles.input}
+                value={messageText}
+                onChangeText={handleInputChange}
+                placeholder="Skriv en besked..."
+                placeholderTextColor={colors.opacity[40]}
+                editable={!sending && !uploading}
+                multiline
+                maxLength={500}
+                onFocus={() => {
+                  // Scroll to bottom when input is focused
+                  setTimeout(() => {
+                    scrollToBottomWithOffset(true);
+                  }, 300);
+                }}
+              />
+              <TouchableOpacity
+                style={[
+                  styles.sendButton,
+                  ((!messageText.trim() && !selectedImageUri) || sending || uploading) && styles.sendButtonDisabled,
+                ]}
+                onPress={handleSend}
+                disabled={(!messageText.trim() && !selectedImageUri) || uploading}
+              >
+                {uploading ? (
+                  <ActivityIndicator size="small" color={colors.base100} />
+                ) : (
+                  <Svg width="20" height="20" viewBox="0 0 24 24" fill={colors.base100} stroke="none">
+                    <Path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                  </Svg>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={[
-            styles.statusIndicator,
-            { backgroundColor: isConnected ? '#28a745' : '#ffc107' }
-          ]} />
         </View>
-      )}
+      </KeyboardAvoidingView>
 
-      {/* Messages */}
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.messagesList}
-        onScroll={handleScroll}
-        scrollEventThrottle={100}
-        onContentSizeChange={() => {
-          if (!loading && messages.length > 0 && isNearBottom) {
-            flatListRef.current?.scrollToEnd({ animated: false });
-          }
-        }}
-        onLayout={() => {
-          if (!loading && messages.length > 0) {
-            flatListRef.current?.scrollToEnd({ animated: false });
-          }
-        }}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>
-            Ingen beskeder endnu. Send den første!
-          </Text>
-        }
-      />
-
-      {/* Typing Indicator */}
-      {typingUsers.length > 0 && (
-        <View style={styles.typingContainer}>
-          <Text style={styles.typingText}>
-            {typingUsers.length === 1
-              ? `${typingUsers[0]?.display_name || 'Nogen'} skriver...`
-              : typingUsers.length === 2
-              ? `${typingUsers[0]?.display_name || 'Nogen'} og ${typingUsers[1]?.display_name || 'nogen'} skriver...`
-              : `${typingUsers.length} personer skriver...`}
-          </Text>
-        </View>
-      )}
-
-      {/* Suggestion Modal */}
+      {/* Modals outside KeyboardAvoidingView */}
       <Modal
         visible={showSuggestion !== null}
         transparent
@@ -424,55 +553,6 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
         </View>
       </Modal>
 
-      {/* Input */}
-      <View style={styles.inputContainer}>
-        {selectedImageUri && (
-          <View style={styles.imagePreviewContainer}>
-            <Image 
-              source={{ uri: selectedImageUri }}
-              style={styles.imagePreview}
-              resizeMode="cover"
-            />
-            <TouchableOpacity 
-              style={styles.removeImageButton}
-              onPress={handleRemoveImage}
-            >
-              <Text style={styles.removeImageText}>×</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        <View style={styles.inputRow}>
-          <TouchableOpacity
-            style={styles.imageButton}
-            onPress={handleImagePick}
-            disabled={sending || uploading}
-          >
-            <Text style={styles.imageButtonText}>📷</Text>
-          </TouchableOpacity>
-          <TextInput
-            style={styles.input}
-            value={messageText}
-            onChangeText={handleInputChange}
-            placeholder="Skriv en besked..."
-            editable={!sending && !uploading}
-            multiline
-            maxLength={500}
-          />
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              ((!messageText.trim() && !selectedImageUri) || sending || uploading) && styles.sendButtonDisabled,
-            ]}
-            onPress={handleSend}
-            disabled={(!messageText.trim() && !selectedImageUri) || uploading}
-          >
-            <Text style={styles.sendButtonText}>
-              {uploading ? '⏳' : '➤'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
       {/* Jump to Bottom Button */}
       {showJumpToBottom && (
         <TouchableOpacity 
@@ -502,11 +582,7 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
           activeOpacity={1}
           onPress={() => setEnlargedImageUri(null)}
         >
-          <TouchableOpacity 
-            style={styles.imageModalContent}
-            activeOpacity={1}
-            onPress={(e) => e.stopPropagation()}
-          >
+          <View style={styles.imageModalContent}>
             {enlargedImageUri && (
               <Image 
                 source={{ uri: enlargedImageUri }}
@@ -514,7 +590,7 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
                 resizeMode="contain"
               />
             )}
-          </TouchableOpacity>
+          </View>
         </TouchableOpacity>
       </Modal>
 
@@ -524,151 +600,183 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
           visible={reactionPickerVisible}
           messageId={reactionPickerMessageId}
           currentUserId={user?.id}
+          onReaction={(emoji) => toggleReaction(reactionPickerMessageId, emoji)}
           onClose={() => {
             setReactionPickerVisible(false);
             setReactionPickerMessageId(null);
           }}
         />
       )}
-    </KeyboardAvoidingView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingTop: 44,
+    backgroundColor: colors.base100,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: colors.base100,
   },
   loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#666',
+    marginTop: spacing.lg,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.opacity[60],
   },
   errorText: {
-    fontSize: 16,
-    color: '#dc3545',
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.error,
     textAlign: 'center',
-    padding: 20,
+    padding: spacing.xl,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    padding: spacing.lg,
+    borderBottomWidth: borders.width.standard,
+    borderBottomColor: borders.color.default,
+    backgroundColor: colors.base100,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.black,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.tight,
+    color: colors.baseContent,
   },
   onlineCount: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wider,
+    color: colors.opacity[50],
+    marginTop: spacing.xs,
   },
   statusIndicator: {
     width: 12,
     height: 12,
-    borderRadius: 6,
+    borderRadius: borders.radius.none,
+    borderWidth: borders.width.standard,
+    borderColor: borders.color.default,
   },
   messagesList: {
-    padding: 16,
+    padding: spacing.lg,
+    paddingBottom: spacing.xl,
     flexGrow: 1,
   },
   messageContainer: {
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
+    padding: spacing.md,
+    borderRadius: borders.radius.none,
+    marginBottom: spacing.sm,
     maxWidth: '80%',
+    borderWidth: borders.width.standard,
+    borderColor: borders.color.default,
   },
   ownMessage: {
-    backgroundColor: '#007bff',
+    backgroundColor: colors.primary,
     alignSelf: 'flex-end',
   },
   otherMessage: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.base200,
     alignSelf: 'flex-start',
   },
   ownMessageText: {
-    color: '#fff',
+    color: colors.base100,
   },
   messageSender: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 2,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wider,
+    color: colors.baseContent,
+    marginBottom: spacing.xs,
   },
   messageTime: {
-    fontSize: 12,
-    color: '#666',
-    opacity: 0.7,
+    fontSize: typography.sizes.sm,
+    color: colors.opacity[60],
   },
   messageBody: {
-    fontSize: 16,
-    paddingHorizontal: 4, // Add some horizontal padding to text bubbles
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.medium,
+    paddingHorizontal: spacing.xs,
   },
   messageFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
-    gap: 8,
+    marginTop: spacing.xs,
+    gap: spacing.sm,
   },
   editedLabel: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 4,
-    fontStyle: 'italic',
+    fontSize: typography.sizes.sm,
+    color: colors.opacity[60],
+    marginTop: spacing.xs,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wider,
   },
   readReceipt: {
-    fontSize: 12,
-    color: '#007bff',
-    marginTop: 4,
+    fontSize: typography.sizes.sm,
+    color: colors.primary,
+    marginTop: spacing.xs,
   },
   emptyText: {
     textAlign: 'center',
-    color: '#666',
-    fontSize: 16,
+    color: colors.opacity[60],
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
     marginTop: 40,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wider,
   },
   inputContainer: {
+    padding: spacing.md,
+    borderTopWidth: borders.width.standard,
+    borderTopColor: borders.color.default,
+    backgroundColor: colors.base200,
+  },
+  inputRow: {
     flexDirection: 'row',
-    padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    gap: 8,
+    alignItems: 'stretch',
   },
   input: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    fontSize: 16,
+    borderWidth: borders.width.standard,
+    borderColor: borders.color.default,
+    borderRadius: borders.radius.none,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.baseContent,
     maxHeight: 100,
+    minHeight: 48,
+    backgroundColor: colors.base100,
+    marginLeft: -1, // Join with image button (overlap borders)
+    marginRight: -1, // Join with send button (overlap borders)
   },
   sendButton: {
-    backgroundColor: '#007bff',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    backgroundColor: colors.primary,
+    width: 48,
+    minHeight: 48,
+    borderRadius: borders.radius.none,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 0,
   },
   sendButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: colors.opacity[20],
+    borderColor: colors.opacity[20],
   },
   sendButtonText: {
-    color: '#fff',
-    fontSize: 24,
+    color: colors.base100,
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.black,
   },
   modalOverlay: {
     flex: 1,
@@ -676,173 +784,185 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
+    backgroundColor: colors.base100,
+    borderTopLeftRadius: borders.radius.bottomSheet,
+    borderTopRightRadius: borders.radius.bottomSheet,
+    padding: spacing.xl,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.black,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.tight,
+    color: colors.baseContent,
+    marginBottom: spacing.md,
   },
   modalDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.opacity[60],
+    marginBottom: spacing.md,
     lineHeight: 20,
   },
   modalSuggestion: {
-    fontSize: 16,
-    fontStyle: 'italic',
-    color: '#333',
-    marginBottom: 20,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.baseContent,
+    marginBottom: spacing.xl,
   },
   modalButtons: {
     flexDirection: 'row',
-    gap: 12,
+    gap: spacing.md,
   },
   modalButton: {
     flex: 1,
-    padding: 16,
-    borderRadius: 8,
+    padding: spacing.lg,
+    borderRadius: borders.radius.none,
     alignItems: 'center',
+    borderWidth: borders.width.standard,
   },
   modalButtonPrimary: {
-    backgroundColor: '#28a745',
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
   },
   modalButtonSecondary: {
-    backgroundColor: '#6c757d',
+    backgroundColor: colors.neutral,
+    borderColor: colors.neutral,
   },
   modalButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+    color: colors.base100,
+    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.md,
+    textTransform: 'uppercase',
   },
   typingContainer: {
-    padding: 8,
-    paddingHorizontal: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    backgroundColor: '#fff',
+    padding: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderTopWidth: borders.width.standard,
+    borderTopColor: borders.color.default,
+    backgroundColor: colors.base100,
   },
   typingText: {
-    fontSize: 14,
-    color: '#666',
-    fontStyle: 'italic',
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    color: colors.opacity[60],
   },
   messageImage: {
-    width: 250, // Fixed width instead of percentage
+    width: 250,
     height: 200,
-    borderRadius: 8,
-    marginTop: 8,
-    marginBottom: 8,
+    borderRadius: borders.radius.none,
+    borderWidth: borders.width.standard,
+    borderColor: borders.color.default,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
   },
   messageImageThumbnail: {
     width: 120,
     height: 90,
-    borderRadius: 8,
-    marginTop: 8,
-    marginBottom: 8,
+    borderRadius: borders.radius.none,
+    borderWidth: borders.width.standard,
+    borderColor: borders.color.default,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
   },
   imagePreviewContainer: {
     position: 'relative',
-    padding: 8,
+    padding: spacing.sm,
   },
   imagePreview: {
     width: 100,
     height: 100,
-    borderRadius: 8,
+    borderRadius: borders.radius.none,
+    borderWidth: borders.width.standard,
+    borderColor: borders.color.default,
   },
   removeImageButton: {
     position: 'absolute',
-    top: 12,
-    right: 12,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    top: spacing.md,
+    right: spacing.md,
+    backgroundColor: colors.error,
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: borders.radius.none,
     alignItems: 'center',
     justifyContent: 'center',
   },
   removeImageText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flex: 1,
+    color: colors.base100,
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.black,
   },
   imageButton: {
-    width: 44,
-    height: 44,
-    backgroundColor: '#6c757d',
-    borderRadius: 8,
+    width: 48,
+    minHeight: 48,
+    backgroundColor: colors.base200,
+    borderRadius: borders.radius.none,
+    borderWidth: borders.width.standard,
+    borderColor: colors.base200,
     alignItems: 'center',
     justifyContent: 'center',
   },
   imageButtonText: {
-    fontSize: 24,
+    fontSize: typography.sizes.xl,
+    color: colors.baseContent,
+    fontWeight: typography.weights.black,
   },
   // Optimistic UI styles
   optimisticMessage: {
     opacity: 0.7,
   },
   errorMessage: {
-    borderWidth: 1,
-    borderColor: '#dc3545',
-    backgroundColor: '#f8d7da',
+    borderWidth: borders.width.standard,
+    borderColor: colors.error,
+    backgroundColor: colors.base200,
   },
   messageHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   messageStatus: {
-    marginLeft: 8,
+    marginLeft: spacing.sm,
   },
   errorIcon: {
-    fontSize: 14,
+    fontSize: typography.sizes.md,
   },
   // Jump to bottom button
   jumpToBottomButton: {
     position: 'absolute',
     bottom: 100,
     right: 20,
-    backgroundColor: '#007bff',
-    borderRadius: 25,
+    backgroundColor: colors.primary,
+    borderRadius: borders.radius.none,
     width: 50,
     height: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 5,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
+    borderWidth: borders.width.standard,
+    borderColor: colors.primary,
+    ...shadows.card,
   },
   jumpToBottomText: {
-    color: '#fff',
-    fontSize: 20,
+    color: colors.base100,
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.black,
   },
   unreadBadge: {
     position: 'absolute',
     top: -5,
     right: -5,
-    backgroundColor: '#dc3545',
-    borderRadius: 10,
+    backgroundColor: colors.error,
+    borderRadius: borders.radius.none,
     minWidth: 20,
     height: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   unreadText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
+    color: colors.base100,
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.bold,
   },
   // Image viewer modal styles
   imageModalOverlay: {
@@ -865,11 +985,11 @@ const styles = StyleSheet.create({
   messageRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   messageAvatar: {
-    marginRight: 8,
-    marginTop: 4,
+    marginRight: spacing.sm,
+    marginTop: spacing.xs,
   },
   messageContent: {
     flex: 1,

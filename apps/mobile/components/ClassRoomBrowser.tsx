@@ -6,9 +6,12 @@ import {
   FlatList,
   StyleSheet,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUserClasses } from '../hooks/useUserClasses';
 import ChatRoom from './ChatRoom';
+import { colors, spacing, typography, borders, shadows } from '../constants/theme';
 
 export default function ClassRoomBrowser() {
   const { classes, loading, error } = useUserClasses();
@@ -19,7 +22,7 @@ export default function ClassRoomBrowser() {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#0070f3" />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>Indlæser klasser...</Text>
       </View>
     );
@@ -44,10 +47,10 @@ export default function ClassRoomBrowser() {
     );
   }
 
-  // If a room is selected, show the chat
+  // If a room is selected, show the chat fullscreen
   if (selectedRoomId) {
     return (
-      <View style={{ flex: 1 }}>
+      <SafeAreaView style={styles.chatContainer} edges={['bottom']}>
         <View style={styles.backHeader}>
           <TouchableOpacity
             onPress={() => setSelectedRoomId(null)}
@@ -58,7 +61,7 @@ export default function ClassRoomBrowser() {
           <Text style={styles.backHeaderTitle}>#{selectedRoomName}</Text>
         </View>
         <ChatRoom roomId={selectedRoomId} showHeader={false} />
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -134,120 +137,163 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: '100%',
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    backgroundColor: colors.base100,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+  },
+  chatContainer: {
+    flex: 1,
+    backgroundColor: colors.base100,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 20,
+    backgroundColor: colors.base100,
+    padding: spacing.xl,
   },
   loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#666',
+    marginTop: spacing.lg,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.opacity[60],
   },
   errorText: {
-    fontSize: 16,
-    color: '#dc3545',
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.error,
     textAlign: 'center',
   },
   emptyTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
+    fontSize: typography.sizes.xxl,
+    fontWeight: typography.weights.black,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.tight,
+    color: colors.baseContent,
+    marginBottom: spacing.lg,
   },
   emptySubtitle: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.opacity[60],
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: spacing.lg,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontSize: typography.sizes.xxl,
+    fontWeight: typography.weights.black,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.tight,
+    color: colors.baseContent,
+    marginBottom: spacing.xl,
   },
   listContent: {
-    gap: 12,
+    gap: spacing.md,
   },
   classCard: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    borderWidth: borders.width.standard,
+    borderColor: borders.color.default,
+    borderRadius: borders.radius.none,
     overflow: 'hidden',
-    marginBottom: 12,
+    marginBottom: spacing.md,
+    backgroundColor: colors.base100,
+    ...shadows.card,
+    position: 'relative',
   },
   classHeader: {
-    padding: 16,
-    backgroundColor: '#f8f9fa',
+    padding: spacing.lg,
+    backgroundColor: colors.base200,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    borderLeftWidth: borders.width.accentBar,
+    borderLeftColor: colors.primary,
   },
   classLabel: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.black,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.tight,
+    color: colors.baseContent,
   },
   schoolName: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wider,
+    color: colors.opacity[50],
+    marginTop: spacing.xs,
   },
   expandIcon: {
-    fontSize: 20,
+    fontSize: typography.sizes.xl,
+    color: colors.baseContent,
   },
   roomsList: {
-    padding: 12,
+    padding: spacing.md,
   },
   noRoomsText: {
-    color: '#666',
-    fontStyle: 'italic',
+    color: colors.opacity[60],
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wider,
   },
   roomButton: {
-    padding: 12,
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: '#dee2e6',
-    borderRadius: 4,
-    marginBottom: 8,
+    padding: spacing.md,
+    backgroundColor: colors.base100,
+    borderWidth: borders.width.standard,
+    borderColor: borders.color.default,
+    borderRadius: borders.radius.none,
+    marginBottom: spacing.sm,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    borderLeftWidth: borders.width.accentBar,
+    borderLeftColor: colors.primaryOpacity[30],
   },
   roomButtonLocked: {
-    backgroundColor: '#e9ecef',
+    backgroundColor: colors.base200,
+    opacity: 0.6,
   },
   roomName: {
-    fontSize: 16,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wider,
+    color: colors.baseContent,
   },
   roomArrow: {
-    fontSize: 18,
-    color: '#007bff',
+    fontSize: typography.sizes.lg,
+    color: colors.primary,
+    fontWeight: typography.weights.black,
   },
   backHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    gap: 12,
+    padding: spacing.lg,
+    borderBottomWidth: borders.width.standard,
+    borderBottomColor: borders.color.default,
+    backgroundColor: colors.base100,
+    gap: spacing.md,
   },
   backButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#6c757d',
-    borderRadius: 4,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.baseContent,
+    borderRadius: borders.radius.none,
+    borderWidth: borders.width.standard,
+    borderColor: colors.baseContent,
   },
   backButtonText: {
-    color: 'white',
-    fontWeight: '600',
+    color: colors.base100,
+    fontWeight: typography.weights.black,
+    fontSize: typography.sizes.lg,
   },
   backHeaderTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.black,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.tight,
+    color: colors.baseContent,
   },
 });

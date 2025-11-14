@@ -17,23 +17,169 @@ interface ReactionGroup {
   hasReacted: boolean;
 }
 
-interface UseReactionsProps {
-  messageId: number;
+interface UseRoomReactionsOptions {
+  roomId: string;
   currentUserId?: string;
   enabled?: boolean;
 }
 
-export function useReactions({ messageId, currentUserId, enabled = true }: UseReactionsProps) {
+export function useRoomReactions({ 
+  roomId, 
+  currentUserId,
+  enabled = true 
+}: UseRoomReactionsOptions) {
   const [reactions, setReactions] = useState<Reaction[]>([]);
-  const [reactionGroups, setReactionGroups] = useState<ReactionGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
 
-  const groupReactions = useCallback((reactionsList: Reaction[]) => {
+  // Fetch initial reactions for all messages in the room
+  const fetchReactions = useCallback(async () => {
+    if (!enabled) return;
+    
+    try {
+      setLoading(true);
+      
+      // Get all message IDs for this room first
+      const { data: messages, error: messagesError } = await supabase
+        .from('messages')
+        .select('id')
+        .eq('room_id', roomId);
+
+      if (messagesError) throw messagesError;
+
+      if (!messages || messages.length === 0) {
+        setReactions([]);
+        setLoading(false);
+        return;
+      }
+
+      const messageIds = messages.map(m => m.id);
+
+      // Fetch all reactions for these messages
+      const { data, error: fetchError } = await supabase
+        .from('reactions')
+        .select('*')
+        .in('message_id', messageIds)
+        .order('created_at', { ascending: true });
+
+      if (fetchError) {
+        if (fetchError.code === 'PGRST204' || fetchError.message?.includes('relation') || fetchError.message?.includes('does not exist')) {
+          console.warn('Reactions table does not exist yet.');
+          setReactions([]);
+          setError(null);
+          return;
+        }
+        throw fetchError;
+      }
+
+      setReactions(data || []);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching reactions:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch reactions');
+    } finally {
+      setLoading(false);
+    }
+  }, [roomId, enabled]);
+
+  // Add reaction optimistically
+  const addReaction = useCallback(async (messageId: number, emoji: string) => {
+    if (!currentUserId) {
+      console.error('Cannot add reaction: user not authenticated');
+      return;
+    }
+
+    console.log(`➕ Adding reaction ${emoji} to message ${messageId}`);
+
+    // Optimistic update
+    const optimisticReaction: Reaction = {
+      id: Date.now(),
+      message_id: messageId,
+      user_id: currentUserId,
+      emoji,
+      created_at: new Date().toISOString(),
+    };
+    
+    setReactions(prev => [...prev, optimisticReaction]);
+
+    try {
+      const { error: insertError } = await supabase
+        .from('reactions')
+        .insert({
+          message_id: messageId,
+          user_id: currentUserId,
+          emoji,
+        });
+
+      if (insertError) throw insertError;
+      
+      console.log('✅ Reaction added to database');
+    } catch (err) {
+      console.error('❌ Error adding reaction:', err);
+      // Revert optimistic update
+      setReactions(prev => prev.filter(r => r.id !== optimisticReaction.id));
+      await fetchReactions();
+    }
+  }, [currentUserId, fetchReactions]);
+
+  // Remove reaction optimistically
+  const removeReaction = useCallback(async (messageId: number, emoji: string) => {
+    if (!currentUserId) {
+      console.error('Cannot remove reaction: user not authenticated');
+      return;
+    }
+
+    console.log(`➖ Removing reaction ${emoji} from message ${messageId}`);
+
+    // Find the reaction to remove
+    const reactionToRemove = reactions.find(
+      r => r.message_id === messageId && r.user_id === currentUserId && r.emoji === emoji
+    );
+
+    if (!reactionToRemove) return;
+
+    // Optimistic update
+    setReactions(prev => prev.filter(r => r.id !== reactionToRemove.id));
+
+    try {
+      const { error: deleteError } = await supabase
+        .from('reactions')
+        .delete()
+        .eq('message_id', messageId)
+        .eq('user_id', currentUserId)
+        .eq('emoji', emoji);
+
+      if (deleteError) throw deleteError;
+
+      console.log('✅ Reaction removed from database');
+    } catch (err) {
+      console.error('❌ Error removing reaction:', err);
+      // Revert optimistic update
+      setReactions(prev => [...prev, reactionToRemove]);
+      await fetchReactions();
+    }
+  }, [currentUserId, reactions, fetchReactions]);
+
+  // Toggle reaction
+  const toggleReaction = useCallback(async (messageId: number, emoji: string) => {
+    const hasReacted = reactions.some(
+      r => r.message_id === messageId && r.user_id === currentUserId && r.emoji === emoji
+    );
+
+    if (hasReacted) {
+      await removeReaction(messageId, emoji);
+    } else {
+      await addReaction(messageId, emoji);
+    }
+  }, [reactions, currentUserId, addReaction, removeReaction]);
+
+  // Get reactions for a specific message
+  const getReactionsForMessage = useCallback((messageId: number): ReactionGroup[] => {
+    const messageReactions = reactions.filter(r => r.message_id === messageId);
     const groups = new Map<string, ReactionGroup>();
     
-    reactionsList.forEach((reaction) => {
+    messageReactions.forEach((reaction) => {
       const existing = groups.get(reaction.emoji);
       if (existing) {
         existing.count++;
@@ -52,178 +198,51 @@ export function useReactions({ messageId, currentUserId, enabled = true }: UseRe
     });
 
     return Array.from(groups.values()).sort((a, b) => b.count - a.count);
-  }, [currentUserId]);
+  }, [reactions, currentUserId]);
 
-  const fetchReactions = useCallback(async () => {
-    if (!enabled) return;
-    
-    try {
-      setLoading(true);
-      const { data, error: fetchError } = await supabase
-        .from('reactions')
-        .select('*')
-        .eq('message_id', messageId)
-        .order('created_at', { ascending: true });
-
-      if (fetchError) {
-        // Check if table doesn't exist (migration not run)
-        if (fetchError.code === 'PGRST204' || fetchError.message?.includes('relation') || fetchError.message?.includes('does not exist')) {
-          console.warn('Reactions table does not exist yet. Run migration: supabase/migrations/20241114_add_reactions.sql');
-          setReactions([]);
-          setError(null);
-          return;
-        }
-        throw fetchError;
-      }
-
-      const reactionsData = data || [];
-      setReactions(reactionsData);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching reactions:', err, {
-        messageId,
-        errorType: typeof err,
-        errorKeys: err ? Object.keys(err) : [],
-      });
-      setError(err instanceof Error ? err.message : 'Failed to fetch reactions');
-    } finally {
-      setLoading(false);
-    }
-  }, [messageId, enabled]);
-
-  const addReaction = useCallback(async (emoji: string) => {
-    if (!currentUserId) {
-      console.error('Cannot add reaction: user not authenticated');
-      return;
-    }
-
-    console.log(`➕ Adding reaction ${emoji} to message ${messageId}`);
-
-    // Optimistic update
-    const optimisticReaction: Reaction = {
-      id: Date.now(),
-      message_id: messageId,
-      user_id: currentUserId,
-      emoji,
-      created_at: new Date().toISOString(),
-    };
-    
-    const updatedReactions = [...reactions, optimisticReaction];
-    setReactions(updatedReactions);
-
-    try {
-      const { error: insertError } = await supabase
-        .from('reactions')
-        .insert({
-          message_id: messageId,
-          user_id: currentUserId,
-          emoji,
-        });
-
-      if (insertError) throw insertError;
-      
-      console.log('✅ Reaction added to database');
-    } catch (err) {
-      console.error('❌ Error adding reaction:', err);
-      // Revert optimistic update
-      setReactions(reactions);
-      await fetchReactions();
-    }
-  }, [messageId, currentUserId, reactions, fetchReactions]);
-
-  const removeReaction = useCallback(async (emoji: string) => {
-    if (!currentUserId) {
-      console.error('Cannot remove reaction: user not authenticated');
-      return;
-    }
-
-    console.log(`➖ Removing reaction ${emoji} from message ${messageId}`);
-
-    // Optimistic update
-    const updatedReactions = reactions.filter(
-      (r) => !(r.user_id === currentUserId && r.emoji === emoji)
-    );
-    setReactions(updatedReactions);
-
-    try {
-      const { error: deleteError } = await supabase
-        .from('reactions')
-        .delete()
-        .eq('message_id', messageId)
-        .eq('user_id', currentUserId)
-        .eq('emoji', emoji);
-
-      if (deleteError) throw deleteError;
-
-      console.log('✅ Reaction removed from database');
-    } catch (err) {
-      console.error('❌ Error removing reaction:', err);
-      // Revert optimistic update
-      setReactions(reactions);
-      await fetchReactions();
-    }
-  }, [messageId, currentUserId, reactions, fetchReactions]);
-
-  const toggleReaction = useCallback(async (emoji: string) => {
-    const hasReacted = reactions.some(
-      (r) => r.user_id === currentUserId && r.emoji === emoji
-    );
-
-    if (hasReacted) {
-      await removeReaction(emoji);
-    } else {
-      await addReaction(emoji);
-    }
-  }, [reactions, currentUserId, addReaction, removeReaction]);
-
-  // Update reaction groups whenever reactions change
-  useEffect(() => {
-    setReactionGroups(groupReactions(reactions));
-  }, [reactions, groupReactions]);
-
+  // Subscribe to realtime updates for ALL reactions in the room
   useEffect(() => {
     if (!enabled) return;
 
-    console.log(`🔧 Setting up reactions subscription for message ${messageId}`);
+    console.log(`🔧 Setting up room-level reactions subscription for room ${roomId}`);
 
-    // Fetch initial reactions
     fetchReactions();
 
     const channel = supabase
-      .channel(`reactions:message_id=eq.${messageId}`)
+      .channel(`reactions:room.${roomId}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'reactions',
-          filter: `message_id=eq.${messageId}`,
         },
-        (payload) => {
+        async (payload) => {
           console.log('🎉 Reaction INSERT event received:', payload);
           const newReaction = payload.new as Reaction;
-          console.log('New reaction details:', {
-            id: newReaction.id,
-            emoji: newReaction.emoji,
-            user_id: newReaction.user_id,
-            message_id: newReaction.message_id
-          });
+          
+          // Verify this reaction belongs to this room by checking if message exists
+          const { data: message } = await supabase
+            .from('messages')
+            .select('room_id')
+            .eq('id', newReaction.message_id)
+            .single();
+
+          if (message?.room_id !== roomId) {
+            console.log('⚠️ Reaction not for this room, ignoring');
+            return;
+          }
           
           setReactions((prev) => {
-            console.log('Current reactions before adding:', prev.length);
-            
-            // Check for duplicate by content (message_id, user_id, emoji) not by ID
-            // because optimistic IDs are temporary
+            // Check for duplicate by content
             const exists = prev.some((r) => 
               r.message_id === newReaction.message_id &&
               r.user_id === newReaction.user_id &&
               r.emoji === newReaction.emoji
             );
-            console.log('Reaction already exists (by content)?', exists);
             
             if (exists) {
               console.log('⚠️ Duplicate reaction (replacing optimistic with real)');
-              // Replace optimistic reaction with real one (has real DB id)
               return prev.map((r) =>
                 r.message_id === newReaction.message_id &&
                 r.user_id === newReaction.user_id &&
@@ -233,9 +252,8 @@ export function useReactions({ messageId, currentUserId, enabled = true }: UseRe
               );
             }
             
-            const updated = [...prev, newReaction];
-            console.log('✅ Adding new reaction to state, new total:', updated.length);
-            return updated;
+            console.log('✅ Adding new reaction to state');
+            return [...prev, newReaction];
           });
         }
       )
@@ -245,37 +263,33 @@ export function useReactions({ messageId, currentUserId, enabled = true }: UseRe
           event: 'DELETE',
           schema: 'public',
           table: 'reactions',
-          filter: `message_id=eq.${messageId}`,
         },
         (payload) => {
           console.log('🗑️ Reaction DELETE event received:', payload);
           const deletedReaction = payload.old as Reaction;
-          setReactions((prev) => {
-            return prev.filter((r) => r.id !== deletedReaction.id);
-          });
+          setReactions((prev) => prev.filter((r) => r.id !== deletedReaction.id));
         }
       )
       .subscribe((status) => {
-        console.log(`📡 Reaction subscription status for message ${messageId}:`, status);
+        console.log(`📡 Room reactions subscription status:`, status);
       });
 
     channelRef.current = channel;
 
     return () => {
-      console.log(`🔌 Unsubscribing from reactions channel for message ${messageId}`);
+      console.log(`🔌 Unsubscribing from room reactions channel`);
       channel.unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messageId, enabled]);
+  }, [roomId, enabled, fetchReactions]);
 
   return {
     reactions,
-    reactionGroups,
     loading,
     error,
     addReaction,
     removeReaction,
     toggleReaction,
+    getReactionsForMessage,
     refresh: fetchReactions,
   };
 }

@@ -1,11 +1,11 @@
 import React from 'react';
-import { useReactions } from '../hooks/useReactions';
 import ReactionPicker from './ReactionPicker';
 
 interface ReactionPickerWithHookProps {
   visible: boolean;
   messageId: number;
   currentUserId?: string;
+  onReaction: (emoji: string) => void | Promise<void>;
   onClose: () => void;
 }
 
@@ -13,16 +13,11 @@ export default function ReactionPickerWithHook({
   visible,
   messageId,
   currentUserId,
+  onReaction,
   onClose,
 }: ReactionPickerWithHookProps) {
-  const { toggleReaction } = useReactions({
-    messageId,
-    currentUserId,
-    enabled: visible,
-  });
-
   const handleSelect = (emoji: string) => {
-    toggleReaction(emoji);
+    onReaction(emoji);
     onClose();
   };
 

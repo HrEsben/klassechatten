@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
+import { colors, spacing, typography, borders } from '../constants/theme';
 
 interface ConnectionStatusProps {
   isConnected: boolean;
@@ -51,15 +52,15 @@ export function ConnectionStatus({
   }
 
   const getBackgroundColor = () => {
-    if (isReconnecting) return '#f59e0b'; // warning
-    if (isConnected && showConnected) return '#10b981'; // success
-    return '#ef4444'; // error
+    if (isReconnecting) return colors.warning; // warning
+    if (isConnected && showConnected) return colors.accent; // success
+    return colors.error; // error
   };
 
   const getMessage = () => {
-    if (isReconnecting) return 'Genforbinder...';
-    if (isConnected && showConnected) return 'Tilsluttet';
-    return 'Forbindelse mistet';
+    if (isReconnecting) return 'GENFORBINDER...';
+    if (isConnected && showConnected) return 'TILSLUTTET';
+    return 'FORBINDELSE MISTET';
   };
 
   return (
@@ -81,11 +82,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
+    borderBottomWidth: borders.width.standard,
+    borderBottomColor: borders.color.default,
   },
   top: {
     top: 0,
@@ -94,8 +97,10 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   text: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '500',
+    color: colors.base100,
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.bold,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.widest,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,40 +7,82 @@ import {
   ActivityIndicator,
   Image,
   Alert,
+  Animated,
 } from 'react-native';
-import { useReactions } from '../hooks/useReactions';
 import ReactionsDisplay from './ReactionsDisplay';
 import Avatar from './Avatar';
 import { getRelativeTime } from '../utils/time';
+import { colors, spacing, typography, borders } from '../constants/theme';
+
+interface ReactionGroup {
+  emoji: string;
+  count: number;
+  users: string[];
+  hasReacted: boolean;
+}
 
 interface MessageItemProps {
   item: any;
   isOwnMessage: boolean;
   currentUserId?: string;
+  reactions: ReactionGroup[];
   onImagePress: (url: string) => void;
   onErrorRetry: (item: any) => void;
   onReactionPickerOpen: (messageId: number) => void;
+  onToggleReaction: (messageId: number, emoji: string) => Promise<void>;
 }
 
-export default function MessageItem({
+function MessageItem({
   item,
   isOwnMessage,
   currentUserId,
+  reactions,
   onImagePress,
   onErrorRetry,
   onReactionPickerOpen,
+  onToggleReaction,
 }: MessageItemProps) {
   const isOptimistic = item.isOptimistic;
   const isLoading = item.isLoading;
   const hasError = item.hasError;
 
+  // Animation for wiggle effect
+  const wiggleAnim = useRef(new Animated.Value(0)).current;
+
   // Only enable reactions for non-optimistic messages with numeric IDs
   const messageId = typeof item.id === 'number' ? item.id : null;
-  const { reactionGroups, toggleReaction } = useReactions({
-    messageId: messageId || 0,
-    currentUserId,
-    enabled: !!messageId && !isOptimistic,
-  });
+
+  const handleToggleReaction = (emoji: string) => {
+    if (messageId) {
+      onToggleReaction(messageId, emoji);
+    }
+  };
+
+  const handleLongPressIn = () => {
+    // Wiggle animation
+    Animated.sequence([
+      Animated.timing(wiggleAnim, {
+        toValue: -5,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(wiggleAnim, {
+        toValue: 5,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(wiggleAnim, {
+        toValue: -5,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+      Animated.timing(wiggleAnim, {
+        toValue: 0,
+        duration: 50,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
 
   const handleAddReaction = () => {
     if (messageId) {
@@ -72,15 +114,16 @@ export default function MessageItem({
         )}
 
         <View style={[styles.messageContent, isOwnMessage && styles.ownMessageContent]}>
-          <View style={styles.messageHeader}>
-            <Text style={[styles.messageSender, isOwnMessage && styles.ownMessageText]}>
+          {/* Sender name - outside bubble */}
+          <View style={[styles.messageHeader, isOwnMessage && styles.ownMessageHeader]}>
+            <Text style={[styles.messageSender, isOwnMessage && styles.ownMessageSenderText]}>
               {isOwnMessage ? 'Dig' : (item.profiles?.display_name || 'Ukendt bruger')}
             </Text>
             {/* Loading/Error indicators */}
             {isLoading && (
               <ActivityIndicator
                 size="small"
-                color={isOwnMessage ? '#fff' : '#007bff'}
+                color={colors.primary}
                 style={styles.messageStatus}
               />
             )}
@@ -103,45 +146,65 @@ export default function MessageItem({
             )}
           </View>
 
-          {item.image_url && (
-            <TouchableOpacity onPress={() => onImagePress(item.image_url)} activeOpacity={0.8}>
-              <Image
-                source={{ uri: item.image_url }}
-                style={styles.messageImageThumbnail}
-                resizeMode="cover"
+          {/* Message bubble - Long press to add reaction */}
+          <TouchableOpacity
+            activeOpacity={1}
+            onLongPress={messageId ? handleAddReaction : undefined}
+            onPressIn={messageId ? handleLongPressIn : undefined}
+            delayLongPress={500}
+          >
+            <Animated.View 
+              style={[
+                styles.messageBubble, 
+                isOwnMessage && styles.ownMessageBubble,
+                { transform: [{ rotate: wiggleAnim.interpolate({
+                  inputRange: [-5, 5],
+                  outputRange: ['-2deg', '2deg']
+                }) }] }
+              ]}
+            >
+              {item.image_url && (
+                <TouchableOpacity onPress={() => onImagePress(item.image_url)} activeOpacity={0.8}>
+                  <Image
+                    source={{ uri: item.image_url }}
+                    style={styles.messageImageThumbnail}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              )}
+
+              {item.body && (
+                <Text style={[styles.messageBody, isOwnMessage && styles.ownMessageBodyText]}>
+                  {item.body}
+                </Text>
+              )}
+
+              {item.edited_at && (
+                <Text style={[styles.editedLabel, isOwnMessage && styles.ownMessageBodyText]}>
+                  (redigeret)
+                </Text>
+              )}
+            </Animated.View>
+          </TouchableOpacity>
+
+          {/* Reactions - outside bubble */}
+          {messageId && !isOptimistic && reactions.length > 0 && (
+            <View style={styles.reactionsContainer}>
+              <ReactionsDisplay
+                reactions={reactions}
+                onToggle={handleToggleReaction}
               />
-            </TouchableOpacity>
+            </View>
           )}
 
-          {item.body && (
-            <Text style={[styles.messageBody, isOwnMessage && styles.ownMessageText]}>
-              {item.body}
-            </Text>
-          )}
-
-          {item.edited_at && (
-            <Text style={[styles.editedLabel, isOwnMessage && styles.ownMessageText]}>
-              (redigeret)
-            </Text>
-          )}
-
-          {/* Reactions */}
-          {messageId && !isOptimistic && (
-            <ReactionsDisplay
-              reactions={reactionGroups}
-              onToggle={toggleReaction}
-              onAddClick={handleAddReaction}
-            />
-          )}
-
-          {/* Time and read receipts footer */}
-          <View style={styles.messageFooter}>
-            <Text style={[styles.messageTime, isOwnMessage && styles.ownMessageText]}>
+          {/* Time and read receipts - outside bubble */}
+          <View style={[styles.messageFooter, isOwnMessage && styles.ownMessageFooter]}>
+            <Text style={[styles.messageTime, isOwnMessage && styles.ownMessageTimeText]}>
               {getRelativeTime(item.created_at)}
             </Text>
             {/* Read receipts - only show for own messages */}
             {isOwnMessage && item.read_receipts && item.read_receipts.length > 0 && (
-              <Text style={[styles.readReceipt, styles.ownMessageText]}>
+              <Text style={[styles.readReceipt, styles.ownMessageTimeText]}>
                 ✓✓ Læst af {item.read_receipts.length}
               </Text>
             )}
@@ -154,8 +217,8 @@ export default function MessageItem({
 
 const styles = StyleSheet.create({
   messageContainer: {
-    marginBottom: 16,
-    paddingHorizontal: 12,
+    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.md,
   },
   ownMessage: {
     alignItems: 'flex-end',
@@ -175,66 +238,97 @@ const styles = StyleSheet.create({
     maxWidth: '80%',
   },
   messageAvatar: {
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   messageContent: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 0, // Sharp corners
-    padding: 12,
     maxWidth: '100%',
-    borderWidth: 2,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   ownMessageContent: {
-    backgroundColor: '#ff3fa4', // primary color
+    alignItems: 'flex-end',
   },
   messageHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
+  },
+  ownMessageHeader: {
+    justifyContent: 'flex-end',
   },
   messageSender: {
-    fontWeight: 'bold',
-    fontSize: 14,
-    color: '#333',
+    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.sm,
+    color: colors.baseContent,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wider,
   },
-  ownMessageText: {
-    color: '#fff',
+  ownMessageSenderText: {
+    color: colors.opacity[60],
   },
   messageStatus: {
-    marginLeft: 8,
+    marginLeft: spacing.sm,
   },
   errorIcon: {
-    fontSize: 14,
+    fontSize: typography.sizes.md,
+  },
+  messageBubble: {
+    backgroundColor: colors.base200,
+    borderRadius: borders.radius.none,
+    padding: spacing.md,
+    maxWidth: '100%',
+    borderWidth: borders.width.standard,
+    borderColor: borders.color.default,
+  },
+  ownMessageBubble: {
+    backgroundColor: colors.primary,
   },
   messageImageThumbnail: {
     width: 200,
     height: 150,
-    marginBottom: 8,
-    borderRadius: 0, // Sharp corners
+    marginBottom: spacing.sm,
+    borderRadius: borders.radius.none,
+    borderWidth: borders.width.standard,
+    borderColor: borders.color.default,
   },
   messageBody: {
-    fontSize: 16,
-    color: '#333',
-    lineHeight: 22,
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.medium,
+    color: colors.baseContent,
+    lineHeight: 24,
+  },
+  ownMessageBodyText: {
+    color: colors.base100,
   },
   editedLabel: {
-    fontSize: 12,
-    fontStyle: 'italic',
-    color: '#666',
-    marginTop: 4,
+    fontSize: typography.sizes.sm,
+    color: colors.opacity[60],
+    marginTop: spacing.xs,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wider,
+  },
+  reactionsContainer: {
+    marginTop: spacing.xs,
   },
   messageFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: spacing.xs,
+  },
+  ownMessageFooter: {
+    justifyContent: 'flex-end',
   },
   messageTime: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: typography.sizes.xs,
+    color: colors.opacity[50],
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wider,
+  },
+  ownMessageTimeText: {
+    color: colors.opacity[60],
   },
   readReceipt: {
-    fontSize: 12,
-    marginLeft: 8,
+    fontSize: typography.sizes.xs,
+    marginLeft: spacing.sm,
   },
 });
+
+export default React.memo(MessageItem);

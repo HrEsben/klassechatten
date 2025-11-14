@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+import { colors, spacing, typography, borders } from '../constants/theme';
 
 interface ReactionGroup {
   emoji: string;
@@ -19,7 +21,8 @@ export default function ReactionsDisplay({
   onToggle,
   onAddClick,
 }: ReactionsDisplayProps) {
-  if (reactions.length === 0 && !onAddClick) {
+  // Only show if there are reactions
+  if (reactions.length === 0) {
     return null;
   }
 
@@ -45,12 +48,6 @@ export default function ReactionsDisplay({
           </Text>
         </TouchableOpacity>
       ))}
-
-      {onAddClick && (
-        <TouchableOpacity onPress={onAddClick} style={styles.addButton}>
-          <Text style={styles.addButtonText}>+</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 }
@@ -59,48 +56,33 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 4,
-    marginTop: 4,
+    gap: spacing.xs,
+    marginTop: spacing.xs,
   },
   reactionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    borderRadius: 0, // Sharp corners
-    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.base200,
+    borderWidth: borders.width.standard,
+    borderColor: colors.opacity[10],
+    borderRadius: borders.radius.none,
+    gap: spacing.xs,
   },
   reactionButtonActive: {
-    backgroundColor: 'rgba(255, 63, 164, 0.3)', // primary/30 (funkyfred theme)
-    borderColor: '#ff3fa4', // primary color
+    backgroundColor: colors.opacity[30],
+    borderColor: colors.primary,
   },
   emoji: {
-    fontSize: 14,
+    fontSize: typography.sizes.md,
   },
   count: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: 'rgba(0, 0, 0, 0.8)',
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.bold,
+    color: colors.baseContent,
   },
   countActive: {
-    color: '#1a1a1a',
-  },
-  addButton: {
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    borderRadius: 0, // Sharp corners
-  },
-  addButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: 'rgba(0, 0, 0, 0.6)',
+    color: colors.baseContent,
   },
 });

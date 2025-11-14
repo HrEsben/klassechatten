@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'expo-router';
+import { colors, spacing, typography, borders, buttonSizes } from '../constants/theme';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -128,61 +129,78 @@ export default function LoginForm() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.base100,
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: spacing.xxxl,
+    paddingVertical: spacing.xl,
     width: '100%',
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 30,
+    fontSize: typography.sizes.xxl,
+    fontWeight: typography.weights.black,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.tight,
+    color: colors.baseContent,
+    marginBottom: spacing.xxxl,
     textAlign: 'center',
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: spacing.xl,
   },
   label: {
-    fontSize: 16,
-    marginBottom: 8,
-    color: '#333',
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.bold,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.widest,
+    color: colors.opacity[50],
+    marginBottom: spacing.sm,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 15,
-    fontSize: 16,
+    borderWidth: borders.width.standard,
+    borderColor: borders.color.default,
+    borderRadius: borders.radius.none,
+    paddingVertical: buttonSizes.md.paddingVertical,
+    paddingHorizontal: buttonSizes.md.paddingHorizontal,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.baseContent,
+    backgroundColor: colors.base100,
   },
   button: {
-    padding: 15,
-    borderRadius: 8,
+    height: buttonSizes.md.height,
+    paddingVertical: buttonSizes.md.paddingVertical,
+    paddingHorizontal: buttonSizes.md.paddingHorizontal,
+    borderRadius: borders.radius.none,
     alignItems: 'center',
-    marginTop: 10,
+    justifyContent: 'center',
+    marginTop: spacing.lg,
+    borderWidth: borders.width.standard,
   },
   primaryButton: {
-    backgroundColor: '#0070f3',
+    backgroundColor: colors.baseContent,
+    borderColor: colors.baseContent,
   },
   secondaryButton: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#0070f3',
+    borderColor: colors.opacity[10],
   },
   disabledButton: {
-    backgroundColor: '#ccc',
+    backgroundColor: colors.opacity[30],
+    borderColor: colors.opacity[30],
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.base100,
+    fontSize: buttonSizes.md.fontSize,
+    fontWeight: typography.weights.bold,
+    textTransform: 'uppercase',
   },
   secondaryButtonText: {
-    color: '#0070f3',
-    fontSize: 16,
-    fontWeight: '600',
+    color: colors.baseContent,
+    fontSize: buttonSizes.md.fontSize,
+    fontWeight: typography.weights.bold,
+    textTransform: 'uppercase',
   },
 });

@@ -262,10 +262,14 @@ export function useRoomMessages({
               prev.filter(optMsg => {
                 // Remove optimistic messages that match content and user
                 const sameUser = optMsg.user_id === newMessage.user_id;
-                const sameContent = optMsg.body === newMessage.body;
-                const sameImage = optMsg.image_url === newMessage.image_url;
+                const sameBody = optMsg.body === newMessage.body;
+                const sameImage = optMsg.image_url && newMessage.image_url && 
+                                  optMsg.image_url === newMessage.image_url;
                 
-                if (sameUser && (sameContent || sameImage)) {
+                // Remove if user matches AND (same text OR same image)
+                const shouldRemove = sameUser && (sameBody || sameImage);
+                
+                if (shouldRemove) {
                   console.log('Removing optimistic message that matches real message:', optMsg.id);
                   return false; // Remove this optimistic message
                 }

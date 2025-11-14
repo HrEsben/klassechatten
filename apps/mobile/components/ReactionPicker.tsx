@@ -7,7 +7,9 @@ import {
   Modal,
   ScrollView,
   Dimensions,
+  Platform,
 } from 'react-native';
+import { colors, spacing, typography, borders } from '../constants/theme';
 
 interface ReactionPickerProps {
   visible: boolean;
@@ -38,7 +40,7 @@ export default function ReactionPicker({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="slide"
       onRequestClose={onClose}
     >
       <TouchableOpacity
@@ -74,40 +76,43 @@ export default function ReactionPicker({
   );
 }
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    justifyContent: 'flex-end',
     alignItems: 'center',
+    paddingBottom: 0,
   },
   container: {
-    backgroundColor: '#ffffff',
-    borderRadius: 0, // Sharp corners
-    padding: 16,
-    width: width * 0.85,
-    maxWidth: 400,
-    maxHeight: '70%',
-    borderWidth: 2,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: colors.base100,
+    borderRadius: borders.radius.none,
+    padding: spacing.lg,
+    paddingBottom: Platform.OS === 'ios' ? 34 : spacing.xl, // Extra padding for iOS home indicator
+    width: width,
+    maxHeight: height * 0.6, // 60% of screen height max
+    minHeight: 250, // Ensure minimum height for small screens
+    borderWidth: borders.width.standard,
+    borderColor: borders.color.default,
+    borderBottomWidth: 0,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+    marginBottom: spacing.md,
+    paddingBottom: spacing.md,
+    borderBottomWidth: borders.width.standard,
+    borderBottomColor: borders.color.default,
   },
   title: {
-    fontSize: 14,
-    fontWeight: '900',
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.black,
     textTransform: 'uppercase',
-    letterSpacing: -0.5,
-    color: '#1a1a1a',
+    letterSpacing: typography.letterSpacing.tight,
+    color: colors.baseContent,
   },
   closeButton: {
     width: 32,
@@ -116,25 +121,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   closeText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#666',
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.bold,
+    color: colors.opacity[60],
   },
   emojiGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
+    paddingBottom: spacing.sm,
   },
   emojiButton: {
-    width: '15%',
-    aspectRatio: 1,
+    width: width / 6 - 12, // 6 emojis per row with spacing
+    height: width / 6 - 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)',
-    borderRadius: 0, // Sharp corners
+    marginBottom: spacing.sm,
+    marginHorizontal: spacing.xs,
+    backgroundColor: colors.opacity[10],
+    borderRadius: borders.radius.none, // Sharp corners
+    borderWidth: borders.width.standard,
+    borderColor: borders.color.default,
   },
   emoji: {
-    fontSize: 28,
+    fontSize: Math.min(28, width / 15), // Scale emoji size based on screen width
   },
 });

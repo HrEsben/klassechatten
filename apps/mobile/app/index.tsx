@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 
@@ -53,7 +54,7 @@ function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <View>
           <Text style={styles.title}>KlasseChatten</Text>
@@ -66,12 +67,10 @@ function HomeScreen() {
         </TouchableOpacity>
       </View>
       
-      <View style={styles.content}>
-        <ClassRoomBrowser />
-      </View>
+      <ClassRoomBrowser />
       
       <StatusBar style="auto" />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -93,14 +92,12 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingTop: 44,
+    backgroundColor: '#f8f8f8',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   subtitle: {
     fontSize: 16,
@@ -121,35 +118,31 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  // Original styles (kept for reference)
   header: {
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    backgroundColor: 'white',
+    borderBottomWidth: 2,
+    borderBottomColor: 'rgba(26, 26, 26, 0.1)',
+    backgroundColor: '#f8f8f8',
   },
   username: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
+    fontSize: 12,
+    color: 'rgba(26, 26, 26, 0.6)',
+    marginTop: 4,
+    textTransform: 'uppercase',
   },
   logoutButton: {
-    backgroundColor: '#ff4444',
-    padding: 8,
-    borderRadius: 4,
+    backgroundColor: '#e86b6b',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   logoutText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  content: {
-    flex: 1,
-    width: '100%',
-    paddingHorizontal: 16,
+    color: '#f8f8f8',
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
 });

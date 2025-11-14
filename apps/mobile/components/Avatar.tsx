@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
+import { colors, typography, borders } from '../constants/theme';
 
 interface AvatarProps {
   user?: {
@@ -14,7 +15,7 @@ interface AvatarProps {
 export default function Avatar({ user, size = 40, style }: AvatarProps) {
   const displayName = user?.display_name || 'U';
   const avatarUrl = user?.avatar_url;
-  const avatarColor = user?.avatar_color || '#3B82F6';
+  const avatarColor = user?.avatar_color || colors.primary;
   
   // Get initials from display name
   const getInitials = (name: string): string => {
@@ -29,7 +30,9 @@ export default function Avatar({ user, size = 40, style }: AvatarProps) {
   const avatarStyle = {
     width: size,
     height: size,
-    borderRadius: size / 2,
+    borderRadius: borders.radius.none, // Sharp corners for Berlin Edgy aesthetic
+    borderWidth: borders.width.standard,
+    borderColor: borders.color.default,
   };
 
   if (avatarUrl) {
@@ -42,7 +45,7 @@ export default function Avatar({ user, size = 40, style }: AvatarProps) {
     );
   }
 
-  // Fallback to colored circle with initials
+  // Fallback to colored square with initials
   return (
     <View
       style={[
@@ -71,8 +74,9 @@ export default function Avatar({ user, size = 40, style }: AvatarProps) {
 
 const styles = StyleSheet.create({
   initialsText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    color: colors.base100,
+    fontWeight: typography.weights.black,
     textAlign: 'center',
+    textTransform: 'uppercase',
   },
 });

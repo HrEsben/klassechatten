@@ -23,11 +23,11 @@ export default function RootLayout({
                 try {
                   const THEME_KEY = 'klassechatten-theme';
                   const savedTheme = localStorage.getItem(THEME_KEY);
-                  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'funkyfred';
                   const theme = savedTheme || systemTheme;
                   document.documentElement.setAttribute('data-theme', theme);
                 } catch (e) {
-                  document.documentElement.setAttribute('data-theme', 'light');
+                  document.documentElement.setAttribute('data-theme', 'funkyfred');
                 }
               })();
             `,

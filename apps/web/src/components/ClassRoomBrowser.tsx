@@ -142,7 +142,7 @@ export default function ClassRoomBrowser() {
               <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
               
               <div className="px-8 py-6 pl-10">
-                <div className="flex items-start justify-between">
+                <div className="flex items-center justify-between">
                   <h3 className="text-lg font-black uppercase tracking-tight text-base-content">
                     # {room.name}
                   </h3>

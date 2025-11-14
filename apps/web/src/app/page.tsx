@@ -15,12 +15,12 @@ function HomePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { classes } = useUserClasses();
-  const { profile, roleLabel } = useUserProfile();
   
   const classParam = searchParams.get('class');
   const roomParam = searchParams.get('room');
   const selectedClass = classes.find(c => c.id === classParam);
   const selectedRoom = selectedClass?.rooms.find(r => r.id === roomParam);
+  const { profile, roleLabel, isClassAdmin } = useUserProfile(classParam || undefined);
 
   const handleSignOut = async () => {
     await signOut();
@@ -192,7 +192,7 @@ function HomePage() {
             {/* User Info */}
             <div className="flex flex-col items-end">
               <span className="text-xs font-bold uppercase tracking-widest text-base-content/50">
-                {roleLabel}
+                {roleLabel}{isClassAdmin && ' ⊕'}
               </span>
               <span className="text-sm font-medium text-base-content">
                 {profile?.display_name || user?.user_metadata?.display_name || user?.email}

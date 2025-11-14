@@ -3,19 +3,19 @@
 import { useEffect, useState } from 'react';
 
 const THEME_KEY = 'klassechatten-theme';
-const AVAILABLE_THEMES = ['light', 'dark'] as const;
+const AVAILABLE_THEMES = ['funkyfred', 'dark'] as const;
 type Theme = (typeof AVAILABLE_THEMES)[number];
 
 export function ThemeController() {
   const [mounted, setMounted] = useState(false);
-  const [currentTheme, setCurrentTheme] = useState<Theme>('light');
+  const [currentTheme, setCurrentTheme] = useState<Theme>('funkyfred');
 
   useEffect(() => {
     setMounted(true);
     
     // Get saved theme or use system preference
     const savedTheme = localStorage.getItem(THEME_KEY) as Theme | null;
-    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'funkyfred';
     const theme = savedTheme || systemTheme;
     
     setCurrentTheme(theme);
@@ -25,7 +25,7 @@ export function ThemeController() {
     if (!savedTheme) {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handleChange = (e: MediaQueryListEvent) => {
-        const newTheme = e.matches ? 'dark' : 'light';
+        const newTheme = e.matches ? 'dark' : 'funkyfred';
         setCurrentTheme(newTheme);
         document.documentElement.setAttribute('data-theme', newTheme);
       };
@@ -36,7 +36,7 @@ export function ThemeController() {
   }, []);
 
   const toggleTheme = () => {
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    const newTheme = currentTheme === 'funkyfred' ? 'dark' : 'funkyfred';
     setCurrentTheme(newTheme);
     localStorage.setItem(THEME_KEY, newTheme);
     document.documentElement.setAttribute('data-theme', newTheme);

@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUserClasses } from '@/hooks/useUserClasses';
+import { useUnreadCounts } from '@/hooks/useUnreadCounts';
 import ChatRoom from './ChatRoom';
 
 export default function ClassRoomBrowser() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { classes, loading, error } = useUserClasses();
+  const { getCountForRoom } = useUnreadCounts();
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
 
@@ -132,40 +134,52 @@ export default function ClassRoomBrowser() {
         </div>
       ) : selectedClass ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {selectedClass.rooms.map((room) => (
-            <button
-              key={room.id}
-              onClick={() => handleSelectRoom(room.id)}
-              disabled={room.is_locked}
-              className="relative group text-left bg-base-100 border-2 border-base-content/10 hover:border-primary/50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-base-content/10 transition-all duration-200 overflow-hidden"
-            >
-              {/* Accent bar */}
-              <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
-              
-              <div className="px-8 py-6 pl-10">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-black uppercase tracking-tight text-base-content">
-                    # {room.name}
-                  </h3>
-                  {room.is_locked ? (
-                    <svg className="w-5 h-5 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="square" strokeLinejoin="miter" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  ) : (
-                    <svg 
-                      className="w-5 h-5 text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-200" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                      strokeWidth={2.5}
-                    >
-                      <path strokeLinecap="square" strokeLinejoin="miter" d="M9 5l7 7-7 7" />
-                    </svg>
-                  )}
-                </div>
+          {selectedClass.rooms.map((room) => {
+            const unreadCount = getCountForRoom(room.id);
+            
+            return (
+              <div key={room.id} className="indicator w-full">
+                {/* Unread badge - only show if count > 0 */}
+                {unreadCount > 0 && (
+                  <span className="indicator-item badge badge-primary badge-sm font-bold">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+                
+                <button
+                  onClick={() => handleSelectRoom(room.id)}
+                  disabled={room.is_locked}
+                  className="relative group text-left bg-base-100 border-2 border-base-content/10 hover:border-primary/50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-base-content/10 transition-all duration-200 overflow-hidden w-full"
+                >
+                  {/* Accent bar */}
+                  <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
+                  
+                  <div className="px-8 py-6 pl-10">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-black uppercase tracking-tight text-base-content">
+                        # {room.name}
+                      </h3>
+                      {room.is_locked ? (
+                        <svg className="w-5 h-5 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="square" strokeLinejoin="miter" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                      ) : (
+                        <svg 
+                          className="w-5 h-5 text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-200" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                          strokeWidth={2.5}
+                        >
+                          <path strokeLinecap="square" strokeLinejoin="miter" d="M9 5l7 7-7 7" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                </button>
               </div>
-            </button>
-          ))}
+            );
+          })}
         </div>
       ) : null}
       </div>

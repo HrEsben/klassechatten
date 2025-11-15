@@ -18,6 +18,7 @@ import Svg, { Path, Line } from 'react-native-svg';
 import { useRoomMessages } from '../hooks/useRoomMessages';
 import { useSendMessage } from '../hooks/useSendMessage';
 import { useRoomPresence } from '../hooks/useRoomPresence';
+import { useRoomUsers } from '../hooks/useRoomUsers';
 import { useReadReceipts } from '../hooks/useReadReceipts';
 import { useRoomReactions } from '../hooks/useRoomReactions';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,6 +26,7 @@ import { getRelativeTime } from '../utils/time';
 import Avatar from './Avatar';
 import MessageItem from './MessageItem';
 import ReactionPickerWithHook from './ReactionPickerWithHook';
+import UsersList from './UsersList';
 import { colors, spacing, typography, borders, buttonSizes, shadows } from '../constants/theme';
 
 interface ChatRoomProps {
@@ -44,6 +46,7 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
   const [enlargedImageUri, setEnlargedImageUri] = useState<string | null>(null);
   const [reactionPickerVisible, setReactionPickerVisible] = useState(false);
   const [reactionPickerMessageId, setReactionPickerMessageId] = useState<number | null>(null);
+  const [usersListVisible, setUsersListVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | number | null>(null);
   const inputRef = useRef<TextInput>(null);
@@ -64,6 +67,12 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
 
   const { sendMessage, pickImage, uploadImage, sending, uploading } = useSendMessage();
 
+  // Fetch all users in the room (including offline users)
+  const { users: allRoomUsers, loading: usersLoading } = useRoomUsers({
+    roomId,
+    enabled: !!user,
+  });
+
   // Presence and typing indicators
   const { onlineUsers, typingUsers, setTyping, onlineCount } = useRoomPresence({
     roomId,
@@ -71,6 +80,23 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
     displayName: user?.user_metadata?.display_name || user?.email || 'Anonymous',
     enabled: !!user,
   });
+
+  // Create a set of online user IDs for quick lookup
+  const onlineUserIds = useMemo(() => {
+    return new Set(onlineUsers.map(u => u.user_id));
+  }, [onlineUsers]);
+
+  // Merge typing status into all users
+  const usersWithStatus = useMemo(() => {
+    return allRoomUsers.map(user => {
+      const onlineUser = onlineUsers.find(ou => ou.user_id === user.user_id);
+      return {
+        ...user,
+        online: onlineUserIds.has(user.user_id),
+        typing: onlineUser?.typing || false,
+      };
+    });
+  }, [allRoomUsers, onlineUsers, onlineUserIds]);
 
   // Memoize message IDs string to detect actual changes
   const messageIdsString = useMemo(() => {
@@ -399,12 +425,28 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
           {/* Header */}
           {showHeader && (
             <View style={styles.header}>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.headerTitle}>{roomName}</Text>
                 {onlineCount > 0 && (
                   <Text style={styles.onlineCount}>{onlineCount} online</Text>
                 )}
               </View>
+              <TouchableOpacity 
+                onPress={() => setUsersListVisible(true)}
+                style={styles.usersButton}
+              >
+                <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.baseContent} strokeWidth={2}>
+                  <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" strokeLinecap="square" strokeLinejoin="miter" />
+                  <Path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" strokeLinecap="square" strokeLinejoin="miter" />
+                  <Path d="M23 21v-2a4 4 0 0 0-3-3.87" strokeLinecap="square" strokeLinejoin="miter" />
+                  <Path d="M16 3.13a4 4 0 0 1 0 7.75" strokeLinecap="square" strokeLinejoin="miter" />
+                </Svg>
+                {allRoomUsers.length > 0 && (
+                  <View style={styles.usersBadge}>
+                    <Text style={styles.usersBadgeText}>{allRoomUsers.length}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
               <View style={[
                 styles.statusIndicator,
                 { backgroundColor: isConnected ? '#28a745' : '#ffc107' }
@@ -607,6 +649,15 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
           }}
         />
       )}
+
+      {/* Users List Modal */}
+      <UsersList
+        users={usersWithStatus}
+        onlineUserIds={onlineUserIds}
+        currentUserId={user?.id}
+        visible={usersListVisible}
+        onClose={() => setUsersListVisible(false)}
+      />
     </>
   );
 }
@@ -643,6 +694,28 @@ const styles = StyleSheet.create({
     borderBottomWidth: borders.width.standard,
     borderBottomColor: borders.color.default,
     backgroundColor: colors.base100,
+  },
+  usersButton: {
+    position: 'relative',
+    padding: spacing.sm,
+    marginRight: spacing.md,
+  },
+  usersBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  usersBadgeText: {
+    color: colors.base100,
+    fontSize: 10,
+    fontWeight: typography.weights.bold,
   },
   headerTitle: {
     fontSize: typography.sizes.lg,

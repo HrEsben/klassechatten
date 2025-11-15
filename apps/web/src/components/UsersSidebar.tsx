@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import Avatar from './Avatar';
 
 interface SidebarUser {
@@ -8,22 +8,85 @@ interface SidebarUser {
   avatar_color?: string;
   typing?: boolean;
   last_seen?: string;
+  online?: boolean;
 }
 
 interface UsersSidebarProps {
   users: SidebarUser[];
+  onlineUserIds?: Set<string>;
   currentUserId?: string;
   className?: string;
 }
 
 export default function UsersSidebar({ 
   users, 
+  onlineUserIds = new Set(),
   currentUserId,
   className = '' 
 }: UsersSidebarProps) {
+  // Separate and sort users by online status
+  const { onlineUsers, offlineUsers, totalOnline } = useMemo(() => {
+    const online: SidebarUser[] = [];
+    const offline: SidebarUser[] = [];
+    
+    users.forEach(user => {
+      const isOnline = onlineUserIds.has(user.user_id) || user.online;
+      if (isOnline) {
+        online.push({ ...user, online: true });
+      } else {
+        offline.push({ ...user, online: false });
+      }
+    });
+    
+    return {
+      onlineUsers: online,
+      offlineUsers: offline,
+      totalOnline: online.length
+    };
+  }, [users, onlineUserIds]);
+
   if (users.length === 0) {
     return null;
   }
+
+  const renderUser = (user: SidebarUser) => {
+    const isCurrentUser = user.user_id === currentUserId;
+    const isOnline = user.online;
+    
+    return (
+      <li key={user.user_id}>
+        <div className={`flex items-center gap-3 py-3 px-3 ${isCurrentUser ? 'bg-primary/5' : ''}`}>
+          <div className="indicator">
+            <Avatar
+              user={{
+                display_name: user.display_name,
+                avatar_url: user.avatar_url,
+                avatar_color: user.avatar_color,
+              }}
+              size="sm"
+            />
+            {isOnline && (
+              <span className="indicator-item badge badge-xs badge-success border-base-200"></span>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium text-base-content truncate">
+              {user.display_name}
+              {isCurrentUser && (
+                <span className="ml-2 text-xs text-base-content/50 font-light">(dig)</span>
+              )}
+            </div>
+            {user.typing && (
+              <div className="text-xs text-base-content/40 font-mono">skriver...</div>
+            )}
+            {!isOnline && (
+              <div className="text-xs text-base-content/30 font-mono">offline</div>
+            )}
+          </div>
+        </div>
+      </li>
+    );
+  };
 
   return (
     <div className={`flex flex-col h-full bg-base-200 lg:bg-base-200/60 border-r border-primary/10 ${className}`}>
@@ -32,10 +95,10 @@ export default function UsersSidebar({
         <div className="flex items-center justify-between w-full">
           <div>
             <div className="font-mono text-xs uppercase tracking-wider text-base-content/60">
-              Brugere online
+              Brugere
             </div>
             <div className="text-sm text-base-content/40 font-light mt-1">
-              {users.length} {users.length === 1 ? 'bruger' : 'brugere'}
+              {totalOnline} online · {users.length} total
             </div>
           </div>
           <label htmlFor="users-drawer" className="btn btn-ghost btn-sm btn-square lg:hidden text-base-content">
@@ -48,37 +111,27 @@ export default function UsersSidebar({
 
       {/* Users List */}
       <div className="flex-1 overflow-y-auto">
-        <ul className="menu p-2">
-          {users.map((user) => {
-            const isCurrentUser = user.user_id === currentUserId;
-            
-            return (
-              <li key={user.user_id}>
-                <div className={`flex items-center gap-3 py-3 px-3 ${isCurrentUser ? 'bg-primary/5' : ''}`}>
-                  <Avatar
-                    user={{
-                      display_name: user.display_name,
-                      avatar_url: user.avatar_url,
-                      avatar_color: user.avatar_color,
-                    }}
-                    size="sm"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-base-content truncate">
-                      {user.display_name}
-                      {isCurrentUser && (
-                        <span className="ml-2 text-xs text-base-content/50 font-light">(dig)</span>
-                      )}
-                    </div>
-                    {user.typing && (
-                      <div className="text-xs text-base-content/40 font-mono">skriver...</div>
-                    )}
-                  </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        {onlineUsers.length > 0 && (
+          <div>
+            <div className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-base-content/50">
+              Online
+            </div>
+            <ul className="menu p-2 pt-0">
+              {onlineUsers.map(renderUser)}
+            </ul>
+          </div>
+        )}
+        
+        {offlineUsers.length > 0 && (
+          <div>
+            <div className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-base-content/50">
+              Offline
+            </div>
+            <ul className="menu p-2 pt-0">
+              {offlineUsers.map(renderUser)}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );

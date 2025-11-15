@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRoomMessages } from '@/hooks/useRoomMessages';
 import { useSendMessage } from '@/hooks/useSendMessage';
 import { useRoomPresence } from '@/hooks/useRoomPresence';
+import { useRoomUsers } from '@/hooks/useRoomUsers';
 import { useReadReceipts } from '@/hooks/useReadReceipts';
 import { useAuth } from '@/contexts/AuthContext';
 import { getRelativeTime } from '@/lib/time';
@@ -68,6 +69,12 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   
   const { sendMessage, uploadImage, sending, uploading } = useSendMessage();
   
+  // Fetch all users in the room (including offline users)
+  const { users: allRoomUsers, loading: usersLoading } = useRoomUsers({
+    roomId,
+    enabled: !!user,
+  });
+  
   // Presence and typing indicators
   const { onlineUsers, typingUsers, setTyping } = useRoomPresence({
     roomId,
@@ -75,6 +82,23 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     displayName: user?.user_metadata?.display_name || user?.email || 'Anonymous',
     enabled: !!user,
   });
+
+  // Create a set of online user IDs for quick lookup
+  const onlineUserIds = useMemo(() => {
+    return new Set(onlineUsers.map(u => u.user_id));
+  }, [onlineUsers]);
+
+  // Merge typing status into all users
+  const usersWithStatus = useMemo(() => {
+    return allRoomUsers.map(user => {
+      const onlineUser = onlineUsers.find(ou => ou.user_id === user.user_id);
+      return {
+        ...user,
+        online: onlineUserIds.has(user.user_id),
+        typing: onlineUser?.typing || false,
+      };
+    });
+  }, [allRoomUsers, onlineUsers, onlineUserIds]);
 
     // Read receipts
   useReadReceipts({
@@ -368,7 +392,8 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       {/* Desktop Sidebar - hidden on mobile */}
       <aside className="hidden lg:flex lg:w-64 lg:shrink-0 bg-base-200 border-r-2 border-base-content/10 overflow-y-auto">
         <UsersSidebar 
-          users={onlineUsers} 
+          users={usersWithStatus} 
+          onlineUserIds={onlineUserIds}
           currentUserId={user?.id}
           className="w-full"
         />
@@ -647,7 +672,8 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         <div className="drawer-side z-50">
           <label htmlFor="users-drawer" aria-label="close sidebar" className="drawer-overlay"></label>
           <UsersSidebar 
-            users={onlineUsers} 
+            users={usersWithStatus} 
+            onlineUserIds={onlineUserIds}
             currentUserId={user?.id}
             className="w-64 min-h-full bg-base-200"
           />

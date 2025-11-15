@@ -194,19 +194,22 @@ serve(async (req) => {
     if (!moderationFailed && moderation) {
       const categories = moderation.results[0].category_scores ?? {};
       
-      // STRICT school-appropriate thresholds
+      // Log all scores for debugging
+      console.log(`Category scores:`, JSON.stringify(categories));
+      
+      // STRICT school-appropriate thresholds (raised from 0.2 to 0.4 to reduce false positives)
       const hardBlock =
-        (categories["sexual/minors"] ?? 0) > 0.3 ||      // Very strict for minors
-        (categories["hate/threatening"] ?? 0) > 0.3 ||
-        (categories["violence/graphic"] ?? 0) > 0.3 ||
-        (categories["sexual"] ?? 0) > 0.5 ||
-        (categories["violence"] ?? 0) > 0.5;
+        (categories["sexual/minors"] ?? 0) > 0.5 ||      // Very strict for minors
+        (categories["hate/threatening"] ?? 0) > 0.5 ||
+        (categories["violence/graphic"] ?? 0) > 0.5 ||
+        (categories["sexual"] ?? 0) > 0.7 ||
+        (categories["violence"] ?? 0) > 0.7;
         
-      // Flag if ANY concerning content (lower thresholds for school)
+      // Flag if ANY concerning content (raised thresholds to reduce false positives)
       const shouldFlag =
-        (categories["harassment"] ?? 0) > 0.2 ||        // Flag teasing/bullying
-        (categories["hate"] ?? 0) > 0.2 ||
-        (categories["illicit"] ?? 0) > 0.2;
+        (categories["harassment"] ?? 0) > 0.5 ||        // Flag teasing/bullying
+        (categories["hate"] ?? 0) > 0.5 ||
+        (categories["illicit"] ?? 0) > 0.5;
 
       if (hardBlock) {
         action = "block";
@@ -214,7 +217,7 @@ serve(async (req) => {
         action = "flag";
       }
       
-      console.log(`Score check - harassment: ${categories["harassment"]}, hate: ${categories["hate"]}, decision: ${action}`);
+      console.log(`Score check - harassment: ${categories["harassment"]}, hate: ${categories["hate"]}, illicit: ${categories["illicit"]}, decision: ${action}`);
     }
 
     if (flagged || action === "flag" || action === "block") {
@@ -252,7 +255,7 @@ serve(async (req) => {
       }
     }
 
-    // 4) Handle blocked and flagged messages - don't insert, return suggestion
+    // 4) Handle ONLY truly blocked messages - don't insert
     if (action === "block") {
       // Log moderation event but don't insert message
       if (moderation) {
@@ -274,7 +277,7 @@ serve(async (req) => {
         JSON.stringify({ 
           status: "blocked",
           reason: "Din besked indeholder upassende indhold",
-          categories: moderation.results[0].categories
+          categories: moderation?.results?.[0]?.categories
         }), 
         { 
           status: 200,
@@ -286,41 +289,7 @@ serve(async (req) => {
       );
     }
 
-    // If flagged (soft), return suggestion without inserting
-    if (action === "flag") {
-      // Log moderation event
-      if (moderation) {
-        await supabase.from("moderation_events").insert({
-          subject_type: "message",
-          subject_id: "flagged_before_insert",
-          class_id: room.class_id,
-          rule: "openai:soft_flag",
-          status: "flagged",
-          labels: moderation.results[0].categories ? 
-            Object.keys(moderation.results[0].categories).filter(
-              k => moderation.results[0].categories[k]
-            ) : [],
-          score: Math.max(...Object.values(moderation.results[0].category_scores ?? {}).map(v => Number(v) || 0))
-        });
-      }
-
-      return new Response(
-        JSON.stringify({ 
-          status: "flag",
-          suggested: suggested,
-          reason: "Message needs rephrasing"
-        }), 
-        { 
-          status: 200,
-          headers: { 
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
-          }
-        }
-      );
-    }
-
-    // 5) Insert message (RLS policies ensure user has permission)
+    // 5) Insert message (flagged messages are inserted but marked for teacher review)
     const { data: message, error: messageError } = await supabase
       .from("messages")
       .insert({
@@ -348,12 +317,29 @@ serve(async (req) => {
       );
     }
 
-    // 6) Return success response (message was allowed)
+    // 6) Log moderation event for flagged messages (after successful insert)
+    if (action === "flag" && moderation) {
+      await supabase.from("moderation_events").insert({
+        subject_type: "message",
+        subject_id: message.id, // Now we have the actual message ID
+        class_id: room.class_id,
+        rule: "openai:soft_flag",
+        status: "flagged",
+        labels: moderation.results[0].categories ? 
+          Object.keys(moderation.results[0].categories).filter(
+            k => moderation.results[0].categories[k]
+          ) : [],
+        score: Math.max(...Object.values(moderation.results[0].category_scores ?? {}).map(v => Number(v) || 0))
+      });
+    }
+
+    // 7) Return success response
     return new Response(
       JSON.stringify({ 
-        status: "allow",
+        status: action === "flag" ? "flagged" : "allow",
         message_id: message.id,
-        created_at: message.created_at
+        created_at: message.created_at,
+        suggested: action === "flag" ? suggested : undefined
       }), 
       { 
         status: 200,

@@ -1,8 +1,9 @@
 import { Slot, Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AuthProvider } from '../contexts/AuthContext';
+import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { View, Text } from 'react-native';
-import { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ErrorInfo, ReactNode, useEffect } from 'react';
+import { initializePushNotifications } from '../utils/pushNotifications';
 
 // Temporarily disable auth to debug
 const DEBUG_MODE = false;
@@ -46,6 +47,21 @@ class ErrorBoundary extends Component<
   }
 }
 
+function PushNotificationInitializer() {
+  const { user } = useAuth();
+  
+  useEffect(() => {
+    if (user?.id) {
+      console.log('Initializing push notifications for user:', user.id);
+      initializePushNotifications(user.id).catch(error => {
+        console.error('Failed to initialize push notifications:', error);
+      });
+    }
+  }, [user?.id]);
+  
+  return null;
+}
+
 export default function RootLayout() {
   console.log('RootLayout rendering...', { DEBUG_MODE });
   
@@ -53,6 +69,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ErrorBoundary>
         <AuthProvider>
+          <PushNotificationInitializer />
           <Slot />
         </AuthProvider>
       </ErrorBoundary>

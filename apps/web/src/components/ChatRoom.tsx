@@ -34,6 +34,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mainScrollRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const previousMessageCountRef = useRef(0);
@@ -85,7 +86,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
 
   // Scroll detection and management
   const checkIfAtBottom = () => {
-    const container = messagesContainerRef.current;
+    const container = mainScrollRef.current;
     if (!container) return false;
     
     const { scrollTop, scrollHeight, clientHeight } = container;
@@ -97,9 +98,9 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   };
 
   const scrollToBottom = (smooth = false) => {
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTo({
-        top: messagesContainerRef.current.scrollHeight,
+    if (mainScrollRef.current) {
+      mainScrollRef.current.scrollTo({
+        top: mainScrollRef.current.scrollHeight,
         behavior: smooth ? 'smooth' : 'auto'
       });
       setIsAtBottom(true);
@@ -363,90 +364,93 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   }
 
   return (
-    <div className="drawer lg:drawer-open h-full">
-      <input id="users-drawer" type="checkbox" className="drawer-toggle" />
-      
-      {/* Sidebar - now on the left */}
-      <div className="drawer-side z-40">
-        <label htmlFor="users-drawer" aria-label="luk sidebaren" className="drawer-overlay"></label>
+    <div className="flex flex-col lg:flex-row h-full w-full">
+      {/* Desktop Sidebar - hidden on mobile */}
+      <aside className="hidden lg:flex lg:w-64 lg:shrink-0 bg-base-200 border-r-2 border-base-content/10 overflow-y-auto">
         <UsersSidebar 
           users={onlineUsers} 
           currentUserId={user?.id}
-          className="w-64 min-h-full mt-18 lg:mt-0 border-t-0"
+          className="w-full"
         />
-      </div>
+      </aside>
 
-      {/* Main Content - Following mobile-first pattern */}
-      <div className="drawer-content flex flex-col h-full min-w-0 bg-base-100/80 backdrop-blur-sm">
-        {/* Header - sticky at top */}
-        <div className="sticky top-0 z-30 shrink-0 bg-base-100/60 border-b border-primary/10 px-4 h-[57px] flex items-center">
-          <div className="flex items-center gap-4">
-            {/* Sidebar toggle for mobile */}
-            <label htmlFor="users-drawer" className="btn btn-square btn-ghost btn-sm lg:hidden text-base-content">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </label>
-            
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="w-8 h-8 flex items-center justify-center text-base-content/60 hover:text-base-content transition-colors duration-200"
-                title="Tilbage"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Subheader */}
+        <div className="flex-none bg-base-100 border-b-2 border-base-content/10">
+          <div className="navbar">
+            <div className="navbar-start">
+              <label htmlFor="users-drawer" className="btn btn-square btn-ghost lg:hidden">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
-              </button>
-            )}
-            <div>
+              </label>
+              
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="btn btn-ghost btn-square"
+                  title="Tilbage"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            
+            <div className="navbar-center">
               <h2 className="text-lg font-light tracking-wide text-base-content">#{roomName}</h2>
             </div>
             
-            {/* DEV: Flush all messages button */}
-            <button
-              onClick={async () => {
-                if (!confirm('Delete ALL messages in this channel? This cannot be undone!')) return;
-                
-                try {
-                  // Use API route with service role access
-                  const response = await fetch('/api/dev/flush-messages', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ roomId })
-                  });
+            <div className="navbar-end">
+              {/* DEV: Flush all messages button */}
+              <button
+                onClick={async () => {
+                  if (!confirm('Delete ALL messages in this channel? This cannot be undone!')) return;
                   
-                  const data = await response.json();
-                  
-                  if (!response.ok) {
-                    console.error('Error deleting messages:', data.error);
-                    alert('Failed to delete messages: ' + data.error);
-                  } else {
-                    alert(`Deleted ${data.count} messages`);
-                    // Refresh the messages list
-                    refresh();
+                  try {
+                    const response = await fetch('/api/dev/flush-messages', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ roomId })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                      console.error('Error deleting messages:', data.error);
+                      alert('Failed to delete messages: ' + data.error);
+                    } else {
+                      alert(`Deleted ${data.count} messages`);
+                      refresh();
+                    }
+                  } catch (err) {
+                    console.error('Error:', err);
+                    alert('Failed to delete messages');
                   }
-                } catch (err) {
-                  console.error('Error:', err);
-                  alert('Failed to delete messages');
-                }
-              }}
-              className="ml-auto btn btn-square btn-sm btn-ghost text-error hover:bg-error/10"
-              title="DEV: Delete all messages"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
+                }}
+                className="btn btn-square btn-ghost text-error"
+                title="DEV: Delete all messages"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
-      {/* Messages - chat-scroll area */}
-      <div
-        ref={messagesContainerRef}
-        onScroll={handleScroll}
-        className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4 bg-transparent relative"
-      >
+        {/* Messages Area - scrollable */}
+        <div 
+          ref={mainScrollRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto bg-base-200 relative"
+        >
+          <div
+            ref={messagesContainerRef}
+            className="p-4 space-y-4 min-h-full"
+          >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="w-12 h-0.5 bg-primary/40 mb-4"></div>
@@ -479,12 +483,13 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             );
           })
         )}
+          </div>
 
         {/* Jump to Bottom Button */}
         {showScrollToBottom && (
           <button
             onClick={() => scrollToBottom(true)}
-            className="absolute bottom-6 right-6 w-10 h-10 bg-primary/90 hover:bg-primary text-primary-content flex items-center justify-center shadow-lg z-10 transition-all duration-200"
+            className="fixed bottom-24 right-6 w-10 h-10 bg-primary/90 hover:bg-primary text-primary-content flex items-center justify-center shadow-lg z-10 transition-all duration-200"
             title={unreadCount > 0 ? `${unreadCount} nye beskeder` : 'Gå til bunden'}
           >
             {unreadCount > 0 ? (
@@ -503,13 +508,11 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             )}
           </button>
         )}
-      </div>
+        </div>
 
-      {/* Bottom section - sticky at bottom with input */}
-      <div className="sticky bottom-0 z-20 shrink-0 flex flex-col">
         {/* Typing Indicator */}
         {typingUsers.length > 0 && (
-          <div className="px-4 py-2 text-xs text-base-content/40 font-mono bg-base-100/30">
+          <div className="flex-none px-4 py-2 text-xs text-base-content/40 font-mono bg-base-100/30 border-t border-base-content/10">
             {typingUsers.length === 1
               ? `${typingUsers[0]?.display_name || 'Someone'} typing...`
               : typingUsers.length === 2
@@ -520,74 +523,74 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
 
         {/* Suggestion Dialog */}
         {showSuggestion && (
-          <div className="px-4 py-4 bg-warning/5 border-t border-warning/20">
-          <div className="font-mono text-xs uppercase tracking-wider text-warning mb-3">Besked markeret</div>
-          <p className="text-sm text-base-content/70 mb-3 font-light">
-            Indhold blev markeret. Alternativ formulering:
-          </p>
-          <p className="mb-4 text-base-content/80 bg-base-200/50 p-3 rounded-none border-l-2 border-primary/40">
-            {showSuggestion}
-          </p>
-          <div className="flex gap-3">
-            <button 
-              onClick={useSuggestion}
-              className="px-4 py-2 bg-success/20 text-success text-xs font-mono uppercase tracking-wider hover:bg-success/30 transition-colors duration-200"
-            >
-              Brug forslag
-            </button>
-            <button 
-              onClick={cancelMessage}
-              className="px-4 py-2 text-base-content/60 text-xs font-mono uppercase tracking-wider hover:text-base-content transition-colors duration-200"
-            >
-              Annuller
-            </button>
+          <div className="flex-none px-4 py-4 bg-warning/5 border-t border-warning/20">
+            <div className="font-mono text-xs uppercase tracking-wider text-warning mb-3">Besked markeret</div>
+            <p className="text-sm text-base-content/70 mb-3 font-light">
+              Indhold blev markeret. Alternativ formulering:
+            </p>
+            <p className="mb-4 text-base-content/80 bg-base-200/50 p-3 rounded-none border-l-2 border-primary/40">
+              {showSuggestion}
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={useSuggestion}
+                className="px-4 py-2 bg-success/20 text-success text-xs font-mono uppercase tracking-wider hover:bg-success/30 transition-colors duration-200"
+              >
+                Brug forslag
+              </button>
+              <button 
+                onClick={cancelMessage}
+                className="px-4 py-2 text-base-content/60 text-xs font-mono uppercase tracking-wider hover:text-base-content transition-colors duration-200"
+              >
+                Annuller
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Alert notification - positioned above input */}
-      {alertMessage && (
-        <div className="flex-none px-4 pb-2">
-          <div role="alert" className={`alert alert-error bg-error/10 border border-error/30`}>
-            <div className="flex-1">
-              <div className="flex items-start gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0 stroke-current mt-0.5" fill="none" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <div className="flex-1">
-                  <div className="font-mono text-xs uppercase tracking-wider text-error mb-1">Besked blokeret</div>
-                  <div className="text-sm text-base-content/80 mb-2">{alertMessage.message}</div>
-                  {alertMessage.blockedText && (
-                    <div className="text-xs bg-base-200/50 border-l-2 border-error/40 p-2 text-base-content/60 font-mono">
-                      "{alertMessage.blockedText}"
-                    </div>
-                  )}
+        {/* Alert notification - positioned above input */}
+        {alertMessage && (
+          <div className="flex-none px-4 py-2 bg-base-200 border-t border-base-content/10">
+            <div role="alert" className={`alert alert-error bg-error/10 border border-error/30`}>
+              <div className="flex-1">
+                <div className="flex items-start gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0 stroke-current mt-0.5" fill="none" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div className="flex-1">
+                    <div className="font-mono text-xs uppercase tracking-wider text-error mb-1">Besked blokeret</div>
+                    <div className="text-sm text-base-content/80 mb-2">{alertMessage.message}</div>
+                    {alertMessage.blockedText && (
+                      <div className="text-xs bg-base-200/50 border-l-2 border-error/40 p-2 text-base-content/60 font-mono">
+                        "{alertMessage.blockedText}"
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
+              <button 
+                onClick={() => setAlertMessage(null)}
+                className="btn btn-sm btn-ghost btn-square text-error hover:bg-error/20"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            <button 
-              onClick={() => setAlertMessage(null)}
-              className="btn btn-sm btn-ghost btn-square text-error hover:bg-error/20"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Input - Always visible at bottom */}
-      <div className="px-4 py-4 border-t border-primary/10 bg-base-100/90 backdrop-blur-md">
-        {/* Image Preview */}
-        {imagePreview && (
-          <div className="mb-4 relative inline-block">
-              <img 
-                src={imagePreview} 
-                alt="Preview" 
-                className="max-h-20 border border-base-300"
-                onError={e => {
-                  e.currentTarget.onerror = null;
+        {/* Input Area - fixed at bottom */}
+        <div className="flex-none p-4 border-t-2 border-base-content/10 bg-base-100">
+          {/* Image Preview */}
+          {imagePreview && (
+            <div className="mb-4 relative inline-block">
+                <img 
+                  src={imagePreview} 
+                  alt="Preview" 
+                  className="max-h-20 border border-base-300"
+                  onError={e => {
+                    e.currentTarget.onerror = null;
                   e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'160\' height=\'80\'><rect width=\'100%\' height=\'100%\' fill=\'#f3f4f6\'/><text x=\'50%\' y=\'50%\' text-anchor=\'middle\' dy=\'.3em\' font-size=\'16\' fill=\'#9ca3af\'>Billede fejler</text></svg>';
                 }}
               />
@@ -638,6 +641,19 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       </div>
       </div>
 
+      {/* Mobile Drawer for Sidebar */}
+      <div className="drawer drawer-end lg:hidden">
+        <input id="users-drawer" type="checkbox" className="drawer-toggle" />
+        <div className="drawer-side z-50">
+          <label htmlFor="users-drawer" aria-label="close sidebar" className="drawer-overlay"></label>
+          <UsersSidebar 
+            users={onlineUsers} 
+            currentUserId={user?.id}
+            className="w-64 min-h-full bg-base-200"
+          />
+        </div>
+      </div>
+
       {/* Enlarged Image Modal - Lightbox */}
       {enlargedImageUrl && (
         <div 
@@ -679,7 +695,6 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }

@@ -67,3 +67,6 @@ export interface ApiResponse<T = unknown> {
   error?: string;
   message?: string;
 }
+
+// Notification types
+export * from './notifications';

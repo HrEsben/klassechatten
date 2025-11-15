@@ -136,7 +136,18 @@ export function useSendMessage() {
         }
       );
 
-      const result = await response.json();
+      let result;
+      const responseText = await response.text();
+      
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse response:', responseText);
+        console.error('HTTP Status:', response.status, response.statusText);
+        onOptimisticUpdate?.(actualTempId, false);
+        throw new Error(`Invalid response from server: ${responseText.slice(0, 100)}`);
+      }
+      
       console.log('Edge Function response:', result);
       console.log('HTTP Status:', response.status, response.statusText);
       

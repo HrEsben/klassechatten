@@ -6,6 +6,7 @@ import { Suspense } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ClassRoomBrowser from '@/components/ClassRoomBrowser';
 import AdminDashboard from '@/components/AdminDashboard';
+import NotificationBell from '@/components/NotificationBell';
 import { useUserClasses } from '@/hooks/useUserClasses';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { ThemeController } from '@/components/ThemeController';
@@ -31,9 +32,9 @@ function HomePage() {
   };
 
   return (
-    <div className="flex flex-col h-svh bg-base-300">
+    <div className="flex flex-col h-svh bg-base-300 overflow-hidden">
       {/* Edgy Berlin Header */}
-      <header className="sticky top-0 z-50 shrink-0 bg-base-100 border-b-2 border-base-content/10">
+      <header className="flex-none bg-base-100 border-b-2 border-base-content/10 z-50">
         <div className="w-full px-4 lg:px-0 lg:grid lg:grid-cols-[256px_1fr]">
           <div className="flex items-center justify-between py-4 lg:justify-end lg:pl-12">
             {/* Logo/Brand with accent bar - right aligned on desktop */}
@@ -104,7 +105,8 @@ function HomePage() {
             </div>
 
             {/* Mobile menu button - shows user controls */}
-            <div className="lg:hidden">
+            <div className="lg:hidden flex items-center gap-2">
+              <NotificationBell />
               <button
                 onClick={handleSignOut}
                 className="btn btn-sm bg-base-content text-base-100 hover:bg-primary hover:text-primary-content"
@@ -202,6 +204,9 @@ function HomePage() {
               </span>
             </div>
             
+            {/* Notification Bell */}
+            <NotificationBell />
+            
             {/* Logout Button */}
             <button
               onClick={handleSignOut}
@@ -214,23 +219,40 @@ function HomePage() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 min-h-0 bg-base-300">
-        <div className={`h-full ${isInChatRoom ? '' : 'overflow-y-auto w-full max-w-7xl mx-auto px-12 py-8'}`}>
-          <Suspense fallback={
-            <div className="flex justify-center items-center min-h-[60vh]">
-              <div className="flex flex-col items-center gap-4">
-                <span className="loading loading-ball loading-lg text-primary"></span>
-                <p className="text-base-content/60 font-medium">Indlæser...</p>
+      <main className="flex-1 bg-base-300 overflow-hidden min-h-0">
+        {isInChatRoom ? (
+          <div className="h-full w-full">
+            <Suspense fallback={
+              <div className="flex justify-center items-center min-h-[60vh]">
+                <div className="flex flex-col items-center gap-4">
+                  <span className="loading loading-ball loading-lg text-primary"></span>
+                  <p className="text-base-content/60 font-medium">Indlæser...</p>
+                </div>
               </div>
+            }>
+              {profile?.role === 'admin' ? <AdminDashboard /> : <ClassRoomBrowser />}
+            </Suspense>
+          </div>
+        ) : (
+          <div className="h-full overflow-y-auto">
+            <div className="w-full max-w-7xl mx-auto px-12 py-8">
+              <Suspense fallback={
+                <div className="flex justify-center items-center min-h-[60vh]">
+                  <div className="flex flex-col items-center gap-4">
+                    <span className="loading loading-ball loading-lg text-primary"></span>
+                    <p className="text-base-content/60 font-medium">Indlæser...</p>
+                  </div>
+                </div>
+              }>
+                {profile?.role === 'admin' ? <AdminDashboard /> : <ClassRoomBrowser />}
+              </Suspense>
             </div>
-          }>
-            {profile?.role === 'admin' ? <AdminDashboard /> : <ClassRoomBrowser />}
-          </Suspense>
-        </div>
+          </div>
+        )}
       </main>
 
       {/* Footer with geometric pattern - hidden on small screens, shown on md+ */}
-      <footer className="hidden md:block shrink-0 bg-base-100 border-t-2 border-base-content/10 relative z-50">
+      <footer className="hidden md:flex md:flex-none bg-base-100 border-t-2 border-base-content/10 z-50">
         <div className="w-full px-12 py-4 lg:grid lg:grid-cols-[256px_1fr] lg:px-0">
           <div className="flex justify-between items-center lg:flex-col lg:items-end">
             <div className="text-xs font-mono text-base-content/40 uppercase tracking-wider">

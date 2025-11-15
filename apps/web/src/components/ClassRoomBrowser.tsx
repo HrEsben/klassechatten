@@ -92,7 +92,7 @@ export default function ClassRoomBrowser() {
   // If a room is selected, show the chat
   if (selectedRoomId) {
     return (
-      <div className="h-full bg-base-300">
+      <div className="h-full w-full bg-base-300">
         <ChatRoom 
           roomId={selectedRoomId}
           onBack={handleBack}
@@ -102,7 +102,8 @@ export default function ClassRoomBrowser() {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full h-full overflow-y-auto">
+      <div className="w-full max-w-7xl mx-auto px-12 py-8">
       {/* Current Class Header */}
       {selectedClass && (
         <div className="mb-12">
@@ -167,6 +168,7 @@ export default function ClassRoomBrowser() {
           ))}
         </div>
       ) : null}
+      </div>
     </div>
   );
 }

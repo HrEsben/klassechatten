@@ -18,6 +18,11 @@ interface ClassWithRooms {
   grade_level: number;
   school_name?: string;
   rooms: ClassRoom[];
+  is_class_admin?: boolean;
+  user_role?: 'child' | 'guardian' | 'adult';
+  nickname?: string;
+  moderation_level?: 'strict' | 'moderate' | 'relaxed';
+  profanity_filter_enabled?: boolean;
 }
 
 export function useUserClasses() {
@@ -42,10 +47,15 @@ export function useUserClasses() {
         .from('class_members')
         .select(`
           class_id,
+          role_in_class,
+          is_class_admin,
           classes (
             id,
             label,
             grade_level,
+            nickname,
+            moderation_level,
+            profanity_filter_enabled,
             schools (
               name
             )
@@ -79,6 +89,9 @@ export function useUserClasses() {
           id: string;
           label: string;
           grade_level: number;
+          nickname?: string;
+          moderation_level?: 'strict' | 'moderate' | 'relaxed';
+          profanity_filter_enabled?: boolean;
           schools?: { name: string };
         };
         const classRooms = rooms?.filter(r => r.class_id === membership.class_id) || [];
@@ -89,6 +102,11 @@ export function useUserClasses() {
           grade_level: classData.grade_level,
           school_name: classData.schools?.name,
           rooms: classRooms,
+          is_class_admin: membership.is_class_admin ?? false,
+          user_role: membership.role_in_class,
+          nickname: classData.nickname,
+          moderation_level: classData.moderation_level || 'moderate',
+          profanity_filter_enabled: classData.profanity_filter_enabled ?? true,
         };
       });
 

@@ -54,10 +54,15 @@ serve(async (req) => {
       });
     }
 
-    // 1) Resolve room + verify it's not locked
+    // 1) Resolve room + verify it's not locked + get class moderation settings
     const { data: room, error: roomError } = await supabase
       .from("rooms")
-      .select("id, class_id, is_locked")
+      .select(`
+        id, 
+        class_id, 
+        is_locked,
+        classes!inner(moderation_level, profanity_filter_enabled)
+      `)
       .eq("id", room_id)
       .single();
 
@@ -81,8 +86,14 @@ serve(async (req) => {
       });
     }
 
-    // 2) Danish profanity filter (catches common Danish curse words)
-    const danishProfanity = [
+    // Get moderation settings from class
+    const moderationLevel = (room as any).classes?.moderation_level || 'moderate';
+    const profanityFilterEnabled = (room as any).classes?.profanity_filter_enabled ?? true;
+    console.log(`Class moderation level: ${moderationLevel}, profanity filter: ${profanityFilterEnabled}`);
+
+    // 2) Danish profanity filter (optional - only if enabled for this class)
+    if (profanityFilterEnabled && body) {
+      const danishProfanity = [
       // Strong curse words
       'fuck', 'fck', 'fucking', 'fucker', 'fuckface',
       'shit', 'skit', 'lort',
@@ -109,7 +120,6 @@ serve(async (req) => {
       'jackass', 'dumbass', 'shithead', 'motherfucker'
     ];
 
-    if (body) {
       const lowerBody = body.toLowerCase();
       const foundProfanity = danishProfanity.find(word => {
         // Match whole words or words with punctuation/spaces around them
@@ -197,19 +207,37 @@ serve(async (req) => {
       // Log all scores for debugging
       console.log(`Category scores:`, JSON.stringify(categories));
       
-      // STRICT school-appropriate thresholds (raised from 0.2 to 0.4 to reduce false positives)
+      // Dynamic thresholds based on class moderation level
+      let hardBlockThresholds = { sexual_minors: 0.5, hate_threatening: 0.5, violence_graphic: 0.5, sexual: 0.7, violence: 0.7 };
+      let flagThresholds = { harassment: 0.5, hate: 0.5, illicit: 0.5 };
+      
+      if (moderationLevel === 'strict') {
+        // Strict: Lower thresholds, blocks more content
+        hardBlockThresholds = { sexual_minors: 0.3, hate_threatening: 0.3, violence_graphic: 0.3, sexual: 0.5, violence: 0.5 };
+        flagThresholds = { harassment: 0.3, hate: 0.3, illicit: 0.3 };
+        console.log('Using STRICT moderation thresholds');
+      } else if (moderationLevel === 'relaxed') {
+        // Relaxed: Higher thresholds, allows more content
+        hardBlockThresholds = { sexual_minors: 0.7, hate_threatening: 0.7, violence_graphic: 0.7, sexual: 0.9, violence: 0.9 };
+        flagThresholds = { harassment: 0.7, hate: 0.7, illicit: 0.7 };
+        console.log('Using RELAXED moderation thresholds');
+      } else {
+        // Moderate (default): Balanced thresholds
+        console.log('Using MODERATE moderation thresholds');
+      }
+      
       const hardBlock =
-        (categories["sexual/minors"] ?? 0) > 0.5 ||      // Very strict for minors
-        (categories["hate/threatening"] ?? 0) > 0.5 ||
-        (categories["violence/graphic"] ?? 0) > 0.5 ||
-        (categories["sexual"] ?? 0) > 0.7 ||
-        (categories["violence"] ?? 0) > 0.7;
+        (categories["sexual/minors"] ?? 0) > hardBlockThresholds.sexual_minors ||
+        (categories["hate/threatening"] ?? 0) > hardBlockThresholds.hate_threatening ||
+        (categories["violence/graphic"] ?? 0) > hardBlockThresholds.violence_graphic ||
+        (categories["sexual"] ?? 0) > hardBlockThresholds.sexual ||
+        (categories["violence"] ?? 0) > hardBlockThresholds.violence;
         
-      // Flag if ANY concerning content (raised thresholds to reduce false positives)
+      // Flag if ANY concerning content
       const shouldFlag =
-        (categories["harassment"] ?? 0) > 0.5 ||        // Flag teasing/bullying
-        (categories["hate"] ?? 0) > 0.5 ||
-        (categories["illicit"] ?? 0) > 0.5;
+        (categories["harassment"] ?? 0) > flagThresholds.harassment ||
+        (categories["hate"] ?? 0) > flagThresholds.hate ||
+        (categories["illicit"] ?? 0) > flagThresholds.illicit;
 
       if (hardBlock) {
         action = "block";

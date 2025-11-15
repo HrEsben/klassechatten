@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUserClasses } from '@/hooks/useUserClasses';
 import { useUnreadCounts } from '@/hooks/useUnreadCounts';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import ChatRoom from './ChatRoom';
 
 export default function ClassRoomBrowser() {
@@ -13,6 +14,9 @@ export default function ClassRoomBrowser() {
   const { getCountForRoom } = useUnreadCounts();
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  
+  // Get user profile to check admin status
+  const { profile } = useUserProfile(selectedClassId || undefined);
 
   // Initialize from URL params
   useEffect(() => {
@@ -55,6 +59,9 @@ export default function ClassRoomBrowser() {
 
   // Get currently selected class
   const selectedClass = classes.find(c => c.id === selectedClassId);
+  
+  // Check if user can access settings (global admin or class admin)
+  const canAccessSettings = profile?.role === 'admin' || selectedClass?.is_class_admin;
 
   if (loading) {
     return (
@@ -105,15 +112,28 @@ export default function ClassRoomBrowser() {
 
   return (
     <div className="w-full h-full overflow-y-auto">
-      <div className="w-full max-w-7xl mx-auto px-12 py-8">
+      <div className="w-full max-w-7xl mx-auto px-0 sm:px-8 lg:px-12 py-8">
       {/* Current Class Header */}
       {selectedClass && (
         <div className="mb-12">
           <div className="flex items-center gap-4 mb-2">
             <h2 className="text-4xl font-black uppercase tracking-tight text-base-content">
-              {selectedClass.label}
+              {selectedClass.nickname || selectedClass.label}
             </h2>
             <div className="flex-1 h-px bg-base-content/10"></div>
+            {/* Settings icon for admins and class admins */}
+            {canAccessSettings && (
+              <button
+                onClick={() => router.push(`/class/${selectedClass.id}/settings`)}
+                className="btn btn-ghost btn-square"
+                aria-label="Indstillinger"
+              >
+                <svg className="w-6 h-6 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+            )}
           </div>
           <p className="text-xs font-mono uppercase tracking-wider text-base-content/40">
             {selectedClass.rooms.length} {selectedClass.rooms.length === 1 ? 'Kanal' : 'Kanaler'}

@@ -6,7 +6,7 @@ import { Suspense } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ClassRoomBrowser from '@/components/ClassRoomBrowser';
 import AdminDashboard from '@/components/AdminDashboard';
-import NotificationBell from '@/components/NotificationBell';
+import UserMenu from '@/components/UserMenu';
 import { useUserClasses } from '@/hooks/useUserClasses';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { ThemeController } from '@/components/ThemeController';
@@ -79,7 +79,7 @@ function HomePage() {
                             <path strokeLinecap="square" strokeLinejoin="miter" d="M19 9l-7 7-7-7" />
                           </svg>
                         </div>
-                        <ul tabIndex={-1} className="dropdown-content menu bg-base-100 rounded-none border border-base-content/20 z-1 w-48 p-2 shadow-lg mt-1">
+                        <ul tabIndex={-1} className="dropdown-content menu bg-base-100 rounded-none border border-base-content/20 z-1 w-screen max-w-xs sm:w-48 p-2 shadow-lg mt-1">
                           {selectedClass.rooms.map((room) => (
                             <li key={room.id}>
                               <button
@@ -106,13 +106,11 @@ function HomePage() {
 
             {/* Mobile menu button - shows user controls */}
             <div className="lg:hidden flex items-center gap-2">
-              <NotificationBell />
-              <button
-                onClick={handleSignOut}
-                className="btn btn-sm bg-base-content text-base-100 hover:bg-primary hover:text-primary-content"
-              >
-                Log Ud
-              </button>
+              <UserMenu 
+                userName={profile?.display_name || user?.user_metadata?.display_name || user?.email}
+                userRole={roleLabel + (isClassAdmin ? ' ⊕' : '')}
+                avatarUrl={profile?.avatar_url}
+              />
             </div>
           </div>
           
@@ -170,7 +168,7 @@ function HomePage() {
                         <path strokeLinecap="square" strokeLinejoin="miter" d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
-                    <ul tabIndex={-1} className="dropdown-content menu bg-base-100 rounded-none border-2 border-base-content/10 z-1 w-52 p-2 shadow-lg mt-2">
+                    <ul tabIndex={-1} className="dropdown-content menu bg-base-100 rounded-none border-2 border-base-content/10 z-1 w-screen max-w-xs sm:w-52 p-2 shadow-lg mt-2">
                       {selectedClass.rooms.map((room) => (
                         <li key={room.id}>
                           <button
@@ -204,16 +202,12 @@ function HomePage() {
               </span>
             </div>
             
-            {/* Notification Bell */}
-            <NotificationBell />
-            
-            {/* Logout Button */}
-            <button
-              onClick={handleSignOut}
-              className="btn bg-base-content text-base-100 hover:bg-primary hover:text-primary-content"
-            >
-              Log Ud
-            </button>
+            {/* User Menu with Notifications and Logout */}
+            <UserMenu 
+              userName={profile?.display_name || user?.user_metadata?.display_name || user?.email}
+              userRole={roleLabel + (isClassAdmin ? ' ⊕' : '')}
+              avatarUrl={profile?.avatar_url}
+            />
           </div>
         </div>
       </header>

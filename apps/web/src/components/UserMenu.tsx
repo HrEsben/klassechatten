@@ -4,8 +4,15 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { da } from 'date-fns/locale';
+import { supabase } from '@/lib/supabase';
 
-export default function NotificationBell() {
+interface UserMenuProps {
+  userName: string | null | undefined;
+  userRole: string;
+  avatarUrl?: string | null;
+}
+
+export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProps) {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const router = useRouter();
 
@@ -22,6 +29,11 @@ export default function NotificationBell() {
 
     // Close dropdown
     (document.activeElement as HTMLElement)?.blur();
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
   };
 
   const getNotificationIcon = (type: string) => {
@@ -61,57 +73,79 @@ export default function NotificationBell() {
     }
   };
 
+  // Get user initials for avatar placeholder
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return '?';
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
-    <div className="dropdown dropdown-end sm:dropdown-end">
-      {/* Bell Button with Badge */}
-      <div tabIndex={0} role="button" className="btn btn-ghost btn-square relative">
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-          <path strokeLinecap="square" strokeLinejoin="miter" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-        </svg>
-        
-        {/* Badge */}
+    <div className="dropdown dropdown-end">
+      {/* Avatar Button with Badge */}
+      <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
+        <div className="w-10 rounded-full">
+          {avatarUrl ? (
+            <img alt={userName || 'User'} src={avatarUrl} />
+          ) : (
+            <div className="bg-primary text-primary-content w-full h-full flex items-center justify-center font-black text-sm">
+              {getInitials(userName)}
+            </div>
+          )}
+        </div>
+        {/* Unread Badge */}
         {unreadCount > 0 && (
-          <span className="indicator-item badge badge-primary badge-sm font-bold">
+          <span className="indicator-item badge badge-primary badge-sm font-bold absolute -top-1 -right-1">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </div>
 
-      {/* Dropdown Content */}
-      <div
+      {/* Dropdown Menu */}
+      <ul
         tabIndex={-1}
-        className="dropdown-content menu bg-base-100 border-2 border-base-content/10 z-50 w-80 sm:w-md shadow-lg mt-2"
-        style={{ maxHeight: '32rem', left: '50%', transform: 'translateX(-50%)', right: 'auto' }}
+        className="menu menu-sm dropdown-content bg-base-100 border-2 border-base-content/10 z-50 w-80 sm:w-md shadow-lg mt-3 p-0"
+        style={{ maxHeight: '32rem' }}
       >
-        {/* Header */}
-        <div className="sticky top-0 bg-base-100 border-b-2 border-base-content/10 px-4 py-3 flex items-center justify-between z-10">
-          <h3 className="text-sm font-black uppercase tracking-tight text-base-content">
-            Notifikationer
-          </h3>
-          {unreadCount > 0 && (
-            <button
-              onClick={markAllAsRead}
-              className="text-xs font-bold uppercase tracking-widest text-primary hover:text-primary-focus"
-            >
-              Markér alle som læst
-            </button>
-          )}
-        </div>
+        {/* User Info Header */}
+        <li className="menu-title border-b-2 border-base-content/10 px-4 py-3">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-black uppercase tracking-tight text-base-content">
+              {userName || 'Bruger'}
+            </span>
+            <span className="text-xs font-mono uppercase tracking-wider text-base-content/50">
+              {userRole}
+            </span>
+          </div>
+        </li>
 
-        {/* Notifications List */}
-        <div className="overflow-y-auto" style={{ maxHeight: '28rem' }}>
-          {notifications.length === 0 ? (
-            <div className="p-8 text-center">
-              <svg className="w-12 h-12 stroke-current text-base-content/30 mx-auto mb-3" fill="none" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="square" strokeLinejoin="miter" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              <p className="text-sm text-base-content/60">
-                Ingen notifikationer endnu
-              </p>
-            </div>
-          ) : (
-            <ul className="menu p-0">
-              {notifications.map((notification) => (
+        {/* Notifications Section */}
+        {notifications.length > 0 && (
+          <>
+            <li className="menu-title border-b-2 border-base-content/10 px-4 py-2 flex flex-row items-center justify-between">
+              <span className="text-xs font-black uppercase tracking-tight text-base-content">
+                Notifikationer
+              </span>
+              {unreadCount > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    markAllAsRead();
+                  }}
+                  className="text-xs font-bold uppercase tracking-widest text-primary hover:text-primary-focus"
+                >
+                  Markér alle
+                </button>
+              )}
+            </li>
+            
+            {/* Notifications List - Scrollable */}
+            <div className="overflow-y-auto" style={{ maxHeight: '16rem' }}>
+              {notifications.slice(0, 5).map((notification) => (
                 <li key={notification.id}>
                   <button
                     onClick={() => handleNotificationClick(notification)}
@@ -155,10 +189,25 @@ export default function NotificationBell() {
                   </button>
                 </li>
               ))}
-            </ul>
-          )}
-        </div>
-      </div>
+            </div>
+            
+            <li className="border-t-2 border-base-content/10"></li>
+          </>
+        )}
+
+        {/* Logout Option */}
+        <li>
+          <button
+            onClick={handleSignOut}
+            className="px-4 py-3 hover:bg-error/10 hover:text-error font-medium"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="square" strokeLinejoin="miter" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Log Ud
+          </button>
+        </li>
+      </ul>
     </div>
   );
 }

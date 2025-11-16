@@ -18,24 +18,11 @@ interface ClassData {
 export default function ClassSettingsPage(props: { params: Promise<{ id: string }> }) {
   // Unwrap params using React.use() - Next.js 15/16 pattern for client components
   const params = use(props.params);
-  let classId = params.id;
-  
-  // Fix for iOS Safari where Next.js 16 wraps params in %%drp:id:...%% format
-  if (classId && classId.includes('%%drp:id:')) {
-    // Extract everything between %%drp:id: and %% - should be the full UUID
-    const match = classId.match(/%%drp:id:([^%]+)%%/);
-    if (match) {
-      classId = match[1];
-      console.log('Extracted classId from drp format:', classId);
-    }
-  }
+  const classId = params.id;
   
   const router = useRouter();
   const { user } = useAuth();
   const { profile } = useUserProfile(classId);
-  
-  // Debug log
-  console.log('ClassSettingsPage classId:', classId, 'type:', typeof classId);
   
   const [classData, setClassData] = useState<ClassData | null>(null);
   const [nickname, setNickname] = useState('');

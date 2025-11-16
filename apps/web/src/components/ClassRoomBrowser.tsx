@@ -124,7 +124,11 @@ export default function ClassRoomBrowser() {
             {/* Settings icon for admins and class admins */}
             {canAccessSettings && (
               <button
-                onClick={() => router.push(`/class/${selectedClass.id}/settings`)}
+                onClick={() => {
+                  console.log('[ClassRoomBrowser] Navigating to settings with class ID:', selectedClass.id);
+                  console.log('[ClassRoomBrowser] Full selectedClass object:', selectedClass);
+                  router.push(`/class/${selectedClass.id}/settings`);
+                }}
                 className="btn btn-ghost btn-square"
                 aria-label="Indstillinger"
               >

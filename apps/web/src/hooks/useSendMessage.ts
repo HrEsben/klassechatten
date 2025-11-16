@@ -4,12 +4,13 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
 interface SendMessageResult {
-  status: 'allow' | 'flag' | 'block' | 'blocked';
+  status: 'allow' | 'flag' | 'flagged' | 'block' | 'blocked' | 'requires_confirmation';
   message_id?: number;
   suggested?: string;
   warning?: string;
   reason?: string;
   error?: string;
+  original_message?: string;
 }
 
 interface OptimisticMessage {
@@ -77,7 +78,8 @@ export function useSendMessage() {
     imageUrl?: string,
     replyTo?: number,
     onOptimisticAdd?: (message: OptimisticMessage) => void,
-    onOptimisticUpdate?: (tempId: string, success: boolean) => void
+    onOptimisticUpdate?: (tempId: string, success: boolean) => void,
+    forceSend?: boolean  // New parameter to bypass confirmation
   ): Promise<SendMessageResult> => {
     setSending(true);
     
@@ -88,7 +90,58 @@ export function useSendMessage() {
         throw new Error('Not authenticated');
       }
 
-      // Create optimistic message
+      const payload = { 
+        room_id: roomId, 
+        body: body || null,
+        image_url: imageUrl || null,
+        reply_to: replyTo,
+        check_only: !forceSend,  // Check first unless force_send is true
+        force_send: forceSend    // Only send if user confirmed
+      };
+      
+      console.log('Sending message payload:', payload);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create_message`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      let result;
+      const responseText = await response.text();
+      
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse response:', responseText);
+        console.error('HTTP Status:', response.status, response.statusText);
+        setSending(false);
+        throw new Error(`Invalid response from server: ${responseText.slice(0, 100)}`);
+      }
+      
+      console.log('Edge Function response:', result);
+      console.log('HTTP Status:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        console.error('Edge Function error:', result);
+        console.error('Full response:', response);
+        setSending(false);
+        throw new Error(result.error || result.reason || 'Failed to send message');
+      }
+
+      // If requires confirmation, return without adding optimistic message
+      if (result.status === 'requires_confirmation') {
+        setSending(false);
+        return result;
+      }
+
+      // Create optimistic message only after confirmation (or if no confirmation needed)
       const tempId = `temp-${Date.now()}-${Math.random()}`;
       const optimisticMessage: OptimisticMessage = {
         room_id: roomId,
@@ -115,56 +168,18 @@ export function useSendMessage() {
       // Reset sending state immediately after optimistic message is added
       setSending(false);
 
-      const payload = { 
-        room_id: roomId, 
-        body: body || null,
-        image_url: imageUrl || null,
-        reply_to: replyTo 
-      };
-      
-      console.log('Sending message payload:', payload);
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create_message`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      let result;
-      const responseText = await response.text();
-      
-      try {
-        result = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('Failed to parse response:', responseText);
-        console.error('HTTP Status:', response.status, response.statusText);
-        onOptimisticUpdate?.(actualTempId, false);
-        throw new Error(`Invalid response from server: ${responseText.slice(0, 100)}`);
-      }
-      
-      console.log('Edge Function response:', result);
-      console.log('HTTP Status:', response.status, response.statusText);
-      
-      if (!response.ok) {
-        console.error('Edge Function error:', result);
-        console.error('Full response:', response);
-        // Mark optimistic message as failed
-        onOptimisticUpdate?.(actualTempId, false);
-        throw new Error(result.error || result.reason || 'Failed to send message');
-      }
-
       // Update optimistic message with success
-      if (result.status === 'allow' && result.message_id) {
+      if ((result.status === 'allow' || result.status === 'flagged') && result.message_id) {
         // Remove optimistic message - real message will come via realtime
         onOptimisticUpdate?.(actualTempId, true);
+        
+        // Show warning for flagged messages
+        if (result.status === 'flagged' && result.warning) {
+          console.warn('Message flagged:', result.warning);
+          // Optionally show a toast notification to the user
+        }
       } else {
-        // Remove optimistic message for non-successful sends (blocked, flagged, etc.)
+        // Remove optimistic message for non-successful sends
         onOptimisticUpdate?.(actualTempId, false);
       }
 

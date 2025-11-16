@@ -111,13 +111,13 @@ export default function ClassRoomBrowser() {
   }
 
   return (
-    <div className="w-full h-full overflow-y-auto">
-      <div className="w-full max-w-7xl mx-auto px-0 sm:px-8 lg:px-12 py-8">
+    <div className="w-full h-full overflow-y-auto overflow-x-hidden">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8">
       {/* Current Class Header */}
       {selectedClass && (
         <div className="mb-12">
           <div className="flex items-center gap-4 mb-2">
-            <h2 className="text-4xl font-black uppercase tracking-tight text-base-content">
+            <h2 className="text-4xl font-black uppercase tracking-tight text-base-content truncate">
               {selectedClass.nickname || selectedClass.label}
             </h2>
             <div className="flex-1 h-px bg-base-content/10"></div>
@@ -157,15 +157,15 @@ export default function ClassRoomBrowser() {
           </div>
         </div>
       ) : selectedClass ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {selectedClass.rooms.map((room) => {
             const unreadCount = getCountForRoom(room.id);
             
             return (
-              <div key={room.id} className="indicator w-full">
+              <div key={room.id} className="relative w-full min-w-0">
                 {/* Unread badge - only show if count > 0 */}
                 {unreadCount > 0 && (
-                  <span className="indicator-item badge badge-primary badge-sm font-bold">
+                  <span className="absolute -top-2 -right-2 badge badge-primary badge-sm font-bold z-10">
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </span>
                 )}
@@ -173,23 +173,23 @@ export default function ClassRoomBrowser() {
                 <button
                   onClick={() => handleSelectRoom(room.id)}
                   disabled={room.is_locked}
-                  className="relative group text-left bg-base-100 border-2 border-base-content/10 hover:border-primary/50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-base-content/10 transition-all duration-200 overflow-hidden w-full"
+                  className="relative group text-left bg-base-100 border-2 border-base-content/10 hover:border-primary/50 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-base-content/10 transition-all duration-200 overflow-hidden w-full min-w-0"
                 >
                   {/* Accent bar */}
                   <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
                   
-                  <div className="px-8 py-6 pl-10">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-black uppercase tracking-tight text-base-content">
+                  <div className="px-4 py-6 pl-6 sm:px-8 sm:pl-10">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-base sm:text-lg font-black uppercase tracking-tight text-base-content truncate min-w-0">
                         # {room.name}
                       </h3>
                       {room.is_locked ? (
-                        <svg className="w-5 h-5 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <svg className="w-5 h-5 text-base-content/40 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                           <path strokeLinecap="square" strokeLinejoin="miter" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
                       ) : (
                         <svg 
-                          className="w-5 h-5 text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-200" 
+                          className="w-5 h-5 text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-200 shrink-0" 
                           fill="none" 
                           stroke="currentColor" 
                           viewBox="0 0 24 24"

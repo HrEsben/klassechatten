@@ -24,6 +24,8 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   const [showSuggestion, setShowSuggestion] = useState<string | null>(null);
   const [alertMessage, setAlertMessage] = useState<{ type: 'error' | 'warning' | 'success' | 'info', message: string, blockedText?: string } | null>(null);
   const [roomName, setRoomName] = useState<string>('Chat Room');
+  const [showFlagConfirmation, setShowFlagConfirmation] = useState<{ warning: string, suggested?: string, originalMessage: string } | null>(null);
+  const [pendingMessage, setPendingMessage] = useState<{ text?: string, imageUrl?: string } | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -272,7 +274,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     }
   };
 
-  const handleSend = async () => {
+  const handleSend = async (forceSend = false) => {
     if (!messageText.trim() && !selectedImage) return;
 
     // Stop typing indicator
@@ -311,22 +313,27 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         // Always scroll to bottom when sending a message
         setTimeout(() => scrollToBottom(false), 50);
       },
-      updateOptimisticMessage
+      updateOptimisticMessage,
+      forceSend  // Pass force_send flag
     );
 
-    if (result.status === 'block' || result.status === 'blocked') {
-      // Remove the optimistic message from UI
-      if (optimisticMessageId) {
-        updateOptimisticMessage(optimisticMessageId, true); // true = remove message
-      }
-      setAlertMessage({
-        type: 'error',
-        message: 'Din besked blev blokeret på grund af upassende indhold',
-        blockedText: messageText.trim()
+    // If message requires confirmation, show confirmation modal
+    if (result.status === 'requires_confirmation') {
+      setShowFlagConfirmation({
+        warning: result.warning || 'Din besked indeholder muligt upassende indhold.',
+        suggested: result.suggested,
+        originalMessage: result.original_message || messageText.trim()
+      });
+      setPendingMessage({
+        text: messageText.trim() || undefined,
+        imageUrl: imageUrl || undefined
       });
       return;
     }
 
+    // Messages are never blocked, only flagged
+    // The flag indicator will show on the message itself
+    
     if (result.status === 'flag' && result.suggested) {
       setShowSuggestion(result.suggested);
       return;
@@ -336,6 +343,28 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     if (result.message_id) {
       setShowSuggestion(null);
     }
+  };
+
+  const handleConfirmFlaggedMessage = async () => {
+    if (!pendingMessage) return;
+
+    // Close confirmation modal
+    setShowFlagConfirmation(null);
+
+    // Send message with force_send = true
+    await handleSend(true);
+    
+    // Clear pending message
+    setPendingMessage(null);
+  };
+
+  const handleCancelFlaggedMessage = () => {
+    // Close confirmation modal without sending
+    setShowFlagConfirmation(null);
+    setPendingMessage(null);
+    
+    // Keep the message text so user can edit it
+    // Already in messageText state
   };
 
   const useSuggestion = async () => {
@@ -573,29 +602,23 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           </div>
         )}
 
-        {/* Alert notification - positioned above input */}
+        {/* Alert notification - for upload errors and warnings only */}
         {alertMessage && (
           <div className="flex-none px-4 py-2 bg-base-200 border-t border-base-content/10">
-            <div role="alert" className={`alert alert-error bg-error/10 border border-error/30`}>
+            <div role="alert" className={`alert ${alertMessage.type === 'error' ? 'alert-error' : 'alert-warning'} alert-soft`}>
               <div className="flex-1">
                 <div className="flex items-start gap-3">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0 stroke-current mt-0.5" fill="none" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                   <div className="flex-1">
-                    <div className="font-mono text-xs uppercase tracking-wider text-error mb-1">Besked blokeret</div>
-                    <div className="text-sm text-base-content/80 mb-2">{alertMessage.message}</div>
-                    {alertMessage.blockedText && (
-                      <div className="text-xs bg-base-200/50 border-l-2 border-error/40 p-2 text-base-content/60 font-mono">
-                        "{alertMessage.blockedText}"
-                      </div>
-                    )}
+                    <div className="text-sm text-base-content/80">{alertMessage.message}</div>
                   </div>
                 </div>
               </div>
               <button 
                 onClick={() => setAlertMessage(null)}
-                className="btn btn-sm btn-ghost btn-square text-error hover:bg-error/20"
+                className="btn btn-sm btn-ghost btn-square hover:bg-base-content/10"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -656,7 +679,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             className="input input-bordered join-item flex-1"
           />
           <button
-            onClick={handleSend}
+            onClick={() => handleSend()}
             disabled={sending || uploading || (!messageText.trim() && !selectedImage)}
             className="btn btn-primary join-item"
           >
@@ -667,7 +690,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       </div>
 
       {/* Mobile Drawer for Sidebar */}
-      <div className="drawer drawer-end lg:hidden">
+      <div className="drawer lg:hidden">
         <input id="users-drawer" type="checkbox" className="drawer-toggle" />
         <div className="drawer-side z-50">
           <label htmlFor="users-drawer" aria-label="close sidebar" className="drawer-overlay"></label>
@@ -686,40 +709,93 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           onClick={() => setEnlargedImageUrl(null)}
           className="fixed inset-0 bg-black/95 flex flex-col justify-center items-center z-50 cursor-pointer backdrop-blur-sm"
         >
-          {/* Close button */}
           <button
             onClick={() => setEnlargedImageUrl(null)}
-            className="absolute top-4 right-4 w-12 h-12 flex items-center justify-center text-white/80 hover:text-white bg-black/50 hover:bg-black/70 transition-all duration-200"
-            title="Luk (ESC)"
+            className="absolute top-6 right-6 btn btn-circle btn-ghost text-white hover:bg-white/20"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-
-          {/* Image container */}
-          <div
+          
+          <img
+            src={enlargedImageUrl}
+            alt="Enlarged view"
+            className="max-w-[95vw] max-h-[95vh] object-contain"
             onClick={(e) => e.stopPropagation()}
-            className="relative max-w-[95vw] max-h-[95vh] flex justify-center items-center p-4"
-          >
-            {enlargedImageUrl && (
-              <img 
-                src={enlargedImageUrl}
-                alt="Enlarged view"
-                className="max-w-full max-h-[90vh] object-contain shadow-2xl"
-                onError={e => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'><rect width=\'100%\' height=\'100%\' fill=\'#111827\'/><text x=\'50%\' y=\'50%\' text-anchor=\'middle\' dy=\'.3em\' font-size=\'24\' fill=\'#9ca3af\'>Billede fejler</text></svg>';
-                }}
-              />
-            )}
-          </div>
-
-          {/* Instructions */}
-          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-white/60 text-sm font-light">
-            Klik for at lukke
-          </div>
+          />
         </div>
+      )}
+
+      {/* Flag Confirmation Modal */}
+      {showFlagConfirmation && (
+        <dialog open className="modal modal-open">
+          <div className="modal-box border-2 border-warning/20 bg-base-100">
+            {/* Warning Header */}
+            <div className="flex items-start gap-4 mb-6">
+              <div className="w-12 h-12 bg-warning/20 flex items-center justify-center shrink-0">
+                <svg className="w-6 h-6 text-warning" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-2">
+                  Advarsel om indhold
+                </h3>
+                <p className="text-sm text-base-content/70">
+                  {showFlagConfirmation.warning}
+                </p>
+              </div>
+            </div>
+
+            {/* Original Message */}
+            <div className="bg-base-200/50 border-2 border-base-content/10 p-4 mb-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-base-content/50 mb-2">
+                Din besked:
+              </p>
+              <p className="text-sm text-base-content whitespace-pre-wrap">
+                {showFlagConfirmation.originalMessage}
+              </p>
+            </div>
+
+            {/* Suggested Alternative (if available) */}
+            {showFlagConfirmation.suggested && showFlagConfirmation.suggested !== 'BLOCK' && (
+              <div className="bg-success/10 border-2 border-success/20 p-4 mb-4">
+                <p className="text-xs font-bold uppercase tracking-widest text-success/70 mb-2">
+                  Foreslået alternativ:
+                </p>
+                <p className="text-sm text-base-content whitespace-pre-wrap">
+                  {showFlagConfirmation.suggested}
+                </p>
+              </div>
+            )}
+
+            {/* Info Box */}
+            <div className="bg-info/10 border-2 border-info/20 p-4 mb-6">
+              <p className="text-xs text-info-content/80">
+                ℹ️ Hvis du sender beskeden, vil den blive markeret til gennemgang af en lærer. 
+                Din besked sendes stadig med det samme, men vil have et lille flag-ikon.
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelFlaggedMessage}
+                className="btn btn-ghost flex-1"
+              >
+                Annuller
+              </button>
+              <button
+                onClick={handleConfirmFlaggedMessage}
+                className="btn bg-base-content text-base-100 hover:bg-warning hover:text-warning-content flex-1"
+              >
+                Send alligevel
+              </button>
+            </div>
+          </div>
+          <div className="modal-backdrop bg-black/50" onClick={handleCancelFlaggedMessage}></div>
+        </dialog>
       )}
     </div>
   );

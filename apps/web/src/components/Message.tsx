@@ -104,6 +104,20 @@ export default function Message({
           isOwnMessage ? 'dashed-line-right' : 'dashed-line-left'
         }`}
       >
+        {/* Flagged indicator - small orange flag on left side */}
+        {msg.is_flagged && isOwnMessage && (
+          <div 
+            className="tooltip tooltip-warning absolute -top-2 -left-2 z-10" 
+            data-tip="Markeret til gennemgang - din besked blev sendt, men en lærer vil gennemgå den"
+          >
+            <div className="w-6 h-6 bg-warning flex items-center justify-center shadow-lg">
+              <svg className="w-3.5 h-3.5 text-warning-content" fill="currentColor" viewBox="0 0 24 24" strokeWidth={0}>
+                <path d="M4 4v16l4-4h12V4H4z" />
+              </svg>
+            </div>
+          </div>
+        )}
+        
         {msg.image_url && (
           <img
             src={msg.image_url}

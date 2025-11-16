@@ -18,7 +18,7 @@ serve(async (req) => {
   }
 
   try {
-    const { room_id, body, reply_to, image_url } = await req.json();
+    const { room_id, body, reply_to, image_url, check_only, force_send } = await req.json();
     if (!room_id || (!body && !image_url)) {
       return new Response(JSON.stringify({ error: "Bad Request: room_id and (body or image_url) required" }), { 
         status: 400,
@@ -29,7 +29,7 @@ serve(async (req) => {
       });
     }
 
-    // Create Supabase client with user's auth token
+    // Create Supabase client with user's auth token for auth
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
@@ -40,6 +40,12 @@ serve(async (req) => {
           } 
         } 
       }
+    );
+
+    // Create service role client for bypassing RLS when needed
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
     // Get current user
@@ -55,7 +61,8 @@ serve(async (req) => {
     }
 
     // 1) Resolve room + verify it's not locked + get class moderation settings
-    const { data: room, error: roomError } = await supabase
+    // Use admin client to bypass RLS for reading room/class data
+    const { data: room, error: roomError } = await supabaseAdmin
       .from("rooms")
       .select(`
         id, 
@@ -92,6 +99,9 @@ serve(async (req) => {
     console.log(`Class moderation level: ${moderationLevel}, profanity filter: ${profanityFilterEnabled}`);
 
     // 2) Danish profanity filter (optional - only if enabled for this class)
+    let danishProfanityDetected = false;
+    let detectedProfanity: string | null = null;
+    
     if (profanityFilterEnabled && body) {
       const danishProfanity = [
       // Strong curse words
@@ -129,30 +139,9 @@ serve(async (req) => {
 
       if (foundProfanity) {
         console.log(`Danish profanity detected: ${foundProfanity}`);
-        // Log and block immediately
-        await supabase.from("moderation_events").insert({
-          subject_type: "message",
-          subject_id: "blocked_danish_profanity",
-          class_id: room.class_id,
-          rule: "danish_profanity_filter",
-          status: "hidden",
-          labels: [foundProfanity],
-          score: 1.0
-        });
-
-        return new Response(
-          JSON.stringify({ 
-            status: "blocked",
-            reason: "Din besked indeholder bandeord eller stødende sprog som ikke er tilladt i skolechatten."
-          }), 
-          { 
-            status: 200,
-            headers: { 
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*"
-            }
-          }
-        );
+        danishProfanityDetected = true;
+        detectedProfanity = foundProfanity;
+        // Will flag the message below, not block
       }
     }
 
@@ -196,9 +185,17 @@ serve(async (req) => {
 
     const flagged = moderationFailed ? false : (moderation?.results?.[0]?.flagged ?? false);
     let suggested: string | null = null;
-    let action: "allow" | "flag" | "block" = "allow";
+    let action: "allow" | "flag" = "allow";  // Removed "block" - we only flag now
+    let flagReason: string | null = null;
     
-    console.log(`Moderation check: flagged=${flagged}, action=${action}, moderationFailed=${moderationFailed}`);
+    // Flag immediately if Danish profanity was detected
+    if (danishProfanityDetected) {
+      action = "flag";
+      flagReason = 'high_severity'; // Danish profanity is considered high severity
+      console.log(`Flagging due to Danish profanity: ${detectedProfanity}`);
+    }
+    
+    console.log(`Moderation check: flagged=${flagged}, action=${action}, moderationFailed=${moderationFailed}, danishProfanity=${danishProfanityDetected}`);
 
     // Check scores even if not flagged by OpenAI (stricter school standards)
     if (!moderationFailed && moderation) {
@@ -226,31 +223,33 @@ serve(async (req) => {
         console.log('Using MODERATE moderation thresholds');
       }
       
-      const hardBlock =
+      // Flag if ANY concerning content (we no longer block, only flag)
+      const shouldFlag =
         (categories["sexual/minors"] ?? 0) > hardBlockThresholds.sexual_minors ||
         (categories["hate/threatening"] ?? 0) > hardBlockThresholds.hate_threatening ||
         (categories["violence/graphic"] ?? 0) > hardBlockThresholds.violence_graphic ||
         (categories["sexual"] ?? 0) > hardBlockThresholds.sexual ||
-        (categories["violence"] ?? 0) > hardBlockThresholds.violence;
-        
-      // Flag if ANY concerning content
-      const shouldFlag =
+        (categories["violence"] ?? 0) > hardBlockThresholds.violence ||
         (categories["harassment"] ?? 0) > flagThresholds.harassment ||
         (categories["hate"] ?? 0) > flagThresholds.hate ||
         (categories["illicit"] ?? 0) > flagThresholds.illicit;
 
-      if (hardBlock) {
-        action = "block";
-      } else if (shouldFlag || flagged) {
+      if (shouldFlag || flagged) {
         action = "flag";
+        // Determine severity for notification
+        const highSeverity = 
+          (categories["sexual/minors"] ?? 0) > hardBlockThresholds.sexual_minors ||
+          (categories["hate/threatening"] ?? 0) > hardBlockThresholds.hate_threatening ||
+          (categories["violence/graphic"] ?? 0) > hardBlockThresholds.violence_graphic;
+        flagReason = highSeverity ? 'high_severity' : 'moderate_severity';
       }
       
       console.log(`Score check - harassment: ${categories["harassment"]}, hate: ${categories["hate"]}, illicit: ${categories["illicit"]}, decision: ${action}`);
     }
 
-    if (flagged || action === "flag" || action === "block") {
+    if (flagged || action === "flag") {
 
-      // 3) If soft flag, generate kind suggestion using GPT-4o-mini
+      // 3) If flagged, generate kind suggestion using GPT-4o-mini
       if (action === "flag" && body) {
         // Only generate suggestions for text messages, not image-only
         try {
@@ -268,56 +267,35 @@ serve(async (req) => {
             temperature: 0.7
           });
           suggested = completion.choices[0]?.message?.content ?? null;
-          
-          // If AI says to block, upgrade to hard block
-          if (suggested?.trim() === 'BLOCK') {
-            action = "block";
-            suggested = null;
-          }
-          
           console.log("Suggestion generated:", suggested);
         } catch (error) {
           console.error("Error generating suggestion:", error);
           // Continue without suggestion if GPT-4o-mini fails
         }
       }
-    }
-
-    // 4) Handle ONLY truly blocked messages - don't insert
-    if (action === "block") {
-      // Log moderation event but don't insert message
-      if (moderation) {
-        await supabase.from("moderation_events").insert({
-          subject_type: "message",
-          subject_id: "blocked_before_insert",
-          class_id: room.class_id,
-          rule: "openai:hard_block",
-          status: "hidden",
-          labels: moderation.results[0].categories ? 
-            Object.keys(moderation.results[0].categories).filter(
-              k => moderation.results[0].categories[k]
-            ) : [],
-          score: Math.max(...Object.values(moderation.results[0].category_scores ?? {}).map(v => Number(v) || 0))
-        });
-      }
-
-      return new Response(
-        JSON.stringify({ 
-          status: "blocked",
-          reason: "Din besked indeholder upassende indhold",
-          categories: moderation?.results?.[0]?.categories
-        }), 
-        { 
-          status: 200,
-          headers: { 
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
+      
+      // If check_only mode, return the flag warning without inserting
+      if (check_only && !force_send) {
+        return new Response(
+          JSON.stringify({ 
+            status: "requires_confirmation",
+            flagged: true,
+            warning: "Din besked indeholder muligt upassende indhold. Den vil blive sendt, men markeret til gennemgang af en lærer.",
+            suggested: suggested,
+            original_message: body
+          }), 
+          { 
+            status: 200,
+            headers: { 
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*"
+            }
           }
-        }
-      );
+        );
+      }
     }
 
-    // 5) Insert message (flagged messages are inserted but marked for teacher review)
+    // 4) Insert ALL messages (flagged or not)
     const { data: message, error: messageError } = await supabase
       .from("messages")
       .insert({
@@ -326,7 +304,8 @@ serve(async (req) => {
         body: body || null,
         image_url: image_url || null,
         reply_to: reply_to || null,
-        user_id: user.id
+        user_id: user.id,
+        is_flagged: action === "flag"  // Mark flagged messages
       })
       .select("id, created_at, body, image_url")
       .single();
@@ -345,28 +324,50 @@ serve(async (req) => {
       );
     }
 
-    // 6) Log moderation event for flagged messages (after successful insert)
-    if (action === "flag" && moderation) {
-      await supabase.from("moderation_events").insert({
-        subject_type: "message",
-        subject_id: message.id, // Now we have the actual message ID
-        class_id: room.class_id,
-        rule: "openai:soft_flag",
-        status: "flagged",
-        labels: moderation.results[0].categories ? 
+    // 5) Log moderation event for flagged messages and trigger parent notification
+    if (action === "flag") {
+      let labels: string[] = [];
+      let score = 0;
+      let rule = "";
+      
+      if (danishProfanityDetected && detectedProfanity) {
+        // Danish profanity detected
+        rule = "danish_profanity_filter";
+        labels = [detectedProfanity];
+        score = 1.0;
+      } else if (moderation) {
+        // OpenAI moderation flagged
+        rule = "openai:flag";
+        labels = moderation.results[0].categories ? 
           Object.keys(moderation.results[0].categories).filter(
             k => moderation.results[0].categories[k]
-          ) : [],
-        score: Math.max(...Object.values(moderation.results[0].category_scores ?? {}).map(v => Number(v) || 0))
-      });
+          ) : [];
+        score = Math.max(...Object.values(moderation.results[0].category_scores ?? {}).map(v => Number(v) || 0));
+      }
+      
+      const moderationEvent = await supabase.from("moderation_events").insert({
+        subject_type: "message",
+        subject_id: message.id,
+        class_id: room.class_id,
+        rule: rule,
+        status: "flagged",
+        severity: flagReason || 'moderate_severity',
+        labels: labels,
+        score: score
+      }).select().single();
+
+      // Trigger parent notification (database trigger will handle batching)
+      console.log('Flagged message inserted, parent notification will be triggered by database');
     }
 
-    // 7) Return success response
+    // 6) Return success response with flag warning
     return new Response(
       JSON.stringify({ 
         status: action === "flag" ? "flagged" : "allow",
         message_id: message.id,
         created_at: message.created_at,
+        flagged: action === "flag",
+        warning: action === "flag" ? "Din besked blev sendt, men markeret til gennemgang på grund af muligt upassende indhold." : undefined,
         suggested: action === "flag" ? suggested : undefined
       }), 
       { 

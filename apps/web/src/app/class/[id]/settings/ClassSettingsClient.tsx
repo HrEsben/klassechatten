@@ -1,4 +1,10 @@
-import { ClassSettingsClient } from './ClassSettingsClient';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { supabase } from '@/lib/supabase';
 
 interface ClassData {
   id: string;
@@ -9,15 +15,10 @@ interface ClassData {
   profanity_filter_enabled: boolean;
 }
 
-// Server component - properly awaits params to get full UUID
-export default async function ClassSettingsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  
-  console.log('[Settings Server] Full UUID from params:', id);
-  
-  // Pass the full UUID to the client component
-  return <ClassSettingsClient classId={id} />;
-}
+export function ClassSettingsClient({ classId }: { classId: string }) {
+  const router = useRouter();
+  const { user } = useAuth();
+  const { profile } = useUserProfile(classId);
   
   const [classData, setClassData] = useState<ClassData | null>(null);
   const [nickname, setNickname] = useState('');
@@ -26,6 +27,8 @@ export default async function ClassSettingsPage({ params }: { params: Promise<{ 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isClassAdmin, setIsClassAdmin] = useState(false);
 
   // Theme controller setup
   useEffect(() => {
@@ -57,8 +60,6 @@ export default async function ClassSettingsPage({ params }: { params: Promise<{ 
     document.addEventListener('change', handleThemeChange);
     return () => document.removeEventListener('change', handleThemeChange);
   }, []);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [isClassAdmin, setIsClassAdmin] = useState(false);
 
   // Check permissions and load class data
   useEffect(() => {
@@ -70,37 +71,21 @@ export default async function ClassSettingsPage({ params }: { params: Promise<{ 
 
       // Validate classId format (UUID)
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!resolvedClassId) {
+      if (!classId) {
         console.error('[Settings] No classId provided');
         setError('Ugyldig klasse ID');
         router.push('/');
         return;
       }
-
-      // If the id isn't a full UUID, try to resolve it server-side (production DRP short ids)
-      if (!uuidRegex.test(resolvedClassId)) {
-        console.log('[Settings] ID is not a full UUID, attempting server-side resolve for:', resolvedClassId);
-        try {
-          const resp = await fetch(`/api/classes/resolve?short=${encodeURIComponent(resolvedClassId)}`);
-          if (resp.ok) {
-            const json = await resp.json();
-            if (json?.id) {
-              console.log('[Settings] Resolved short id to full UUID:', json.id);
-              setResolvedClassId(json.id);
-              return; // wait for effect to re-run with full id
-            }
-          }
-        } catch (err) {
-          console.error('[Settings] Error resolving short id:', err);
-        }
-
-        console.error('[Settings] Invalid UUID format after resolve attempt. Id:', resolvedClassId, 'Length:', resolvedClassId.length);
+      
+      if (!uuidRegex.test(classId)) {
+        console.error('[Settings] Invalid UUID format. ClassId:', classId, 'Length:', classId.length);
         setError('Ugyldig klasse ID format');
         router.push('/');
         return;
       }
-
-      console.log('[Settings] UUID validation passed:', resolvedClassId);
+      
+      console.log('[Settings] UUID validation passed:', classId);
 
       // Wait for profile to load before checking permissions
       if (profile === undefined) {
@@ -109,11 +94,11 @@ export default async function ClassSettingsPage({ params }: { params: Promise<{ 
 
       try {
         // Check if user is admin or class admin
-      const { data: membership } = await supabase
+        const { data: membership } = await supabase
           .from('class_members')
           .select('is_class_admin')
           .eq('user_id', user.id)
-        .eq('class_id', resolvedClassId)
+          .eq('class_id', classId)
           .single();
 
         const isAdmin = profile?.role === 'admin';
@@ -130,7 +115,7 @@ export default async function ClassSettingsPage({ params }: { params: Promise<{ 
         const { data: classInfo, error: classError } = await supabase
           .from('classes')
           .select('id, label, grade_level, nickname, moderation_level, profanity_filter_enabled')
-          .eq('id', resolvedClassId)
+          .eq('id', classId)
           .single();
 
         if (classError) throw classError;
@@ -148,7 +133,7 @@ export default async function ClassSettingsPage({ params }: { params: Promise<{ 
     };
 
     loadData();
-  }, [user, resolvedClassId, profile, router]);
+  }, [user, classId, profile, router]);
 
   const handleSave = async () => {
     if (!classData) return;
@@ -164,7 +149,7 @@ export default async function ClassSettingsPage({ params }: { params: Promise<{ 
         throw new Error('No session');
       }
 
-  const response = await fetch(`/api/classes/${resolvedClassId}`, {
+      const response = await fetch(`/api/classes/${classId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -203,7 +188,7 @@ export default async function ClassSettingsPage({ params }: { params: Promise<{ 
   };
 
   const handleBack = () => {
-    router.push(`/?class=${resolvedClassId}`);
+    router.push(`/?class=${classId}`);
   };
 
   if (loading) {
@@ -281,223 +266,223 @@ export default async function ClassSettingsPage({ params }: { params: Promise<{ 
       {/* Main Content Area */}
       <main className="flex-1 py-8 bg-base-300">
         <div className="w-full max-w-4xl mx-auto px-12">
-        {/* Page Header */}
-        <div className="mb-12">
-          <h1 className="text-3xl font-black uppercase tracking-tight text-base-content">
-            Indstillinger
-          </h1>
-          <div className="h-1 w-24 bg-primary mt-2"></div>
-          
-          <p className="text-xs font-mono uppercase tracking-wider text-base-content/50 mt-4">
-            {classData.label} • {classData.grade_level}. klasse
-          </p>
-        </div>
-
-        {/* Settings Form */}
-        <div className="space-y-8">
-          {/* Nickname Section */}
-          <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
-            <div className="p-6 border-b-2 border-base-content/10">
-              <h2 className="text-xl font-black uppercase tracking-tight text-base-content">
-                Rediger navn
-              </h2>
-            </div>
+          {/* Page Header */}
+          <div className="mb-12">
+            <h1 className="text-3xl font-black uppercase tracking-tight text-base-content">
+              Indstillinger
+            </h1>
+            <div className="h-1 w-24 bg-primary mt-2"></div>
             
-            <div className="p-6 space-y-6">
-              {/* Error Message */}
-              {error && (
-                <div className="bg-error/10 border-2 border-error/20 px-6 py-4">
-                  <p className="text-sm font-medium text-error">{error}</p>
-                </div>
-              )}
-
-              {/* Success Message */}
-              {successMessage && (
-                <div className="bg-success/10 border-2 border-success/20 px-6 py-4">
-                  <p className="text-sm font-medium text-success">{successMessage}</p>
-                </div>
-              )}
-
-              {/* Nickname Input */}
-              <div>
-                <input
-                  type="text"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  placeholder={classData.label}
-                  className="input input-md w-full"
-                  maxLength={50}
-                />
-                <p className="text-xs text-base-content/60 mt-2">
-                  Standard: <strong>{classData.label}</strong>
-                </p>
-              </div>
-            </div>
+            <p className="text-xs font-mono uppercase tracking-wider text-base-content/50 mt-4">
+              {classData.label} • {classData.grade_level}. klasse
+            </p>
           </div>
 
-          {/* AI Moderation Section */}
-          <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
-            <div className="p-6 border-b-2 border-base-content/10">
-              <h2 className="text-xl font-black uppercase tracking-tight text-base-content">
-                AI-Moderation
-              </h2>
-              <p className="text-xs text-base-content/60 mt-2">
-                Sætter tærskler for automatisk blokering og flagning af beskeder
-              </p>
-            </div>
-            
-            <div className="p-6 space-y-6">
-              {/* Moderation Level Selector */}
-              <div className="space-y-4">
-                <label className="label">
-                  <span className="label text-xs font-bold uppercase tracking-wider text-base-content/50">
-                    Moderation Niveau
-                  </span>
-                </label>
-                
-                {/* Strict Option */}
-                <div className="form-control">
-                  <div className="flex items-start gap-4 py-4 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="moderation_level"
-                      value="strict"
-                      checked={moderationLevel === 'strict'}
-                      onChange={(e) => setModerationLevel(e.target.value as 'strict' | 'moderate' | 'relaxed')}
-                      className="radio radio-primary shrink-0 mt-0.5"
-                    />
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-black uppercase tracking-tight text-base-content">
-                          Streng
-                        </span>
-                        <span className="badge badge-error badge-xs shrink-0">Højeste sikkerhed</span>
-                      </div>
-                      <p className="text-xs text-base-content/60 leading-relaxed">
-                        Laveste tærskler. Blokerer milde problemer. Anbefalet 0.-4. klasse.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Moderate Option */}
-                <div className="form-control">
-                  <div className="flex items-start gap-4 py-4 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="moderation_level"
-                      value="moderate"
-                      checked={moderationLevel === 'moderate'}
-                      onChange={(e) => setModerationLevel(e.target.value as 'strict' | 'moderate' | 'relaxed')}
-                      className="radio radio-primary shrink-0 mt-0.5"
-                    />
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-black uppercase tracking-tight text-base-content">
-                          Moderat
-                        </span>
-                        <span className="badge badge-info badge-xs shrink-0">Anbefalet</span>
-                      </div>
-                      <p className="text-xs text-base-content/60 leading-relaxed">
-                        Standard tærskler for skolemiljø. Anbefalet 5.-9. klasse.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Relaxed Option */}
-                <div className="form-control">
-                  <div className="flex items-start gap-4 py-4 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="moderation_level"
-                      value="relaxed"
-                      checked={moderationLevel === 'relaxed'}
-                      onChange={(e) => setModerationLevel(e.target.value as 'strict' | 'moderate' | 'relaxed')}
-                      className="radio radio-primary shrink-0 mt-0.5"
-                    />
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-black uppercase tracking-tight text-base-content">
-                          Afslappet
-                        </span>
-                        <span className="badge badge-warning badge-xs shrink-0">Mere frihed</span>
-                      </div>
-                      <p className="text-xs text-base-content/60 leading-relaxed">
-                        Højeste tærskler. Kun alvorlige problemer blokeres. Anbefalet 8.-9. klasse.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+          {/* Settings Form */}
+          <div className="space-y-8">
+            {/* Nickname Section */}
+            <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
+              <div className="p-6 border-b-2 border-base-content/10">
+                <h2 className="text-xl font-black uppercase tracking-tight text-base-content">
+                  Rediger navn
+                </h2>
               </div>
-
-              {/* Profanity Filter Toggle */}
-              <div className="divider"></div>
               
-              <div className="form-control">
-                <div className="flex items-start gap-4 py-4 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={profanityFilterEnabled}
-                    onChange={(e) => setProfanityFilterEnabled(e.target.checked)}
-                    className="checkbox checkbox-primary shrink-0 mt-0.5"
-                  />
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-black uppercase tracking-tight text-base-content">
-                        Danske bandeord filter
-                      </span>
-                    </div>
-                    <p className="text-xs text-base-content/60 leading-relaxed">
-                      Blokerer danske bandeord og stødende sprog uafhængigt af moderation niveau.
-                    </p>
+              <div className="p-6 space-y-6">
+                {/* Error Message */}
+                {error && (
+                  <div className="bg-error/10 border-2 border-error/20 px-6 py-4">
+                    <p className="text-sm font-medium text-error">{error}</p>
                   </div>
+                )}
+
+                {/* Success Message */}
+                {successMessage && (
+                  <div className="bg-success/10 border-2 border-success/20 px-6 py-4">
+                    <p className="text-sm font-medium text-success">{successMessage}</p>
+                  </div>
+                )}
+
+                {/* Nickname Input */}
+                <div>
+                  <input
+                    type="text"
+                    value={nickname}
+                    onChange={(e) => setNickname(e.target.value)}
+                    placeholder={classData.label}
+                    className="input input-md w-full"
+                    maxLength={50}
+                  />
+                  <p className="text-xs text-base-content/60 mt-2">
+                    Standard: <strong>{classData.label}</strong>
+                  </p>
                 </div>
               </div>
+            </div>
 
-              {/* Info Box */}
-              <div className="bg-base-200 border-2 border-base-content/10 p-4">
-                <p className="text-xs text-base-content/60">
-                  <strong>Valgt:</strong> {
-                    moderationLevel === 'strict' 
-                      ? 'Streng moderation - laveste tærskler, blokerer milde problemer.'
-                      : moderationLevel === 'moderate'
-                      ? 'Moderat moderation - standard tærskler for skolemiljø.'
-                      : 'Afslappet moderation - højeste tærskler, kun alvorlige problemer blokeres.'
-                  }
-                  {profanityFilterEnabled 
-                    ? ' Bandeordfilter aktiveret.'
-                    : ' Bandeordfilter deaktiveret.'}
+            {/* AI Moderation Section */}
+            <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
+              <div className="p-6 border-b-2 border-base-content/10">
+                <h2 className="text-xl font-black uppercase tracking-tight text-base-content">
+                  AI-Moderation
+                </h2>
+                <p className="text-xs text-base-content/60 mt-2">
+                  Sætter tærskler for automatisk blokering og flagning af beskeder
                 </p>
               </div>
+              
+              <div className="p-6 space-y-6">
+                {/* Moderation Level Selector */}
+                <div className="space-y-4">
+                  <label className="label">
+                    <span className="label text-xs font-bold uppercase tracking-wider text-base-content/50">
+                      Moderation Niveau
+                    </span>
+                  </label>
+                  
+                  {/* Strict Option */}
+                  <div className="form-control">
+                    <div className="flex items-start gap-4 py-4 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="moderation_level"
+                        value="strict"
+                        checked={moderationLevel === 'strict'}
+                        onChange={(e) => setModerationLevel(e.target.value as 'strict' | 'moderate' | 'relaxed')}
+                        className="radio radio-primary shrink-0 mt-0.5"
+                      />
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-black uppercase tracking-tight text-base-content">
+                            Streng
+                          </span>
+                          <span className="badge badge-error badge-xs shrink-0">Højeste sikkerhed</span>
+                        </div>
+                        <p className="text-xs text-base-content/60 leading-relaxed">
+                          Laveste tærskler. Blokerer milde problemer. Anbefalet 0.-4. klasse.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Moderate Option */}
+                  <div className="form-control">
+                    <div className="flex items-start gap-4 py-4 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="moderation_level"
+                        value="moderate"
+                        checked={moderationLevel === 'moderate'}
+                        onChange={(e) => setModerationLevel(e.target.value as 'strict' | 'moderate' | 'relaxed')}
+                        className="radio radio-primary shrink-0 mt-0.5"
+                      />
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-black uppercase tracking-tight text-base-content">
+                            Moderat
+                          </span>
+                          <span className="badge badge-info badge-xs shrink-0">Anbefalet</span>
+                        </div>
+                        <p className="text-xs text-base-content/60 leading-relaxed">
+                          Standard tærskler for skolemiljø. Anbefalet 5.-9. klasse.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Relaxed Option */}
+                  <div className="form-control">
+                    <div className="flex items-start gap-4 py-4 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="moderation_level"
+                        value="relaxed"
+                        checked={moderationLevel === 'relaxed'}
+                        onChange={(e) => setModerationLevel(e.target.value as 'strict' | 'moderate' | 'relaxed')}
+                        className="radio radio-primary shrink-0 mt-0.5"
+                      />
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-black uppercase tracking-tight text-base-content">
+                            Afslappet
+                          </span>
+                          <span className="badge badge-warning badge-xs shrink-0">Mere frihed</span>
+                        </div>
+                        <p className="text-xs text-base-content/60 leading-relaxed">
+                          Højeste tærskler. Kun alvorlige problemer blokeres. Anbefalet 8.-9. klasse.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Profanity Filter Toggle */}
+                <div className="divider"></div>
+                
+                <div className="form-control">
+                  <div className="flex items-start gap-4 py-4 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={profanityFilterEnabled}
+                      onChange={(e) => setProfanityFilterEnabled(e.target.checked)}
+                      className="checkbox checkbox-primary shrink-0 mt-0.5"
+                    />
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-black uppercase tracking-tight text-base-content">
+                          Danske bandeord filter
+                        </span>
+                      </div>
+                      <p className="text-xs text-base-content/60 leading-relaxed">
+                        Blokerer danske bandeord og stødende sprog uafhængigt af moderation niveau.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Info Box */}
+                <div className="bg-base-200 border-2 border-base-content/10 p-4">
+                  <p className="text-xs text-base-content/60">
+                    <strong>Valgt:</strong> {
+                      moderationLevel === 'strict' 
+                        ? 'Streng moderation - laveste tærskler, blokerer milde problemer.'
+                        : moderationLevel === 'moderate'
+                        ? 'Moderat moderation - standard tærskler for skolemiljø.'
+                        : 'Afslappet moderation - højeste tærskler, kun alvorlige problemer blokeres.'
+                    }
+                    {profanityFilterEnabled 
+                      ? ' Bandeordfilter aktiveret.'
+                      : ' Bandeordfilter deaktiveret.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Save Button Section */}
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={handleBack}
+                className="btn btn-ghost"
+                disabled={saving}
+              >
+                Annuller
+              </button>
+              <button
+                onClick={handleSave}
+                className="btn bg-base-content text-base-100 hover:bg-primary hover:text-primary-content"
+                disabled={saving}
+              >
+                {saving ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    Gemmer...
+                  </>
+                ) : (
+                  'Gem ændringer'
+                )}
+              </button>
             </div>
           </div>
-
-          {/* Save Button Section */}
-          <div className="flex justify-end gap-4">
-            <button
-              onClick={handleBack}
-              className="btn btn-ghost"
-              disabled={saving}
-            >
-              Annuller
-            </button>
-            <button
-              onClick={handleSave}
-              className="btn bg-base-content text-base-100 hover:bg-primary hover:text-primary-content"
-              disabled={saving}
-            >
-              {saving ? (
-                <>
-                  <span className="loading loading-spinner loading-sm"></span>
-                  Gemmer...
-                </>
-              ) : (
-                'Gem ændringer'
-              )}
-            </button>
-          </div>
-        </div>
         </div>
       </main>
 

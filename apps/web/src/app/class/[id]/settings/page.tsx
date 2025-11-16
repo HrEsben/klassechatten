@@ -22,7 +22,8 @@ export default function ClassSettingsPage(props: { params: Promise<{ id: string 
   
   // Fix for iOS Safari where Next.js 16 wraps params in %%drp:id:...%% format
   if (classId && classId.includes('%%drp:id:')) {
-    const match = classId.match(/%%drp:id:([a-f0-9-]+)%%/);
+    // Extract everything between %%drp:id: and %% - should be the full UUID
+    const match = classId.match(/%%drp:id:([^%]+)%%/);
     if (match) {
       classId = match[1];
       console.log('Extracted classId from drp format:', classId);

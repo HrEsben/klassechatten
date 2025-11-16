@@ -15,8 +15,20 @@ interface ClassData {
   profanity_filter_enabled: boolean;
 }
 
-export default function ClassSettingsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: classId } = use(params);
+export default function ClassSettingsPage(props: { params: Promise<{ id: string }> }) {
+  // Unwrap params using React.use() - Next.js 15/16 pattern for client components
+  const params = use(props.params);
+  let classId = params.id;
+  
+  // Fix for iOS Safari where Next.js 16 wraps params in %%drp:id:...%% format
+  if (classId && classId.includes('%%drp:id:')) {
+    const match = classId.match(/%%drp:id:([a-f0-9-]+)%%/);
+    if (match) {
+      classId = match[1];
+      console.log('Extracted classId from drp format:', classId);
+    }
+  }
+  
   const router = useRouter();
   const { user } = useAuth();
   const { profile } = useUserProfile(classId);
@@ -279,7 +291,7 @@ export default function ClassSettingsPage({ params }: { params: Promise<{ id: st
           <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
             <div className="p-6 border-b-2 border-base-content/10">
               <h2 className="text-xl font-black uppercase tracking-tight text-base-content">
-                Klassenavn
+                Rediger navn
               </h2>
             </div>
             
@@ -300,11 +312,6 @@ export default function ClassSettingsPage({ params }: { params: Promise<{ id: st
 
               {/* Nickname Input */}
               <div>
-                <label className="label">
-                  <span className="label text-xs font-bold uppercase tracking-wider text-base-content/50">
-                    Brugerdefineret navn (valgfrit)
-                  </span>
-                </label>
                 <input
                   type="text"
                   value={nickname}

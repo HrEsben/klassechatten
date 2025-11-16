@@ -21,6 +21,9 @@ export default function ClassSettingsPage({ params }: { params: Promise<{ id: st
   const { user } = useAuth();
   const { profile } = useUserProfile(classId);
   
+  // Debug log
+  console.log('ClassSettingsPage classId:', classId, 'type:', typeof classId);
+  
   const [classData, setClassData] = useState<ClassData | null>(null);
   const [nickname, setNickname] = useState('');
   const [moderationLevel, setModerationLevel] = useState<'strict' | 'moderate' | 'relaxed'>('moderate');
@@ -68,6 +71,20 @@ export default function ClassSettingsPage({ params }: { params: Promise<{ id: st
       if (!user) {
         router.push('/login');
         return;
+      }
+
+      // Validate classId format (UUID)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!classId || !uuidRegex.test(classId)) {
+        console.error('Invalid classId format:', classId);
+        setError('Ugyldig klasse ID');
+        router.push('/');
+        return;
+      }
+
+      // Wait for profile to load before checking permissions
+      if (profile === undefined) {
+        return; // Still loading
       }
 
       try {

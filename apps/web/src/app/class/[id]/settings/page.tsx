@@ -18,7 +18,24 @@ interface ClassData {
 export default function ClassSettingsPage(props: { params: Promise<{ id: string }> }) {
   // Unwrap params using React.use() - Next.js 15/16 pattern for client components
   const params = use(props.params);
-  const classId = params.id;
+  let classId = params.id;
+  
+  console.log('[Settings] Raw classId:', classId);
+  
+  // Fix for Next.js 16 DRP format: %%drp:id:UUID%%
+  if (classId && typeof classId === 'string' && classId.includes('%%drp:id:')) {
+    console.log('[Settings] Detected DRP format, extracting UUID...');
+    // Extract UUID between %%drp:id: and the closing %%
+    const match = classId.match(/%%drp:id:([a-f0-9-]+)%%/i);
+    if (match && match[1]) {
+      classId = match[1];
+      console.log('[Settings] Extracted UUID:', classId);
+    } else {
+      console.error('[Settings] Failed to extract UUID from DRP format:', classId);
+    }
+  }
+  
+  console.log('[Settings] Final classId:', classId);
   
   const router = useRouter();
   const { user } = useAuth();
@@ -75,12 +92,21 @@ export default function ClassSettingsPage(props: { params: Promise<{ id: string 
 
       // Validate classId format (UUID)
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!classId || !uuidRegex.test(classId)) {
-        console.error('Invalid classId format:', classId);
+      if (!classId) {
+        console.error('[Settings] No classId provided');
         setError('Ugyldig klasse ID');
         router.push('/');
         return;
       }
+      
+      if (!uuidRegex.test(classId)) {
+        console.error('[Settings] Invalid UUID format. ClassId:', classId, 'Length:', classId.length);
+        setError('Ugyldig klasse ID format');
+        router.push('/');
+        return;
+      }
+      
+      console.log('[Settings] UUID validation passed:', classId);
 
       // Wait for profile to load before checking permissions
       if (profile === undefined) {

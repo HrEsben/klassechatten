@@ -329,6 +329,9 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
         hasError: false,
       });
       
+      // Auto-focus input for next message
+      setTimeout(() => inputRef.current?.focus(), 100);
+      
     } catch (error) {
       // Mark optimistic message as failed
       updateOptimisticMessage(tempId, {
@@ -349,6 +352,8 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
       setMessageText('');
       setShowSuggestion(null);
       handleRemoveImage();
+      // Auto-focus input for next message
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
   };
 

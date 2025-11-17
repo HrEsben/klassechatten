@@ -37,6 +37,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const mainScrollRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -390,6 +391,8 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     // Clear suggestion if message was successful
     if (result.message_id) {
       setShowSuggestion(null);
+      // Auto-focus input for next message
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
   };
 
@@ -404,6 +407,9 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     
     // Clear pending message
     setPendingMessage(null);
+    
+    // Auto-focus input for next message
+    setTimeout(() => inputRef.current?.focus(), 100);
   };
 
   const handleCancelFlaggedMessage = () => {
@@ -413,6 +419,9 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     
     // Keep the message text so user can edit it
     // Already in messageText state
+    
+    // Auto-focus input so user can edit
+    setTimeout(() => inputRef.current?.focus(), 100);
   };
 
   const useSuggestion = async () => {
@@ -740,6 +749,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             </svg>
           </button>
           <input
+            ref={inputRef}
             type="text"
             value={messageText}
             onChange={(e) => handleInputChange(e.target.value)}

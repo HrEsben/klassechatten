@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 interface SendMessageResult {
   status: 'allow' | 'flag' | 'flagged' | 'block' | 'blocked' | 'requires_confirmation';
   message_id?: number;
+  flagged?: boolean;
   warning?: string;
   reason?: string;
   error?: string;
@@ -77,8 +78,7 @@ export function useSendMessage() {
     imageUrl?: string,
     replyTo?: number,
     onOptimisticAdd?: (message: OptimisticMessage) => void,
-    onOptimisticUpdate?: (tempId: string, success: boolean) => void,
-    forceSend?: boolean  // New parameter to bypass confirmation
+    onOptimisticUpdate?: (tempId: string, success: boolean) => void
   ): Promise<SendMessageResult> => {
     setSending(true);
     
@@ -93,9 +93,7 @@ export function useSendMessage() {
         room_id: roomId, 
         body: body || null,
         image_url: imageUrl || null,
-        reply_to: replyTo,
-        check_only: !forceSend,  // Check first unless force_send is true
-        force_send: forceSend    // Only send if user confirmed
+        reply_to: replyTo
       };
       
       console.log('Sending message payload:', payload);
@@ -134,58 +132,10 @@ export function useSendMessage() {
         throw new Error(result.error || result.reason || 'Failed to send message');
       }
 
-      // If requires confirmation, return without adding optimistic message
-      if (result.status === 'requires_confirmation') {
-        setSending(false);
-        return result;
-      }
-
-      // Create optimistic message only after confirmation (or if no confirmation needed)
-      const tempId = `temp-${Date.now()}-${Math.random()}`;
-      const optimisticMessage: OptimisticMessage = {
-        room_id: roomId,
-        class_id: undefined,
-        user_id: session.user.id,
-        body: body || null,
-        image_url: imageUrl || null,
-        reply_to: replyTo || null,
-        created_at: new Date().toISOString(),
-        edited_at: null,
-        deleted_at: null,
-        meta: undefined,
-        profiles: undefined,
-        user: {
-          id: session.user.id,
-          email: session.user.email || '',
-          user_metadata: session.user.user_metadata || {}
-        }
-      };
-
-      // Add optimistic message immediately
-      const actualTempId = onOptimisticAdd?.(optimisticMessage) || tempId;
-      
-      // Reset sending state immediately after optimistic message is added
       setSending(false);
-
-      // Update optimistic message with success
-      if ((result.status === 'allow' || result.status === 'flagged') && result.message_id) {
-        // Remove optimistic message - real message will come via realtime
-        onOptimisticUpdate?.(actualTempId, true);
-        
-        // Show warning for flagged messages
-        if (result.status === 'flagged' && result.warning) {
-          console.warn('Message flagged:', result.warning);
-          // Optionally show a toast notification to the user
-        }
-      } else {
-        // Remove optimistic message for non-successful sends
-        onOptimisticUpdate?.(actualTempId, false);
-      }
-
       return result;
     } catch (error) {
       console.error('Error sending message:', error);
-      // Set sending to false on error since we set it to false earlier on success
       setSending(false);
       return {
         status: 'blocked' as const,

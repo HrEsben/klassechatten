@@ -18,7 +18,7 @@ serve(async (req) => {
   }
 
   try {
-    const { room_id, body, reply_to, image_url, check_only, force_send } = await req.json();
+    const { room_id, body, reply_to, image_url } = await req.json();
     if (!room_id || (!body && !image_url)) {
       return new Response(JSON.stringify({ error: "Bad Request: room_id and (body or image_url) required" }), { 
         status: 400,
@@ -246,28 +246,7 @@ serve(async (req) => {
       console.log(`Score check - harassment: ${categories["harassment"]}, hate: ${categories["hate"]}, illicit: ${categories["illicit"]}, decision: ${action}`);
     }
 
-    if (flagged || action === "flag") {
-      // If check_only mode, return the flag warning without inserting
-      if (check_only && !force_send) {
-        return new Response(
-          JSON.stringify({ 
-            status: "requires_confirmation",
-            flagged: true,
-            warning: "Din besked indeholder muligt upassende indhold. Den vil blive sendt, men markeret til gennemgang af en voksen.",
-            original_message: body
-          }), 
-          { 
-            status: 200,
-            headers: { 
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*"
-            }
-          }
-        );
-      }
-    }
-
-    // 4) Insert ALL messages (flagged or not)
+    // 4) Insert ALL messages immediately (flagged or not)
     const { data: message, error: messageError } = await supabase
       .from("messages")
       .insert({

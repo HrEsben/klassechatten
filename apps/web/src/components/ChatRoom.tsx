@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { supabase } from '@/lib/supabase';
 import { useRoomMessages } from '@/hooks/useRoomMessages';
 import { useSendMessage } from '@/hooks/useSendMessage';
 import { useRoomPresence } from '@/hooks/useRoomPresence';
@@ -338,61 +339,118 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       clearTimeout(typingTimeoutRef.current);
     }
 
-    let imageUrl: string | null = null;
+    // Save message content before clearing
+    const messageBody = messageText.trim();
+    const imageFile = selectedImage;
 
-    // Upload image if selected
-    if (selectedImage) {
-      imageUrl = await uploadImage(selectedImage);
+    // 1. INSTANT: Add optimistic message and clear input immediately
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (!currentUser) return;
+
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
+    const optimisticMessage = {
+      id: tempId,
+      room_id: roomId,
+      user_id: currentUser.id,
+      body: messageBody || null,
+      image_url: null, // Will update after upload
+      created_at: new Date().toISOString(),
+      user: {
+        id: currentUser.id,
+        email: currentUser.email || '',
+        user_metadata: {
+          display_name: currentUser.user_metadata?.display_name || currentUser.email || 'You'
+        }
+      },
+      is_flagged: false,
+      reactions: [],
+      read_by: [],
+      reply_to: null,
+      isOptimistic: true,
+      isLoading: true
+    };
+
+    const optimisticMessageId = addOptimisticMessage(optimisticMessage as any);
+
+    // Clear input immediately for instant feel
+    setMessageText('');
+    handleRemoveImage();
+    setTimeout(() => scrollToBottom(false), 50);
+    setTimeout(() => inputRef.current?.focus(), 100);
+
+    // 2. ASYNC: Upload image in background (if needed)
+    let imageUrl: string | null = null;
+    if (imageFile) {
+      imageUrl = await uploadImage(imageFile);
       if (!imageUrl) {
+        // Mark optimistic message as failed
+        if (optimisticMessageId) {
+          updateOptimisticMessage(optimisticMessageId, false);
+        }
         setAlertMessage({
           type: 'error',
           message: 'Kunne ikke uploade billede. Prøv igen.'
         });
         return;
       }
+      // Update optimistic message with image URL
+      if (optimisticMessageId) {
+        const messages = document.querySelectorAll(`[data-message-id="${optimisticMessageId}"]`);
+        messages.forEach(msg => {
+          const img = msg.querySelector('img');
+          if (img) img.src = imageUrl!;
+        });
+      }
     }
 
-    // Track the tempId for potential removal if blocked
-    let optimisticMessageId: string | undefined;
+    // 3. ASYNC: Send to server (non-blocking)
+    try {
+      const result = await sendMessage(
+        roomId,
+        messageBody || undefined,
+        imageUrl || undefined,
+        undefined, // replyTo
+        undefined, // onOptimisticAdd - already done
+        (tempId: string, success: boolean) => {
+          // updateOptimisticMessage callback
+          if (optimisticMessageId) {
+            updateOptimisticMessage(optimisticMessageId, success);
+          }
+        }
+      );
 
-    const result = await sendMessage(
-      roomId, 
-      messageText.trim() || undefined, 
-      imageUrl || undefined,
-      undefined, // replyTo
-      (message) => { 
-        optimisticMessageId = addOptimisticMessage(message);
-        // Clear input immediately after optimistic message is added
-        setMessageText('');
-        handleRemoveImage();
-        // Always scroll to bottom when sending a message
-        setTimeout(() => scrollToBottom(false), 50);
-      },
-      updateOptimisticMessage,
-      forceSend  // Pass force_send flag
-    );
+      if (result.error) {
+        // Mark as failed
+        if (optimisticMessageId) {
+          updateOptimisticMessage(optimisticMessageId, false);
+        }
+        setAlertMessage({
+          type: 'error',
+          message: result.error
+        });
+        return;
+      }
 
-    // If message requires confirmation, show confirmation modal
-    if (result.status === 'requires_confirmation') {
-      setShowFlagConfirmation({
-        warning: result.warning || 'Din besked indeholder muligt upassende indhold.',
-        originalMessage: result.original_message || messageText.trim()
-      });
-      setPendingMessage({
-        text: messageText.trim() || undefined,
-        imageUrl: imageUrl || undefined
-      });
-      return;
-    }
+      // Success - mark as sent
+      if (result.message_id && optimisticMessageId) {
+        updateOptimisticMessage(optimisticMessageId, true);
+      }
 
-    // Messages are never blocked, only flagged
-    // The flag indicator will show on the message itself
+      // Show notification if message was flagged
+      if (result.flagged || result.status === 'flagged') {
+        setAlertMessage({
+          type: 'warning',
+          message: 'Din besked blev markeret til gennemgang på grund af muligt upassende indhold.'
+        });
+      }
 
-    // Clear suggestion if message was successful
-    if (result.message_id) {
       setShowSuggestion(null);
-      // Auto-focus input for next message
-      setTimeout(() => inputRef.current?.focus(), 100);
+
+    } catch (error) {
+      console.error('Error sending message:', error);
+      if (optimisticMessageId) {
+        updateOptimisticMessage(optimisticMessageId, false);
+      }
     }
   };
 

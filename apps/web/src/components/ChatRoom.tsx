@@ -552,12 +552,6 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     // Wait for backoff delay
     await new Promise(resolve => setTimeout(resolve, backoffDelay));
 
-    // Mark as loading
-    updateOptimisticMessage(messageId, {
-      isLoading: true,
-      hasError: false,
-    });
-
     try {
       // Try to send again
       let imageUrl = failedMessage.image_url;
@@ -565,10 +559,6 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       // If there's an image URL that looks like a blob/local URL, re-upload it
       if (imageUrl && imageUrl.startsWith('blob:')) {
         // Can't re-upload blob URLs, show error
-        updateOptimisticMessage(messageId, {
-          isLoading: false,
-          hasError: true,
-        });
         setAlertMessage({
           type: 'error',
           message: 'Kan ikke gensende billede. Send beskeden igen med et nyt billede.'
@@ -578,27 +568,20 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
 
       const result = await sendMessage(roomId, failedMessage.body || undefined, imageUrl || undefined);
 
-      if (result.status === 'success') {
-        // Success! Clear retry count and mark as sent
+      if (result.status === 'allow' || result.status === 'flag') {
+        // Success! Clear retry count and remove failed message (real one will arrive via realtime)
         newAttempts.delete(messageId);
         setRetryAttempts(newAttempts);
         
-        updateOptimisticMessage(messageId, {
-          isLoading: false,
-          hasError: false,
-        });
+        // Remove the optimistic failed message
+        updateOptimisticMessage(messageId, true);
         
         setAlertMessage({
           type: 'success',
           message: 'Besked sendt!'
         });
       } else {
-        // Failed again
-        updateOptimisticMessage(messageId, {
-          isLoading: false,
-          hasError: true,
-        });
-        
+        // Failed again (blocked or error)
         if (currentAttempts + 1 >= 3) {
           setAlertMessage({
             type: 'error',
@@ -607,11 +590,6 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         }
       }
     } catch (error) {
-      updateOptimisticMessage(messageId, {
-        isLoading: false,
-        hasError: true,
-      });
-      
       if (currentAttempts + 1 >= 3) {
         setAlertMessage({
           type: 'error',

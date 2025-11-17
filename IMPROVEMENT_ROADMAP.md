@@ -96,13 +96,6 @@
 ## 📊 Data Management (2-3 hours total)
 
 ### Phase 4: Scalability
-- [ ] **Message Pagination** (2 hours)
-  - Cursor-based pagination
-  - Load last 50 messages by default
-  - "Load more" button for older messages
-  - Infinite scroll support
-  - Files: `useRoomMessages.ts`, `ChatRoom.tsx`
-
 - [ ] **Message Archiving Strategy** (1 hour)
   - Document archival policy (6 months)
   - Create archive migration
@@ -236,12 +229,12 @@
 | **Phase 1: Quick Wins** | 2 hours (2.08h done) | ⚡️⚡️⚡️ High | ✅ 100% Complete |
 | **Phase 2: Performance** | 4 hours | ⚡️⚡️⚡️ High | ⚪️ Not Started |
 | **Phase 3: Images** | 3 hours (0.5h done) | ⚡️⚡️ Medium | 🟢 17% Complete |
-| **Phase 4: Data** | 3 hours | ⚡️⚡️ Medium | ⚪️ Not Started |
+| **Phase 4: Data** | 1 hour | ⚡️⚡️ Medium | ⚪️ Not Started |
 | **Phase 5: Monitoring** | 3 hours | ⚡️⚡️⚡️ High | ⚪️ Not Started |
 | **Phase 6: Testing** | 5 hours | ⚡️⚡️ Medium | ⚪️ Not Started |
 | **Phase 7: Docs** | 3 hours | ⚡️ Low | ⚪️ Not Started |
 | **Phase 8: Features** | 6 hours | ⚡️ Low | ⚪️ Not Started |
-| **TOTAL** | ~29 hours (2.58h done) | | 🟢 8.9% Complete |
+| **TOTAL** | ~27 hours (2.58h done) | | 🟢 9.6% Complete |
 
 ---
 
@@ -263,9 +256,9 @@
 - **Total:** 7 hours
 
 ### Sprint 3 (Week 3): Scalability & Quality
-- ✅ Phase 4: Data Management (3 hours)
+- ✅ Phase 4: Data Management (1 hour)
 - ✅ Phase 6: Testing (partial - 3 hours)
-- **Total:** 6 hours
+- **Total:** 4 hours
 
 ### Sprint 4 (Week 4): Polish
 - ✅ Phase 6: Testing (remaining - 2 hours)
@@ -314,6 +307,19 @@
    - Mobile: Shows Alert dialogs with attempt count and results
    - Handles image upload failures with helpful error messages
    - Tracks retry attempts per message using Map state
+
+### ✅ Previously Completed (Before Roadmap)
+
+6. **Message Pagination / Infinite Scroll** - Already implemented!
+   - Cursor-based pagination using timestamp
+   - Loads last 50 messages by default
+   - "INDLÆS ÆLDRE" button for older messages
+   - IntersectionObserver for automatic loading on web
+   - FlatList onEndReached for mobile
+   - Preserves scroll position when loading more
+   - 5-10x faster initial load compared to loading all messages
+   - Documented in `INFINITE_SCROLL.md`
+   - Files: `useRoomMessages.ts`, `ChatRoom.tsx` (web/mobile)
 
 ### 🎉 Phase 1 Complete!
 

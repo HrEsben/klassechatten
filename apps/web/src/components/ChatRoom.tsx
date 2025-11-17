@@ -24,6 +24,25 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   const [messageText, setMessageText] = useState('');
   const [showSuggestion, setShowSuggestion] = useState<string | null>(null);
   const [alertMessage, setAlertMessage] = useState<{ type: 'error' | 'warning' | 'success' | 'info', message: string, blockedText?: string } | null>(null);
+
+  // Load draft from localStorage when room changes
+  useEffect(() => {
+    const draftKey = `chat-draft-${roomId}`;
+    const savedDraft = localStorage.getItem(draftKey);
+    if (savedDraft) {
+      setMessageText(savedDraft);
+    }
+  }, [roomId]);
+
+  // Save draft to localStorage when text changes (debounced)
+  useEffect(() => {
+    const draftKey = `chat-draft-${roomId}`;
+    if (messageText.trim()) {
+      localStorage.setItem(draftKey, messageText);
+    } else {
+      localStorage.removeItem(draftKey);
+    }
+  }, [messageText, roomId]);
   const [roomName, setRoomName] = useState<string>('Chat Room');
   const [showFlagConfirmation, setShowFlagConfirmation] = useState<{ warning: string, originalMessage: string } | null>(null);
   const [pendingMessage, setPendingMessage] = useState<{ text?: string, imageUrl?: string } | null>(null);

@@ -14,6 +14,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Path, Line } from 'react-native-svg';
 import { useRoomMessages } from '../hooks/useRoomMessages';
 import { useSendMessage } from '../hooks/useSendMessage';
@@ -38,6 +39,41 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
   const [messageText, setMessageText] = useState('');
   const [showSuggestion, setShowSuggestion] = useState<string | null>(null);
   const [roomName, setRoomName] = useState<string>('Chat Room');
+
+  // Load draft from AsyncStorage when room changes
+  useEffect(() => {
+    const loadDraft = async () => {
+      try {
+        const draftKey = `chat-draft-${roomId}`;
+        const savedDraft = await AsyncStorage.getItem(draftKey);
+        if (savedDraft) {
+          setMessageText(savedDraft);
+        }
+      } catch (error) {
+        console.error('Error loading draft:', error);
+      }
+    };
+    loadDraft();
+  }, [roomId]);
+
+  // Save draft to AsyncStorage when text changes (debounced)
+  useEffect(() => {
+    const saveDraft = async () => {
+      try {
+        const draftKey = `chat-draft-${roomId}`;
+        if (messageText.trim()) {
+          await AsyncStorage.setItem(draftKey, messageText);
+        } else {
+          await AsyncStorage.removeItem(draftKey);
+        }
+      } catch (error) {
+        console.error('Error saving draft:', error);
+      }
+    };
+
+    const timeoutId = setTimeout(saveDraft, 500);
+    return () => clearTimeout(timeoutId);
+  }, [messageText, roomId]);
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
   const [isNearBottom, setIsNearBottom] = useState(true);
   const [showJumpToBottom, setShowJumpToBottom] = useState(false);
@@ -297,6 +333,12 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
     // Clear input immediately for instant feel
     setMessageText('');
     setSelectedImageUri(null);
+    
+    // Clear draft from AsyncStorage
+    const draftKey = `chat-draft-${roomId}`;
+    AsyncStorage.removeItem(draftKey).catch(error => {
+      console.error('Error clearing draft:', error);
+    });
     
     // Scroll to bottom and focus for next message
     setTimeout(() => scrollToBottomWithOffset(true), 50);

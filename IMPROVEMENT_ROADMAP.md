@@ -10,11 +10,19 @@
   - Files: `ChatRoom.tsx` (web/mobile), `useRoomMessages.ts`, `Message.tsx`, `MessageItem.tsx`
   - **Status**: Web and mobile apps now show messages instantly with image preview, upload happens in background with loading indicator
 
-- [ ] **Message Draft Persistence** (30 min)
+- [x] **Cascade Messaging Fix** (15 min) ✅ COMPLETED
+  - Remove input blocking during message send
+  - Allow rapid message sending without waiting
+  - Keep input disabled only during image upload
+  - Files: `ChatRoom.tsx` (web/mobile)
+  - **Status**: Users can now type next message immediately after sending, input stays enabled and focused
+
+- [x] **Message Draft Persistence** (30 min) ✅ COMPLETED
   - Save unsent text to localStorage/AsyncStorage
   - Restore draft on room change
   - Clear draft after successful send
   - Files: `ChatRoom.tsx` (web/mobile)
+  - **Status**: Drafts auto-save every 500ms (mobile) or immediately (web), restore when returning to room
 
 - [ ] **Client-Side Rate Limiting** (20 min)
   - Prevent spam (1 second between messages)
@@ -223,7 +231,7 @@
 
 | Phase | Time | Impact | Status |
 |-------|------|--------|--------|
-| **Phase 1: Quick Wins** | 2 hours (0.5h done) | ⚡️⚡️⚡️ High | 🟢 25% Complete |
+| **Phase 1: Quick Wins** | 2 hours (1.25h done) | ⚡️⚡️⚡️ High | 🟢 63% Complete |
 | **Phase 2: Performance** | 4 hours | ⚡️⚡️⚡️ High | ⚪️ Not Started |
 | **Phase 3: Images** | 3 hours (0.5h done) | ⚡️⚡️ Medium | 🟢 17% Complete |
 | **Phase 4: Data** | 3 hours | ⚡️⚡️ Medium | ⚪️ Not Started |
@@ -231,20 +239,21 @@
 | **Phase 6: Testing** | 5 hours | ⚡️⚡️ Medium | ⚪️ Not Started |
 | **Phase 7: Docs** | 3 hours | ⚡️ Low | ⚪️ Not Started |
 | **Phase 8: Features** | 6 hours | ⚡️ Low | ⚪️ Not Started |
-| **TOTAL** | ~29 hours (1h done) | | 🟢 3.4% Complete |
+| **TOTAL** | ~29 hours (1.75h done) | | 🟢 6.0% Complete |
 
 ---
 
 ## 🎯 Suggested Sprint Plan
 
 ### Sprint 1 (Week 1): Foundation
-- 🟡 Phase 1: Quick Wins (2 hours) - 25% complete
+- 🟡 Phase 1: Quick Wins (2 hours) - 63% complete
   - ✅ Image Upload Optimization (done)
-  - ⬜️ Message Draft Persistence (remaining)
+  - ✅ Cascade Messaging Fix (done)
+  - ✅ Message Draft Persistence (done)
   - ⬜️ Client-Side Rate Limiting (remaining)
   - ⬜️ Retry Failed Messages (remaining)
 - ⬜️ Phase 5: Monitoring (3 hours)
-- **Total:** 5 hours (1h done, 4h remaining)
+- **Total:** 5 hours (1.75h done, 3.25h remaining)
 
 ### Sprint 2 (Week 2): Performance
 - ✅ Phase 2: Performance Optimizations (4 hours)
@@ -275,16 +284,29 @@
    - Both apps show loading indicator during upload
    - Image preview shows immediately for instant UX
 
+2. **Cascade Messaging Fix** - Users can now rapidly send multiple messages without input blocking
+   - Web: Removed `sending` flag from input/button disabled conditions
+   - Mobile: Changed `editable={!uploading}` to allow typing during send
+   - Input stays enabled and focused after sending
+   - Only blocks during image upload (actual long operation)
+
+3. **Message Draft Persistence** - Auto-saves unsent messages across room switches
+   - Web: Saves to localStorage immediately on text change
+   - Mobile: Saves to AsyncStorage with 500ms debounce to reduce I/O
+   - Restores draft when user returns to same room
+   - Clears draft after successful message send
+   - Prevents data loss when switching rooms or closing app
+
 ### 🎯 Next Steps
-**Recommended Next Task:** Message Draft Persistence (30 min)
+**Recommended Next Task:** Client-Side Rate Limiting (20 min)
 - Quick win that provides immediate value
 - Save unsent messages to localStorage/AsyncStorage
 - Restore drafts when user returns to room
 - Complement the instant send experience
 
 ### 📊 Overall Progress
-- **Hours Completed:** 1 out of 29 (3.4%)
-- **Current Sprint:** Sprint 1 - Week 1 (1h/5h completed)
+- **Hours Completed:** 1.75 out of 29 (6.0%)
+- **Current Sprint:** Sprint 1 - Week 1 (1.75h/5h completed)
 - **Status:** On track ✅
 
 ---

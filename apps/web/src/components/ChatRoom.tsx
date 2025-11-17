@@ -54,6 +54,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null);
   const [lastReadMessageId, setLastReadMessageId] = useState<number | null>(null);
   const [hasScrolledToLastRead, setHasScrolledToLastRead] = useState(false);
+  const [retryAttempts, setRetryAttempts] = useState<Map<string, number>>(new Map());
   
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -519,6 +520,107 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     setTimeout(() => inputRef.current?.focus(), 100);
   };
 
+  const handleRetry = async (failedMessage: any) => {
+    if (!failedMessage.id || !user) return;
+
+    const messageId = failedMessage.id;
+    const currentAttempts = retryAttempts.get(messageId) || 0;
+    
+    // Max 3 retry attempts
+    if (currentAttempts >= 3) {
+      setAlertMessage({
+        type: 'error',
+        message: 'Maksimalt antal forsøg nået. Tjek din forbindelse og prøv igen senere.'
+      });
+      return;
+    }
+
+    // Exponential backoff: 1s, 2s, 4s
+    const backoffDelay = Math.pow(2, currentAttempts) * 1000;
+    
+    // Update retry count
+    const newAttempts = new Map(retryAttempts);
+    newAttempts.set(messageId, currentAttempts + 1);
+    setRetryAttempts(newAttempts);
+
+    // Show retry attempt message
+    setAlertMessage({
+      type: 'info',
+      message: `Prøver igen... (forsøg ${currentAttempts + 1}/3)`
+    });
+
+    // Wait for backoff delay
+    await new Promise(resolve => setTimeout(resolve, backoffDelay));
+
+    // Mark as loading
+    updateOptimisticMessage(messageId, {
+      isLoading: true,
+      hasError: false,
+    });
+
+    try {
+      // Try to send again
+      let imageUrl = failedMessage.image_url;
+      
+      // If there's an image URL that looks like a blob/local URL, re-upload it
+      if (imageUrl && imageUrl.startsWith('blob:')) {
+        // Can't re-upload blob URLs, show error
+        updateOptimisticMessage(messageId, {
+          isLoading: false,
+          hasError: true,
+        });
+        setAlertMessage({
+          type: 'error',
+          message: 'Kan ikke gensende billede. Send beskeden igen med et nyt billede.'
+        });
+        return;
+      }
+
+      const result = await sendMessage(roomId, failedMessage.body || undefined, imageUrl || undefined);
+
+      if (result.status === 'success') {
+        // Success! Clear retry count and mark as sent
+        newAttempts.delete(messageId);
+        setRetryAttempts(newAttempts);
+        
+        updateOptimisticMessage(messageId, {
+          isLoading: false,
+          hasError: false,
+        });
+        
+        setAlertMessage({
+          type: 'success',
+          message: 'Besked sendt!'
+        });
+      } else {
+        // Failed again
+        updateOptimisticMessage(messageId, {
+          isLoading: false,
+          hasError: true,
+        });
+        
+        if (currentAttempts + 1 >= 3) {
+          setAlertMessage({
+            type: 'error',
+            message: 'Kunne ikke sende besked efter 3 forsøg. Tjek din forbindelse.'
+          });
+        }
+      }
+    } catch (error) {
+      updateOptimisticMessage(messageId, {
+        isLoading: false,
+        hasError: true,
+      });
+      
+      if (currentAttempts + 1 >= 3) {
+        setAlertMessage({
+          type: 'error',
+          message: 'Kunne ikke sende besked. Tjek din internetforbindelse.'
+        });
+      }
+    }
+  };
+
   const useSuggestion = async () => {
     if (!showSuggestion) return;
     
@@ -706,6 +808,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
                   onImageClick={setEnlargedImageUrl}
                   onScrollToBottom={() => scrollToBottom(true)}
                   currentUserId={user?.id}
+                  onRetry={handleRetry}
                 />
               </div>
             );

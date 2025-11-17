@@ -217,8 +217,21 @@ function MessageItem({
             <Text style={[styles.messageTime, isOwnMessage && styles.ownMessageTimeText]}>
               {getRelativeTime(item.created_at)}
             </Text>
+            {hasError && (
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={() => onErrorRetry(item)}
+              >
+                <Text style={styles.retryText}>↻ Prøv igen</Text>
+              </TouchableOpacity>
+            )}
+            {!hasError && isOptimistic && (
+              <Text style={[styles.messageTime, isOwnMessage && styles.ownMessageTimeText]}>
+                {isLoading ? 'Sender...' : 'Sendt'}
+              </Text>
+            )}
             {/* Read receipts - only show for own messages */}
-            {isOwnMessage && item.read_receipts && item.read_receipts.length > 0 && (
+            {!hasError && isOwnMessage && item.read_receipts && item.read_receipts.length > 0 && (
               <Text style={[styles.readReceipt, styles.ownMessageTimeText]}>
                 ✓✓ Læst af {item.read_receipts.length}
               </Text>
@@ -364,6 +377,18 @@ const styles = StyleSheet.create({
   readReceipt: {
     fontSize: typography.sizes.xs,
     marginLeft: spacing.sm,
+  },
+  retryButton: {
+    marginLeft: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs / 2,
+    backgroundColor: colors.error,
+    borderRadius: 4,
+  },
+  retryText: {
+    color: colors.base100,
+    fontSize: 11,
+    fontWeight: '600' as const,
   },
 });
 

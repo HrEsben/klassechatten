@@ -14,6 +14,7 @@ interface MessageProps {
   onImageClick: (url: string) => void;
   onScrollToBottom: () => void;
   currentUserId?: string;
+  onRetry?: (message: any) => void;
 }
 
 export default function Message({
@@ -23,6 +24,7 @@ export default function Message({
   onImageClick,
   onScrollToBottom,
   currentUserId,
+  onRetry,
 }: MessageProps) {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [pickerPosition, setPickerPosition] = useState<{ x: number; y: number } | null>(null);
@@ -164,7 +166,21 @@ export default function Message({
               <span className="text-xs">{isLoading ? 'Sender...' : hasError ? 'Fejlet' : 'Sendt'}</span>
             )}
             {hasError && (
-              <div className="text-error italic mt-1 text-xs">Besked kunne ikke sendes. Prøv igen.</div>
+              <div className="flex items-center gap-2">
+                <div className="text-error text-xs">Kunne ikke sendes</div>
+                {onRetry && (
+                  <button
+                    onClick={() => onRetry(msg)}
+                    className="btn btn-xs btn-error btn-outline"
+                    title="Prøv igen"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Prøv igen
+                  </button>
+                )}
+              </div>
             )}
             {msg.edited_at && (
               <div>(redigeret)</div>

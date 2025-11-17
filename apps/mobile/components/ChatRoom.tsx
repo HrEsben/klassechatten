@@ -83,6 +83,7 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
   const [reactionPickerVisible, setReactionPickerVisible] = useState(false);
   const [reactionPickerMessageId, setReactionPickerMessageId] = useState<number | null>(null);
   const [usersListVisible, setUsersListVisible] = useState(false);
+  const [retryAttempts, setRetryAttempts] = useState<Map<string, number>>(new Map());
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | number | null>(null);
   const inputRef = useRef<TextInput>(null);

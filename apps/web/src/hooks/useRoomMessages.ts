@@ -80,6 +80,9 @@ export function useRoomMessages({
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [oldestMessageTimestamp, setOldestMessageTimestamp] = useState<string | null>(null);
   
   // Track reconnection state
   const retryCountRef = useRef(0);
@@ -121,7 +124,17 @@ export function useRoomMessages({
       }
 
       // Reverse to show oldest first
-      setMessages(data ? data.reverse() : []);
+      const reversedData = data ? data.reverse() : [];
+      setMessages(reversedData);
+      
+      // Set hasMore based on whether we got a full page
+      setHasMore(data && data.length === limit);
+      
+      // Track the oldest message timestamp for pagination
+      if (reversedData.length > 0) {
+        setOldestMessageTimestamp(reversedData[0].created_at);
+      }
+      
       setError(null); // Clear error on successful load
     } catch (err) {
       console.error('Error loading messages:', err);
@@ -130,6 +143,67 @@ export function useRoomMessages({
       setLoading(false);
     }
   }, [roomId, limit, enabled]);
+
+  // Load more older messages
+  const loadMore = useCallback(async () => {
+    if (!enabled || !hasMore || loadingMore || !oldestMessageTimestamp) {
+      return;
+    }
+    
+    try {
+      setLoadingMore(true);
+      console.log('📄 Loading more messages before:', oldestMessageTimestamp);
+      
+      const { data, error: fetchError } = await supabase
+        .from('messages')
+        .select(`
+          *,
+          profiles!messages_user_id_profiles_fkey (
+            display_name,
+            avatar_url,
+            avatar_color
+          ),
+          read_receipts (
+            user_id,
+            read_at
+          )
+        `)
+        .eq('room_id', roomId)
+        .is('deleted_at', null)
+        .lt('created_at', oldestMessageTimestamp) // Get messages older than current oldest
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (fetchError) {
+        console.error('Supabase fetch error:', fetchError);
+        throw fetchError;
+      }
+
+      // Reverse to show oldest first
+      const reversedData = data ? data.reverse() : [];
+      
+      if (reversedData.length > 0) {
+        // Prepend older messages
+        setMessages(prev => [...reversedData, ...prev]);
+        
+        // Update oldest timestamp
+        setOldestMessageTimestamp(reversedData[0].created_at);
+        
+        // Check if there are more messages
+        setHasMore(reversedData.length === limit);
+        
+        console.log(`✅ Loaded ${reversedData.length} more messages`);
+      } else {
+        setHasMore(false);
+        console.log('✅ No more messages to load');
+      }
+    } catch (err) {
+      console.error('Error loading more messages:', err);
+      // Don't set a blocking error, just log it
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [roomId, limit, enabled, hasMore, loadingMore, oldestMessageTimestamp]);
 
   // Calculate exponential backoff delay
   const getBackoffDelay = useCallback((retryCount: number): number => {
@@ -416,5 +490,8 @@ export function useRoomMessages({
     isReconnecting,
     addOptimisticMessage,
     updateOptimisticMessage,
+    loadMore,
+    hasMore,
+    loadingMore,
   };
 }

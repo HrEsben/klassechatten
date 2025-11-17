@@ -59,7 +59,10 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
     isConnected, 
     addOptimisticMessage, 
     updateOptimisticMessage, 
-    removeOptimisticMessage 
+    removeOptimisticMessage,
+    loadMore,
+    hasMore,
+    loadingMore 
   } = useRoomMessages({
     roomId,
     limit: 50,
@@ -478,6 +481,30 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
                 scrollToBottomWithOffset(false);
               }
             }}
+            onEndReached={() => {
+              // Load more when scrolling to top (inverted list)
+              if (hasMore && !loadingMore && !loading) {
+                console.log('🔄 Loading more messages...');
+                loadMore();
+              }
+            }}
+            onEndReachedThreshold={0.5}
+            inverted
+            ListHeaderComponent={
+              loadingMore ? (
+                <View style={styles.loadingMoreContainer}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text style={styles.loadingMoreText}>Indlæser ældre beskeder...</Text>
+                </View>
+              ) : hasMore && messages.length > 0 ? (
+                <TouchableOpacity 
+                  style={styles.loadMoreButton}
+                  onPress={loadMore}
+                >
+                  <Text style={styles.loadMoreText}>INDLÆS ÆLDRE</Text>
+                </TouchableOpacity>
+              ) : null
+            }
             ListEmptyComponent={
               <Text style={styles.emptyText}>
                 Ingen beskeder endnu. Send den første!
@@ -804,6 +831,32 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.medium,
     marginTop: 40,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wider,
+  },
+  loadingMoreContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  loadingMoreText: {
+    fontSize: typography.sizes.xs,
+    color: colors.opacity[60],
+    fontWeight: typography.weights.medium,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wider,
+  },
+  loadMoreButton: {
+    alignItems: 'center',
+    padding: spacing.md,
+    marginVertical: spacing.sm,
+  },
+  loadMoreText: {
+    fontSize: typography.sizes.xs,
+    color: colors.opacity[60],
+    fontWeight: typography.weights.bold,
     textTransform: 'uppercase',
     letterSpacing: typography.letterSpacing.wider,
   },

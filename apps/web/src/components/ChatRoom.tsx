@@ -41,6 +41,8 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const previousMessageCountRef = useRef(0);
+  const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
+  const previousScrollHeightRef = useRef(0);
 
   // Handle ESC key to close lightbox
   useEffect(() => {
@@ -63,7 +65,10 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     isReconnecting,
     refresh,
     addOptimisticMessage, 
-    updateOptimisticMessage 
+    updateOptimisticMessage,
+    loadMore,
+    hasMore,
+    loadingMore 
   } = useRoomMessages({ 
     roomId,
     limit: 50 
@@ -187,6 +192,55 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     setLastReadMessageId(null);
     messageRefs.current.clear();
   }, [roomId]);
+
+  // Infinite scroll: Load more messages when scrolling to top
+  useEffect(() => {
+    if (!loadMoreTriggerRef.current || !mainScrollRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && hasMore && !loadingMore && !loading) {
+          console.log('🔄 Loading more messages...');
+          
+          // Store current scroll position
+          const scrollContainer = mainScrollRef.current;
+          if (scrollContainer) {
+            previousScrollHeightRef.current = scrollContainer.scrollHeight;
+          }
+          
+          loadMore();
+        }
+      },
+      {
+        root: mainScrollRef.current,
+        rootMargin: '100px', // Start loading 100px before reaching the trigger
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(loadMoreTriggerRef.current);
+
+    return () => observer.disconnect();
+  }, [hasMore, loadingMore, loading, loadMore]);
+
+  // Restore scroll position after loading more messages
+  useEffect(() => {
+    const scrollContainer = mainScrollRef.current;
+    if (!scrollContainer || !loadingMore || previousScrollHeightRef.current === 0) return;
+
+    // After loadingMore becomes false, restore scroll position
+    if (!loadingMore && previousScrollHeightRef.current > 0) {
+      const newScrollHeight = scrollContainer.scrollHeight;
+      const heightDifference = newScrollHeight - previousScrollHeightRef.current;
+      
+      // Scroll down by the height difference to maintain the user's view
+      scrollContainer.scrollTop = heightDifference;
+      
+      console.log('📍 Restored scroll position after loading more messages');
+      previousScrollHeightRef.current = 0;
+    }
+  }, [loadingMore]);
 
   // Fetch room details
   useEffect(() => {
@@ -535,6 +589,28 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             ref={messagesContainerRef}
             className="p-4 space-y-4 min-h-full"
           >
+        {/* Load More Trigger - at the top */}
+        {hasMore && !loading && (
+          <div ref={loadMoreTriggerRef} className="flex justify-center py-2">
+            {loadingMore ? (
+              <div className="flex items-center gap-2 text-base-content/40 text-xs font-mono">
+                <span className="loading loading-spinner loading-sm"></span>
+                <span>Indlæser ældre beskeder...</span>
+              </div>
+            ) : (
+              <button
+                onClick={loadMore}
+                className="btn btn-ghost btn-sm text-base-content/60 hover:text-base-content font-mono text-xs"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
+                INDLÆS ÆLDRE
+              </button>
+            )}
+          </div>
+        )}
+
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="w-12 h-0.5 bg-primary/40 mb-4"></div>

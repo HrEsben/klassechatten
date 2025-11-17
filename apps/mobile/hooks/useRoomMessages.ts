@@ -29,6 +29,7 @@ interface Message {
   isOptimistic?: boolean;
   isLoading?: boolean;
   hasError?: boolean;
+  isUploadingImage?: boolean; // Flag for showing image upload progress
 }
 
 interface UseRoomMessagesOptions {

@@ -281,26 +281,31 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
     const messageBody = messageText.trim();
     const imageUriTemp = selectedImageUri;
 
-    // Add optimistic message immediately with loading state
+    // Add optimistic message immediately with preview image
     const tempId = addOptimisticMessage({
       user_id: user?.id || '',
       body: messageBody || '',
-      image_url: imageUriTemp || undefined,
+      image_url: imageUriTemp || undefined, // Show preview immediately
       profiles: {
         display_name: user?.user_metadata?.display_name || user?.email || 'You',
       },
-      isLoading: true,
+      isLoading: imageUriTemp ? true : false, // Loading state if uploading image
       hasError: false,
+      isUploadingImage: imageUriTemp ? true : false, // Flag for showing upload indicator
     });
     
     // Clear input immediately for instant feel
     setMessageText('');
     setSelectedImageUri(null);
+    
+    // Scroll to bottom and focus for next message
+    setTimeout(() => scrollToBottomWithOffset(true), 50);
+    setTimeout(() => inputRef.current?.focus(), 100);
 
     let imageUrl: string | null = null;
 
     try {
-      // Upload image if selected
+      // Upload image in background if selected
       if (imageUriTemp) {
         imageUrl = await uploadImage(imageUriTemp);
         if (!imageUrl) {
@@ -308,13 +313,19 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
           updateOptimisticMessage(tempId, {
             isLoading: false,
             hasError: true,
+            isUploadingImage: false,
           });
           Alert.alert('Fejl', 'Kunne ikke uploade billede. Prøv igen.');
           return;
         }
+        // Update optimistic message with real image URL
+        updateOptimisticMessage(tempId, {
+          image_url: imageUrl,
+          isUploadingImage: false,
+        });
       }
 
-      // Send message
+      // Send message to server (async, non-blocking for user)
       const result = await sendMessage(roomId, messageBody || undefined, imageUrl || undefined);
 
       if (result.status === 'block' || result.status === 'blocked') {
@@ -329,14 +340,12 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
         hasError: false,
       });
       
-      // Auto-focus input for next message
-      setTimeout(() => inputRef.current?.focus(), 100);
-      
     } catch (error) {
       // Mark optimistic message as failed
       updateOptimisticMessage(tempId, {
         isLoading: false,
         hasError: true,
+        isUploadingImage: false,
       });
       console.error('Error sending message:', error);
     }
@@ -544,7 +553,7 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
               <TouchableOpacity
                 style={styles.imageButton}
                 onPress={handleImagePick}
-                disabled={sending || uploading}
+                disabled={uploading}
               >
                 <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.baseContent} strokeWidth="1.5">
                   <Path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" strokeLinecap="round" strokeLinejoin="round" />
@@ -557,7 +566,7 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
                 onChangeText={handleInputChange}
                 placeholder="Skriv en besked..."
                 placeholderTextColor={colors.opacity[40]}
-                editable={!sending && !uploading}
+                editable={!uploading}
                 multiline
                 maxLength={500}
                 onFocus={() => {
@@ -570,7 +579,7 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
               <TouchableOpacity
                 style={[
                   styles.sendButton,
-                  ((!messageText.trim() && !selectedImageUri) || sending || uploading) && styles.sendButtonDisabled,
+                  ((!messageText.trim() && !selectedImageUri) || uploading) && styles.sendButtonDisabled,
                 ]}
                 onPress={handleSend}
                 disabled={(!messageText.trim() && !selectedImageUri) || uploading}

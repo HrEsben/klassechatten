@@ -164,13 +164,28 @@ function MessageItem({
               ]}
             >
               {item.image_url && (
-                <TouchableOpacity onPress={() => onImagePress(item.image_url)} activeOpacity={0.8}>
-                  <Image
-                    source={{ uri: item.image_url }}
-                    style={styles.messageImageThumbnail}
-                    resizeMode="cover"
-                  />
-                </TouchableOpacity>
+                <View style={styles.imageContainer}>
+                  <TouchableOpacity 
+                    onPress={() => !item.isUploadingImage && onImagePress(item.image_url)} 
+                    activeOpacity={0.8}
+                    disabled={item.isUploadingImage}
+                  >
+                    <Image
+                      source={{ uri: item.image_url }}
+                      style={[
+                        styles.messageImageThumbnail,
+                        item.isUploadingImage && { opacity: 0.5 }
+                      ]}
+                      resizeMode="cover"
+                    />
+                  </TouchableOpacity>
+                  {item.isUploadingImage && (
+                    <View style={styles.imageUploadingOverlay}>
+                      <ActivityIndicator size="large" color={colors.base100} />
+                      <Text style={styles.imageUploadingText}>Uploader...</Text>
+                    </View>
+                  )}
+                </View>
               )}
 
               {item.body && (
@@ -281,6 +296,9 @@ const styles = StyleSheet.create({
   ownMessageBubble: {
     backgroundColor: colors.primary,
   },
+  imageContainer: {
+    position: 'relative',
+  },
   messageImageThumbnail: {
     width: 200,
     height: 150,
@@ -288,6 +306,24 @@ const styles = StyleSheet.create({
     borderRadius: borders.radius.none,
     borderWidth: borders.width.standard,
     borderColor: borders.color.default,
+  },
+  imageUploadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: spacing.sm,
+    backgroundColor: 'rgba(26, 26, 26, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  imageUploadingText: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.bold,
+    color: colors.base100,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wider,
   },
   messageBody: {
     fontSize: typography.sizes.lg,

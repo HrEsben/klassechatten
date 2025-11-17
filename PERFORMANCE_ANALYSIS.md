@@ -55,10 +55,15 @@ moderation = await openai.moderations.create(...); // 200-500ms
 
 ---
 
-### 4. **Image Upload Blocks Everything** ⚠️ PARTIALLY OPTIMIZED
-**Current Behavior:** Upload still completes before server call, but optimistic UI shows immediately
+### 4. **Image Upload Blocks Everything** ✅ FIXED
+**Previous Behavior:** Upload had to complete before server call, blocking user
 
-**Future Optimization:** Show optimistic immediately, upload in background (not yet implemented)
+**Solution Implemented (November 17, 2025):**
+- Show optimistic message with image preview immediately
+- Upload happens in background while user continues chatting
+- Loading indicator shows upload progress
+- Message updates with real URL when upload completes
+- **Benefit:** No wait time for large images, instant UX
 
 ---
 
@@ -264,14 +269,19 @@ return { status: 'allow', message_id, flagged: profanityResult.hasProfanity };
 Could further improve scalability with dedicated queue system:
 - Create `moderation_queue` table
 - Cron job processes queue every 10 seconds
-- Batch OpenAI API calls for cost savings
-- **Benefit:** Even more scalable for high traffic
+- Batch API calls to reduce load on Edge Function
+- **Benefit:** Even more scalable for high traffic, reduces Edge Function execution time
 - **Effort:** ~2 hours
+- **Note:** OpenAI moderation API is FREE, so no cost savings - only performance/scalability benefits
 
-### Image Upload Optimization
+### ~~Image Upload Optimization~~ ✅ COMPLETED (November 17, 2025)
 Upload images in background while showing optimistic message:
-- Show optimistic message immediately
-- Upload image async
+- ✅ Show optimistic message immediately
+- ✅ Upload image async in background
+- ✅ Update message when upload completes
+- ✅ Loading indicator during upload
+- **Benefit:** No wait time for large images - instant UX
+- **Status:** Already implemented for both web and mobile apps
 - Update message when upload completes
 - **Benefit:** No wait time for large images
 - **Effort:** ~30 minutes

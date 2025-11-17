@@ -481,6 +481,17 @@ export function useRoomMessages({
     });
   }, []);
 
+  const updateOptimisticMessageImage = useCallback((tempId: string, imageUrl: string): void => {
+    console.log(`updateOptimisticMessageImage called: tempId=${tempId}, imageUrl=${imageUrl}`);
+    setMessages(prev => {
+      return prev.map(msg => 
+        msg.id === tempId 
+          ? { ...msg, image_url: imageUrl, isLoading: false }
+          : msg
+      );
+    });
+  }, []);
+
   return {
     messages,
     loading,
@@ -490,6 +501,7 @@ export function useRoomMessages({
     isReconnecting,
     addOptimisticMessage,
     updateOptimisticMessage,
+    updateOptimisticMessageImage,
     loadMore,
     hasMore,
     loadingMore,

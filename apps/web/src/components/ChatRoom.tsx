@@ -68,6 +68,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     refresh,
     addOptimisticMessage, 
     updateOptimisticMessage,
+    updateOptimisticMessageImage,
     loadMore,
     hasMore,
     loadingMore 
@@ -342,6 +343,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     // Save message content before clearing
     const messageBody = messageText.trim();
     const imageFile = selectedImage;
+    const imagePreviewUrl = imagePreview; // Save preview for optimistic UI
 
     // 1. INSTANT: Add optimistic message and clear input immediately
     const { data: { user: currentUser } } = await supabase.auth.getUser();
@@ -353,7 +355,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       room_id: roomId,
       user_id: currentUser.id,
       body: messageBody || null,
-      image_url: null, // Will update after upload
+      image_url: imageFile ? imagePreviewUrl : null, // Show preview immediately
       created_at: new Date().toISOString(),
       user: {
         id: currentUser.id,
@@ -367,7 +369,8 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       read_by: [],
       reply_to: null,
       isOptimistic: true,
-      isLoading: true
+      isLoading: imageFile ? true : false, // Loading if we have an image to upload
+      isUploadingImage: imageFile ? true : false
     };
 
     const optimisticMessageId = addOptimisticMessage(optimisticMessage as any);
@@ -381,6 +384,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     // 2. ASYNC: Upload image in background (if needed)
     let imageUrl: string | null = null;
     if (imageFile) {
+      // Upload happens in background while user sees optimistic message
       imageUrl = await uploadImage(imageFile);
       if (!imageUrl) {
         // Mark optimistic message as failed
@@ -393,13 +397,9 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         });
         return;
       }
-      // Update optimistic message with image URL
+      // Update optimistic message with real image URL
       if (optimisticMessageId) {
-        const messages = document.querySelectorAll(`[data-message-id="${optimisticMessageId}"]`);
-        messages.forEach(msg => {
-          const img = msg.querySelector('img');
-          if (img) img.src = imageUrl!;
-        });
+        updateOptimisticMessageImage(optimisticMessageId, imageUrl);
       }
     }
 
@@ -798,7 +798,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            disabled={sending || uploading}
+            disabled={uploading}
             className="btn join-item bg-base-200 hover:bg-base-300 w-10 h-10 min-h-10 p-0 border-0"
             title="Upload billede"
           >
@@ -813,15 +813,15 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             onChange={(e) => handleInputChange(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
             placeholder="Skriv en besked..."
-            disabled={sending || uploading}
+            disabled={uploading}
             className="input input-bordered join-item flex-1"
           />
           <button
             onClick={() => handleSend()}
-            disabled={sending || uploading || (!messageText.trim() && !selectedImage)}
+            disabled={uploading || (!messageText.trim() && !selectedImage)}
             className="btn btn-primary join-item"
           >
-            {uploading ? 'Uploader' : sending ? 'Sender' : 'Send'}
+            {uploading ? 'Uploader' : 'Send'}
           </button>
         </div>
       </div>

@@ -30,6 +30,7 @@ export default function Message({
   const isOptimistic = msg.isOptimistic;
   const isLoading = msg.isLoading;
   const hasError = msg.hasError;
+  const isUploadingImage = msg.isUploadingImage;
   
   // Only enable reactions for non-optimistic messages with numeric IDs
   const messageId = typeof msg.id === 'number' ? msg.id : null;
@@ -119,16 +120,28 @@ export default function Message({
         )}
         
         {msg.image_url && (
-          <img
-            src={msg.image_url}
-            alt="Uploaded image"
-            onClick={() => onImageClick(msg.image_url || '')}
-            className={`max-w-xs w-full h-auto object-cover cursor-pointer hover:brightness-90 transition-all block ${isOptimistic && isLoading ? 'opacity-50' : ''} ${msg.body ? 'mb-3' : ''}`}
-            onError={e => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'320\' height=\'240\'><rect width=\'100%\' height=\'100%\' fill=\'#f3f4f6\'/><text x=\'50%\' y=\'50%\' text-anchor=\'middle\' dy=\'.3em\' font-size=\'16\' fill=\'#9ca3af\'>Billede fejler</text></svg>';
-            }}
-          />
+          <div className="relative">
+            <img
+              src={msg.image_url}
+              alt="Uploaded image"
+              onClick={() => !isUploadingImage && onImageClick(msg.image_url || '')}
+              className={`max-w-xs w-full h-auto object-cover ${!isUploadingImage ? 'cursor-pointer hover:brightness-90' : 'cursor-wait'} transition-all block ${isOptimistic && isLoading ? 'opacity-50' : ''} ${msg.body ? 'mb-3' : ''}`}
+              onError={e => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'320\' height=\'240\'><rect width=\'100%\' height=\'100%\' fill=\'#f3f4f6\'/><text x=\'50%\' y=\'50%\' text-anchor=\'middle\' dy=\'.3em\' font-size=\'16\' fill=\'#9ca3af\'>Billede fejler</text></svg>';
+              }}
+            />
+            {isUploadingImage && (
+              <div className="absolute inset-0 flex items-center justify-center bg-base-content/20">
+                <div className="flex flex-col items-center gap-2">
+                  <span className="loading loading-spinner loading-md text-base-100"></span>
+                  <span className="text-xs font-medium text-base-100 bg-base-content/50 px-3 py-1">
+                    Uploader...
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
         )}
         {msg.body && <div className="whitespace-pre-wrap px-1">{msg.body}</div>}
         

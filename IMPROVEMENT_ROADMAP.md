@@ -3,11 +3,12 @@
 ## 🎯 Quick Wins (1-2 hours total)
 
 ### Phase 1: Immediate UX Improvements
-- [ ] **Image Upload Optimization** (30 min)
+- [x] **Image Upload Optimization** (30 min) ✅ COMPLETED
   - Show optimistic message immediately
   - Upload image in background
   - Update message when upload completes
-  - Files: `ChatRoom.tsx` (web/mobile), `useSendMessage.ts`
+  - Files: `ChatRoom.tsx` (web/mobile), `useRoomMessages.ts`, `Message.tsx`, `MessageItem.tsx`
+  - **Status**: Web and mobile apps now show messages instantly with image preview, upload happens in background with loading indicator
 
 - [ ] **Message Draft Persistence** (30 min)
   - Save unsent text to localStorage/AsyncStorage
@@ -220,26 +221,30 @@
 
 ## 📊 Time Estimates
 
-| Phase | Time | Impact |
-|-------|------|--------|
-| **Phase 1: Quick Wins** | 2 hours | ⚡️⚡️⚡️ High |
-| **Phase 2: Performance** | 4 hours | ⚡️⚡️⚡️ High |
-| **Phase 3: Images** | 3 hours | ⚡️⚡️ Medium |
-| **Phase 4: Data** | 3 hours | ⚡️⚡️ Medium |
-| **Phase 5: Monitoring** | 3 hours | ⚡️⚡️⚡️ High |
-| **Phase 6: Testing** | 5 hours | ⚡️⚡️ Medium |
-| **Phase 7: Docs** | 3 hours | ⚡️ Low |
-| **Phase 8: Features** | 6 hours | ⚡️ Low |
-| **TOTAL** | ~29 hours | |
+| Phase | Time | Impact | Status |
+|-------|------|--------|--------|
+| **Phase 1: Quick Wins** | 2 hours (0.5h done) | ⚡️⚡️⚡️ High | 🟢 25% Complete |
+| **Phase 2: Performance** | 4 hours | ⚡️⚡️⚡️ High | ⚪️ Not Started |
+| **Phase 3: Images** | 3 hours (0.5h done) | ⚡️⚡️ Medium | 🟢 17% Complete |
+| **Phase 4: Data** | 3 hours | ⚡️⚡️ Medium | ⚪️ Not Started |
+| **Phase 5: Monitoring** | 3 hours | ⚡️⚡️⚡️ High | ⚪️ Not Started |
+| **Phase 6: Testing** | 5 hours | ⚡️⚡️ Medium | ⚪️ Not Started |
+| **Phase 7: Docs** | 3 hours | ⚡️ Low | ⚪️ Not Started |
+| **Phase 8: Features** | 6 hours | ⚡️ Low | ⚪️ Not Started |
+| **TOTAL** | ~29 hours (1h done) | | 🟢 3.4% Complete |
 
 ---
 
 ## 🎯 Suggested Sprint Plan
 
 ### Sprint 1 (Week 1): Foundation
-- ✅ Phase 1: Quick Wins (2 hours)
-- ✅ Phase 5: Monitoring (3 hours)
-- **Total:** 5 hours
+- 🟡 Phase 1: Quick Wins (2 hours) - 25% complete
+  - ✅ Image Upload Optimization (done)
+  - ⬜️ Message Draft Persistence (remaining)
+  - ⬜️ Client-Side Rate Limiting (remaining)
+  - ⬜️ Retry Failed Messages (remaining)
+- ⬜️ Phase 5: Monitoring (3 hours)
+- **Total:** 5 hours (1h done, 4h remaining)
 
 ### Sprint 2 (Week 2): Performance
 - ✅ Phase 2: Performance Optimizations (4 hours)
@@ -261,13 +266,36 @@
 
 ---
 
+## 🚀 Progress Update
+
+### ✅ Completed (November 17, 2025)
+1. **Image Upload Optimization** - Messages now appear instantly with image preview, upload happens in background
+   - Web: Added `updateOptimisticMessageImage()` hook function
+   - Mobile: Updated `Message` interface with `isUploadingImage` flag
+   - Both apps show loading indicator during upload
+   - Image preview shows immediately for instant UX
+
+### 🎯 Next Steps
+**Recommended Next Task:** Message Draft Persistence (30 min)
+- Quick win that provides immediate value
+- Save unsent messages to localStorage/AsyncStorage
+- Restore drafts when user returns to room
+- Complement the instant send experience
+
+### 📊 Overall Progress
+- **Hours Completed:** 1 out of 29 (3.4%)
+- **Current Sprint:** Sprint 1 - Week 1 (1h/5h completed)
+- **Status:** On track ✅
+
+---
+
 ## 🚀 Getting Started
 
-To begin implementing this roadmap:
+To continue implementing this roadmap:
 
-1. **Start with Phase 1** - Quick wins provide immediate value
+1. **Continue Phase 1** - Complete remaining quick wins
 2. **Track progress** - Check off items as you complete them
-3. **Adjust priorities** - Feel free to reorder based on your needs
-4. **One phase at a time** - Don't try to do everything at once
+3. **Test thoroughly** - Verify image upload works on both web and mobile
+4. **One task at a time** - Focus on completing draft persistence next
 
-**Ready to start?** Let me know which phase you'd like to tackle first! 🎯
+**Ready to continue?** Let me know if you want to tackle message draft persistence or move to another task! 🎯

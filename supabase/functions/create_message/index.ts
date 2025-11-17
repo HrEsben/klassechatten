@@ -95,57 +95,9 @@ serve(async (req) => {
 
     // Get moderation settings from class
     const moderationLevel = (room as any).classes?.moderation_level || 'moderate';
-    const profanityFilterEnabled = (room as any).classes?.profanity_filter_enabled ?? true;
-    console.log(`Class moderation level: ${moderationLevel}, profanity filter: ${profanityFilterEnabled}`);
+    console.log(`Class moderation level: ${moderationLevel}`);
 
-    // 2) Danish profanity filter (optional - only if enabled for this class)
-    let danishProfanityDetected = false;
-    let detectedProfanity: string | null = null;
-    
-    if (profanityFilterEnabled && body) {
-      const danishProfanity = [
-      // Strong curse words
-      'fuck', 'fck', 'fucking', 'fucker', 'fuckface',
-      'shit', 'skit', 'lort',
-      'pis', 'piss',
-      'fanden', 'satan', 'helvede',
-      'røv', 'røvhul', 'røvbanan',
-      'kusse', 'kussekryster', 'fisse', 'fissetryne',
-      'pik', 'pikansjos', 'pikhovede', 'pikhoved',
-      'luder', 'ludder', 'luderunge',
-      'kælling', 'kelling',
-      'møgsvin', 'møgluder', 'møgkælling',
-      'tåbe', 'idiot', 'spasser', 'mongo', 'retard',
-      'bitch', 'bøsse', 'bosse', 'perker',
-      // Mild but inappropriate for school
-      'lortehovede', 'lortehoved', 'skiderik',
-      'fandens', 'pokker', 'søren',
-      'kraftedeme', 'kraftedme', 'fandme', 'fanme',
-      'hore', 'hor',
-      // Variations and creative spellings
-      'f*ck', 'sh*t', 'b*tch', 'p*k',
-      'fjong', 'nar', 'tåbe', 'tosse',
-      // English that kids use
-      'asshole', 'bastard', 'dick', 'pussy', 'cunt',
-      'jackass', 'dumbass', 'shithead', 'motherfucker'
-    ];
-
-      const lowerBody = body.toLowerCase();
-      const foundProfanity = danishProfanity.find(word => {
-        // Match whole words or words with punctuation/spaces around them
-        const regex = new RegExp(`(^|\\s|[.,!?])${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|\\s|[.,!?])`, 'i');
-        return regex.test(lowerBody);
-      });
-
-      if (foundProfanity) {
-        console.log(`Danish profanity detected: ${foundProfanity}`);
-        danishProfanityDetected = true;
-        detectedProfanity = foundProfanity;
-        // Will flag the message below, not block
-      }
-    }
-
-    // 3) Run OpenAI Moderation (FREE - omni-moderation-latest)
+    // 2) Run OpenAI Moderation (FREE - omni-moderation-latest)
     let moderation;
     let moderationFailed = false;
     
@@ -187,14 +139,7 @@ serve(async (req) => {
     let action: "allow" | "flag" = "allow";  // Removed "block" - we only flag now
     let flagReason: string | null = null;
     
-    // Flag immediately if Danish profanity was detected
-    if (danishProfanityDetected) {
-      action = "flag";
-      flagReason = 'high_severity'; // Danish profanity is considered high severity
-      console.log(`Flagging due to Danish profanity: ${detectedProfanity}`);
-    }
-    
-    console.log(`Moderation check: flagged=${flagged}, action=${action}, moderationFailed=${moderationFailed}, danishProfanity=${danishProfanityDetected}`);
+    console.log(`Moderation check: flagged=${flagged}, action=${action}, moderationFailed=${moderationFailed}`);
 
     // Check scores even if not flagged by OpenAI (stricter school standards)
     if (!moderationFailed && moderation) {
@@ -279,16 +224,10 @@ serve(async (req) => {
     if (action === "flag") {
       let labels: string[] = [];
       let score = 0;
-      let rule = "";
+      let rule = "openai:flag";
       
-      if (danishProfanityDetected && detectedProfanity) {
-        // Danish profanity detected
-        rule = "danish_profanity_filter";
-        labels = [detectedProfanity];
-        score = 1.0;
-      } else if (moderation) {
+      if (moderation) {
         // OpenAI moderation flagged
-        rule = "openai:flag";
         labels = moderation.results[0].categories ? 
           Object.keys(moderation.results[0].categories).filter(
             k => moderation.results[0].categories[k]

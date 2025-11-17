@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { RealtimeChannel } from '@supabase/supabase-js';
+import { useConsolidatedRealtime } from './useConsolidatedRealtime';
 
 interface Message {
   id: number | string; // Allow string for optimistic messages
@@ -77,19 +77,9 @@ export function useRoomMessages({
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [channel, setChannel] = useState<RealtimeChannel | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [isReconnecting, setIsReconnecting] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [oldestMessageTimestamp, setOldestMessageTimestamp] = useState<string | null>(null);
-  
-  // Track reconnection state
-  const retryCountRef = useRef(0);
-  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isReconnectingRef = useRef(false);
-  const maxRetries = 5;
-  const baseDelay = 1000;
 
   // Backfill: Load initial messages
   const loadMessages = useCallback(async () => {
@@ -205,241 +195,114 @@ export function useRoomMessages({
     }
   }, [roomId, limit, enabled, hasMore, loadingMore, oldestMessageTimestamp]);
 
-  // Calculate exponential backoff delay
-  const getBackoffDelay = useCallback((retryCount: number): number => {
-    const delay = Math.min(baseDelay * Math.pow(2, retryCount), 30000);
-    const jitter = Math.random() * 1000;
-    return delay + jitter;
-  }, [baseDelay]);
-
-  // Clear retry timeout
-  const clearRetryTimeout = useCallback(() => {
-    if (retryTimeoutRef.current) {
-      clearTimeout(retryTimeoutRef.current);
-      retryTimeoutRef.current = null;
+  // Handle realtime message insert
+  const handleMessageInsert = useCallback(async (newMessage: Message) => {
+    console.log('Received INSERT event:', newMessage);
+    console.log('New message image_url:', newMessage.image_url);
+    console.log('New message details:', { id: newMessage.id, body: newMessage.body?.substring(0, 20) });
+    
+    // Only add if not deleted
+    if (!newMessage.deleted_at) {
+      // Fetch profile data for the new message
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('display_name, avatar_url, avatar_color')
+        .eq('user_id', newMessage.user_id)
+        .single();
+      
+      // Add profile data to message
+      const messageWithProfile = {
+        ...newMessage,
+        profiles: profileData ? { 
+          display_name: profileData.display_name,
+          avatar_url: profileData.avatar_url,
+          avatar_color: profileData.avatar_color
+        } : undefined
+      };
+      
+      setMessages((prev) => {
+        console.log('Adding new message to existing:', prev.map(m => ({ id: m.id, isOptimistic: m.isOptimistic, body: m.body?.substring(0, 20) })));
+        
+        // Check if this message content matches any optimistic message
+        // If so, remove the optimistic message and add the real one
+        const filteredPrev = prev.filter(msg => {
+          if (msg.isOptimistic && msg.body === newMessage.body && msg.user_id === newMessage.user_id) {
+            console.log('Found matching optimistic message, removing:', { optimisticId: msg.id, realId: newMessage.id });
+            return false; // Remove the optimistic message
+          }
+          return true; // Keep other messages
+        });
+        
+        const updated = [...filteredPrev, messageWithProfile];
+        console.log('Messages after adding new message:', updated.map(m => ({ id: m.id, isOptimistic: m.isOptimistic, body: m.body?.substring(0, 20) })));
+        return updated;
+      });
     }
   }, []);
 
-  // Attempt reconnection
-  const attemptReconnect = useCallback(async (currentChannel: RealtimeChannel) => {
-    if (isReconnectingRef.current) return;
-
-    if (retryCountRef.current >= maxRetries) {
-      console.warn('Max reconnection attempts reached');
-      setIsReconnecting(false);
-      setError('Connection lost. Please refresh the page.');
-      return;
-    }
-
-    isReconnectingRef.current = true;
-    retryCountRef.current += 1;
-    setIsReconnecting(true);
-
-    console.log(`🔄 Attempting reconnection (${retryCountRef.current}/${maxRetries})...`);
-
-    try {
-      // Unsubscribe current channel
-      await currentChannel.unsubscribe();
-      
-      // Small delay before resubscribing
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Reload messages
-      await loadMessages();
-      
-      // Resubscribe (will happen in the main useEffect)
-      console.log('✅ Reconnection successful, messages reloaded');
-      
-      retryCountRef.current = 0;
-      isReconnectingRef.current = false;
-      setIsReconnecting(false);
-      setError(null);
-      
-    } catch (err) {
-      console.error('❌ Reconnection failed:', err);
-      isReconnectingRef.current = false;
-      
-      // Schedule next retry
-      const delay = getBackoffDelay(retryCountRef.current);
-      console.log(`⏱️ Next retry in ${Math.round(delay / 1000)}s`);
-      
-      retryTimeoutRef.current = setTimeout(() => {
-        attemptReconnect(currentChannel);
-      }, delay);
-    }
-  }, [loadMessages, getBackoffDelay, maxRetries]);
-
-  // Subscribe to realtime updates
-  useEffect(() => {
-    if (!enabled) return;
-
-    // Load initial messages
-    loadMessages();
-
-    // Set up realtime subscription
-    const channelName = `realtime:room.${roomId}`;
-    console.log('Setting up realtime channel:', channelName);
+  // Handle realtime message update
+  const handleMessageUpdate = useCallback((updatedMessage: Message) => {
+    console.log('Received UPDATE event:', updatedMessage);
     
-    const realtimeChannel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `room_id=eq.${roomId}`,
-        },
-        async (payload) => {
-          console.log('Received INSERT event:', payload);
-          const newMessage = payload.new as Message;
-          console.log('New message image_url:', newMessage.image_url);
-          console.log('New message details:', { id: newMessage.id, body: newMessage.body?.substring(0, 20) });
-          
-          // Only add if not deleted
-          if (!newMessage.deleted_at) {
-            // Fetch profile data for the new message
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('display_name, avatar_url, avatar_color')
-              .eq('user_id', newMessage.user_id)
-              .single();
-            
-            // Add profile data to message
-            const messageWithProfile = {
-              ...newMessage,
-              profiles: profileData ? { 
-                display_name: profileData.display_name,
-                avatar_url: profileData.avatar_url,
-                avatar_color: profileData.avatar_color
-              } : undefined
+    setMessages((prev) =>
+      prev
+        .map((msg) =>
+          msg.id === updatedMessage.id ? updatedMessage : msg
+        )
+        .filter((msg) => !msg.deleted_at) // Remove if soft-deleted
+    );
+  }, []);
+
+  // Handle realtime message delete
+  const handleMessageDelete = useCallback((deletedMessage: Message) => {
+    console.log('Received DELETE event:', deletedMessage);
+    
+    setMessages((prev) =>
+      prev.filter((msg) => msg.id !== deletedMessage.id)
+    );
+  }, []);
+
+  // Handle realtime read receipt insert
+  const handleReadReceiptInsert = useCallback((receipt: { message_id: number; user_id: string; read_at: string }) => {
+    console.log('Received read receipt:', receipt);
+    
+    // Update the message to include this read receipt
+    setMessages((prev) =>
+      prev.map((msg) => {
+        if (msg.id === receipt.message_id) {
+          const existingReceipts = msg.read_receipts || [];
+          // Check if this user already has a receipt
+          const hasReceipt = existingReceipts.some(r => r.user_id === receipt.user_id);
+          if (!hasReceipt) {
+            return {
+              ...msg,
+              read_receipts: [...existingReceipts, { user_id: receipt.user_id, read_at: receipt.read_at }]
             };
-            
-            setMessages((prev) => {
-              console.log('Adding new message to existing:', prev.map(m => ({ id: m.id, isOptimistic: m.isOptimistic, body: m.body?.substring(0, 20) })));
-              
-              // Check if this message content matches any optimistic message
-              // If so, remove the optimistic message and add the real one
-              const filteredPrev = prev.filter(msg => {
-                if (msg.isOptimistic && msg.body === newMessage.body && msg.user_id === newMessage.user_id) {
-                  console.log('Found matching optimistic message, removing:', { optimisticId: msg.id, realId: newMessage.id });
-                  return false; // Remove the optimistic message
-                }
-                return true; // Keep other messages
-              });
-              
-              const updated = [...filteredPrev, messageWithProfile];
-              console.log('Messages after adding new message:', updated.map(m => ({ id: m.id, isOptimistic: m.isOptimistic, body: m.body?.substring(0, 20) })));
-              return updated;
-            });
           }
         }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'messages',
-          filter: `room_id=eq.${roomId}`,
-        },
-        (payload) => {
-          console.log('Received UPDATE event:', payload);
-          const updatedMessage = payload.new as Message;
-          
-          setMessages((prev) =>
-            prev
-              .map((msg) =>
-                msg.id === updatedMessage.id ? updatedMessage : msg
-              )
-              .filter((msg) => !msg.deleted_at) // Remove if soft-deleted
-          );
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'messages',
-          filter: `room_id=eq.${roomId}`,
-        },
-        (payload) => {
-          console.log('Received DELETE event:', payload);
-          const deletedMessage = payload.old as Message;
-          
-          setMessages((prev) =>
-            prev.filter((msg) => msg.id !== deletedMessage.id)
-          );
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'read_receipts',
-        },
-        async (payload) => {
-          console.log('Received read receipt:', payload);
-          const receipt = payload.new as { message_id: number; user_id: string; read_at: string };
-          
-          // Update the message to include this read receipt
-          setMessages((prev) =>
-            prev.map((msg) => {
-              if (msg.id === receipt.message_id) {
-                const existingReceipts = msg.read_receipts || [];
-                // Check if this user already has a receipt
-                const hasReceipt = existingReceipts.some(r => r.user_id === receipt.user_id);
-                if (!hasReceipt) {
-                  return {
-                    ...msg,
-                    read_receipts: [...existingReceipts, { user_id: receipt.user_id, read_at: receipt.read_at }]
-                  };
-                }
-              }
-              return msg;
-            })
-          );
-        }
-      )
-      .subscribe((status, err) => {
-        console.log('📡 Subscription status:', status, err);
-        
-        if (status === 'SUBSCRIBED') {
-          console.log(`✅ Successfully subscribed to room ${roomId}`);
-          setIsConnected(true);
-          setIsReconnecting(false);
-          setError(null);
-          retryCountRef.current = 0; // Reset retry count on success
-          clearRetryTimeout();
-        } else if (status === 'CHANNEL_ERROR') {
-          console.warn(`⚠️ Channel error for room ${roomId}, attempting reconnection...`);
-          setIsConnected(false);
-          // Don't set error - we'll try to reconnect silently
-          attemptReconnect(realtimeChannel);
-        } else if (status === 'TIMED_OUT') {
-          console.warn(`⏱️ Connection timed out for room ${roomId}, attempting reconnection...`);
-          setIsConnected(false);
-          // Don't set error - we'll try to reconnect silently
-          attemptReconnect(realtimeChannel);
-        } else if (status === 'CLOSED') {
-          console.log(`🔌 Channel closed for room ${roomId}`);
-          setIsConnected(false);
-        }
-      });
+        return msg;
+      })
+    );
+  }, []);
 
-    setChannel(realtimeChannel);
+  // Use consolidated realtime hook
+  const { isConnected, isReconnecting } = useConsolidatedRealtime({
+    roomId,
+    enabled,
+    handlers: {
+      onMessageInsert: handleMessageInsert,
+      onMessageUpdate: handleMessageUpdate,
+      onMessageDelete: handleMessageDelete,
+      onReadReceiptInsert: handleReadReceiptInsert,
+    },
+  });
 
-    // Cleanup
-    return () => {
-      console.log(`🔌 Unsubscribing from room ${roomId}`);
-      clearRetryTimeout();
-      retryCountRef.current = 0;
-      isReconnectingRef.current = false;
-      realtimeChannel.unsubscribe();
-    };
-  }, [roomId, enabled, loadMessages, attemptReconnect, clearRetryTimeout]);
+  // Load initial messages on mount
+  useEffect(() => {
+    if (enabled) {
+      loadMessages();
+    }
+  }, [enabled, loadMessages]);
 
   const refresh = useCallback(() => {
     loadMessages();

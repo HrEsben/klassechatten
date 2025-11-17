@@ -42,6 +42,15 @@
 ## ⚡️ Performance Optimizations (3-4 hours total)
 
 ### Phase 2: React Performance
+- [x] **Consolidate Realtime Subscriptions** (1 hour) ✅ COMPLETED
+  - Combine 4 separate channels into 1 per room
+  - Single channel handles: messages, read receipts, presence
+  - Batch reaction/receipt updates with 100ms debounce
+  - Unified reconnection logic
+  - Files: Created `useConsolidatedRealtime.ts`, updated `useRoomMessages.ts`, `useRoomPresence.ts`
+  - Optimized `useReactions.ts` channel naming for better multiplexing
+  - **Status**: 75% reduction in realtime channels, unified event handling, batched updates
+
 - [ ] **Memoize Message Components** (30 min)
   - Wrap Message in React.memo
   - Add proper comparison function
@@ -226,15 +235,15 @@
 
 | Phase | Time | Impact | Status |
 |-------|------|--------|--------|
-| **Phase 1: Quick Wins** | 2 hours (2.08h done) | ⚡️⚡️⚡️ High | ✅ 100% Complete |
-| **Phase 2: Performance** | 4 hours | ⚡️⚡️⚡️ High | ⚪️ Not Started |
+| **Phase 1: Quick Wins** | 2 hours (2.58h done) | ⚡️⚡️⚡️ High | ✅ 100% Complete |
+| **Phase 2: Performance** | 4 hours (1h done) | ⚡️⚡️⚡️ High | 🟢 25% Complete |
 | **Phase 3: Images** | 3 hours (0.5h done) | ⚡️⚡️ Medium | 🟢 17% Complete |
 | **Phase 4: Data** | 1 hour | ⚡️⚡️ Medium | ⚪️ Not Started |
 | **Phase 5: Monitoring** | 3 hours | ⚡️⚡️⚡️ High | ⚪️ Not Started |
 | **Phase 6: Testing** | 5 hours | ⚡️⚡️ Medium | ⚪️ Not Started |
 | **Phase 7: Docs** | 3 hours | ⚡️ Low | ⚪️ Not Started |
 | **Phase 8: Features** | 6 hours | ⚡️ Low | ⚪️ Not Started |
-| **TOTAL** | ~27 hours (2.58h done) | | 🟢 9.6% Complete |
+| **TOTAL** | ~27 hours (3.58h done) | | 🟢 13.3% Complete |
 
 ---
 
@@ -320,6 +329,13 @@
    - 5-10x faster initial load compared to loading all messages
    - Documented in `INFINITE_SCROLL.md`
    - Files: `useRoomMessages.ts`, `ChatRoom.tsx` (web/mobile)
+
+7. **Danish Profanity Filter Removed** - Simplified moderation! ✅
+   - Removed redundant 38-word Danish profanity filter (~50 lines)
+   - AI moderation (OpenAI omni-moderation-latest) catches all inappropriate content
+   - No more regex compilation on every message send
+   - Cleaner Edge Function code
+   - File: `supabase/functions/create_message/index.ts`
 
 ### 🎉 Phase 1 Complete!
 

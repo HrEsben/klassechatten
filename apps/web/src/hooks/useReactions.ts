@@ -207,15 +207,17 @@ export function useReactions({ messageId, currentUserId, enabled = true }: UseRe
     }
   }, [reactions, currentUserId, addReaction, removeReaction]);
 
-  // Set up realtime subscription
+  // Set up realtime subscription for this specific message's reactions
   useEffect(() => {
     if (!enabled) return;
 
     fetchReactions();
 
-    // Subscribe to reaction changes
+    // Subscribe to reaction changes for this message only
+    // Note: We keep per-message subscriptions for reactions because they're component-level,
+    // but use a simpler channel naming to allow Supabase to better multiplex connections
     const channel = supabase
-      .channel(`reactions:message_id=eq.${messageId}`)
+      .channel(`reactions:${messageId}`)
       .on(
         'postgres_changes',
         {

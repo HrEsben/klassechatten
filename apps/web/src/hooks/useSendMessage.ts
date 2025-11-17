@@ -122,12 +122,8 @@ export function useSendMessage() {
         throw new Error(`Invalid response from server: ${responseText.slice(0, 100)}`);
       }
       
-      console.log('Edge Function response:', result);
-      console.log('HTTP Status:', response.status, response.statusText);
-      
       if (!response.ok) {
         console.error('Edge Function error:', result);
-        console.error('Full response:', response);
         setSending(false);
         throw new Error(result.error || result.reason || 'Failed to send message');
       }

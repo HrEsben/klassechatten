@@ -127,7 +127,7 @@ export function useReactions({ messageId, currentUserId, enabled = true }: UseRe
     } finally {
       setLoading(false);
     }
-  }, [messageId, enabled, groupReactions]);
+  }, [messageId, enabled, currentUserId]);
 
   // Add a reaction
   const addReaction = useCallback(async (emoji: string) => {
@@ -263,7 +263,7 @@ export function useReactions({ messageId, currentUserId, enabled = true }: UseRe
     return () => {
       channel.unsubscribe();
     };
-  }, [messageId, enabled, fetchReactions, groupReactions]);
+  }, [messageId, enabled]);
 
   return {
     reactions,

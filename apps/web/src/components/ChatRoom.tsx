@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRoomMessages } from '@/hooks/useRoomMessages';
 import { useSendMessage } from '@/hooks/useSendMessage';
-import { useRoomPresence } from '@/hooks/useRoomPresence';
 import { useRoomUsers } from '@/hooks/useRoomUsers';
 import { useReadReceipts } from '@/hooks/useReadReceipts';
 import { useAuth } from '@/contexts/AuthContext';
@@ -78,7 +77,6 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [enlargedImageUrl]);
-  
   const { user } = useAuth();
   const { 
     messages, 
@@ -87,6 +85,9 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     isConnected,
     isReconnecting,
     refresh,
+    onlineUsers,
+    typingUsers,
+    updateTypingStatus,
     addOptimisticMessage, 
     updateOptimisticMessage,
     updateOptimisticMessageImage,
@@ -95,7 +96,10 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     loadingMore 
   } = useRoomMessages({ 
     roomId,
-    limit: 50 
+    limit: 50,
+    userId: user?.id,
+    displayName: user?.user_metadata?.display_name || user?.email || 'Anonymous',
+    enabled: !!user,
   });
   
   const { sendMessage, uploadImage, sending, uploading } = useSendMessage();
@@ -105,28 +109,27 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     roomId,
     enabled: !!user,
   });
-  
-  // Presence and typing indicators
-  const { onlineUsers, typingUsers, setTyping } = useRoomPresence({
-    roomId,
-    userId: user?.id || '',
-    displayName: user?.user_metadata?.display_name || user?.email || 'Anonymous',
-    enabled: !!user,
-  });
+
+  // Wrapper for typing status that's compatible with the UI
+  const setTyping = useCallback(
+    async (isTyping: boolean) => {
+      await updateTypingStatus(isTyping);
+    },
+    [updateTypingStatus]
+  );
 
   // Create a set of online user IDs for quick lookup
   const onlineUserIds = useMemo(() => {
-    return new Set(onlineUsers.map(u => u.user_id));
+    return new Set(onlineUsers);
   }, [onlineUsers]);
 
   // Merge typing status into all users
   const usersWithStatus = useMemo(() => {
     return allRoomUsers.map(user => {
-      const onlineUser = onlineUsers.find(ou => ou.user_id === user.user_id);
       return {
         ...user,
         online: onlineUserIds.has(user.user_id),
-        typing: onlineUser?.typing || false,
+        typing: typingUsers.includes(user.user_id),
       };
     });
   }, [allRoomUsers, onlineUsers, onlineUserIds]);
@@ -450,7 +453,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         undefined, // replyTo
         undefined, // onOptimisticAdd - already done
         (tempId: string, success: boolean) => {
-          // updateOptimisticMessage callback
+          // updateOptimisticMessage callback - this handles the optimistic update
           if (optimisticMessageId) {
             updateOptimisticMessage(optimisticMessageId, success);
           }
@@ -458,20 +461,12 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       );
 
       if (result.error) {
-        // Mark as failed
-        if (optimisticMessageId) {
-          updateOptimisticMessage(optimisticMessageId, false);
-        }
+        // Error already handled by callback above
         setAlertMessage({
           type: 'error',
           message: result.error
         });
         return;
-      }
-
-      // Success - mark as sent
-      if (result.message_id && optimisticMessageId) {
-        updateOptimisticMessage(optimisticMessageId, true);
       }
 
       // Show notification if message was flagged
@@ -823,9 +818,9 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         {typingUsers.length > 0 && (
           <div className="flex-none px-4 py-2 text-xs text-base-content/40 font-mono bg-base-100/30 border-t border-base-content/10">
             {typingUsers.length === 1
-              ? `${typingUsers[0]?.display_name || 'Someone'} typing...`
+              ? `${allRoomUsers.find(u => u.user_id === typingUsers[0])?.display_name || 'Someone'} typing...`
               : typingUsers.length === 2
-              ? `${typingUsers[0]?.display_name || 'Someone'} and ${typingUsers[1]?.display_name || 'someone'} typing...`
+              ? `${allRoomUsers.find(u => u.user_id === typingUsers[0])?.display_name || 'Someone'} and ${allRoomUsers.find(u => u.user_id === typingUsers[1])?.display_name || 'someone'} typing...`
               : `${typingUsers.length} people typing...`}
           </div>
         )}

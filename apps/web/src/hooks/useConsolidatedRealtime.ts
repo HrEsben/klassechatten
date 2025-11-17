@@ -45,11 +45,19 @@ export function useConsolidatedRealtime({
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
   
   // Track reconnection state
   const retryCountRef = useRef(0);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isReconnectingRef = useRef(false);
+  
+  // Use ref for handlers to avoid recreating the channel
+  const handlersRef = useRef(handlers);
+  useEffect(() => {
+    handlersRef.current = handlers;
+  }, [handlers]);
   const maxRetries = 5;
   const baseDelay = 1000;
 
@@ -146,19 +154,62 @@ export function useConsolidatedRealtime({
     }
   }, [userId, displayName]);
 
-  // Update typing status
+  // Update typing status with debouncing to prevent excessive presence updates
+  const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const currentTypingStateRef = useRef<boolean>(false);
+  
   const updateTypingStatus = useCallback(async (isTyping: boolean) => {
     if (!channel || !userId || !displayName) return;
     
-    try {
-      await channel.track({
-        user_id: userId,
-        display_name: displayName,
-        typing: isTyping,
-        last_seen: new Date().toISOString(),
-      });
-    } catch (err) {
-      console.error('❌ Error updating typing status:', err);
+    // Clear any pending typing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // If setting typing to true, update immediately
+    if (isTyping && !currentTypingStateRef.current) {
+      try {
+        await channel.track({
+          user_id: userId,
+          display_name: displayName,
+          typing: true,
+          last_seen: new Date().toISOString(),
+        });
+        currentTypingStateRef.current = true;
+        
+        // Auto-clear typing status after 3 seconds of no updates
+        typingTimeoutRef.current = setTimeout(async () => {
+          try {
+            await channel.track({
+              user_id: userId,
+              display_name: displayName,
+              typing: false,
+              last_seen: new Date().toISOString(),
+            });
+            currentTypingStateRef.current = false;
+          } catch (err) {
+            console.error('❌ Error clearing typing status:', err);
+          }
+        }, 3000);
+      } catch (err) {
+        console.error('❌ Error updating typing status:', err);
+      }
+    } 
+    // If setting typing to false, debounce it
+    else if (!isTyping && currentTypingStateRef.current) {
+      typingTimeoutRef.current = setTimeout(async () => {
+        try {
+          await channel.track({
+            user_id: userId,
+            display_name: displayName,
+            typing: false,
+            last_seen: new Date().toISOString(),
+          });
+          currentTypingStateRef.current = false;
+        } catch (err) {
+          console.error('❌ Error clearing typing status:', err);
+        }
+      }, 1000); // Wait 1 second before clearing typing status
     }
   }, [channel, userId, displayName]);
 
@@ -207,11 +258,12 @@ export function useConsolidatedRealtime({
 
   // Set up consolidated realtime subscription
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) {
+      console.log('🔵 [useConsolidatedRealtime] Realtime disabled for room:', roomId);
+      return;
+    }
 
     const channelName = `consolidated:room.${roomId}`;
-    console.log('🔄 Setting up consolidated realtime channel:', channelName);
-    
     const realtimeChannel = supabase.channel(channelName);
 
     // Subscribe to message events
@@ -225,10 +277,16 @@ export function useConsolidatedRealtime({
           filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
-          console.log('📨 Message INSERT:', payload.new.id);
-          if (handlers.onMessageInsert) {
+          console.log('🟢 [useConsolidatedRealtime] Message INSERT received:', payload.new.id);
+          console.log('🟢 [useConsolidatedRealtime] Message payload:', { id: payload.new.id, body: payload.new.body?.substring(0, 30), user_id: payload.new.user_id, room_id: payload.new.room_id });
+          console.log('🟢 [useConsolidatedRealtime] Handler exists:', !!handlersRef.current.onMessageInsert);
+          if (handlersRef.current.onMessageInsert) {
+            console.log('🟢 [useConsolidatedRealtime] Calling onMessageInsert handler');
             // Messages are high priority - don't batch them
-            handlers.onMessageInsert(payload.new);
+            handlersRef.current.onMessageInsert(payload.new);
+            console.log('🟢 [useConsolidatedRealtime] onMessageInsert handler called');
+          } else {
+            console.error('🔴 [useConsolidatedRealtime] No onMessageInsert handler!');
           }
         }
       )
@@ -241,8 +299,7 @@ export function useConsolidatedRealtime({
           filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
-          console.log('📨 Message UPDATE:', payload.new.id);
-          handlers.onMessageUpdate?.(payload.new);
+          handlersRef.current.onMessageUpdate?.(payload.new);
         }
       )
       .on(
@@ -254,8 +311,7 @@ export function useConsolidatedRealtime({
           filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
-          console.log('📨 Message DELETE:', payload.old.id);
-          handlers.onMessageDelete?.(payload.old);
+          handlersRef.current.onMessageDelete?.(payload.old);
         }
       );
 
@@ -269,7 +325,6 @@ export function useConsolidatedRealtime({
           table: 'reactions',
         },
         (payload) => {
-          console.log('👍 Reaction INSERT:', payload.new.id);
           scheduleBatchUpdate('reaction', payload.new);
         }
       )
@@ -281,8 +336,7 @@ export function useConsolidatedRealtime({
           table: 'reactions',
         },
         (payload) => {
-          console.log('👍 Reaction DELETE:', payload.old.id);
-          handlers.onReactionDelete?.(payload.old);
+          handlersRef.current.onReactionDelete?.(payload.old);
         }
       );
 
@@ -296,37 +350,62 @@ export function useConsolidatedRealtime({
           table: 'read_receipts',
         },
         (payload) => {
-          console.log('✓ Read receipt INSERT:', payload.new.message_id);
           scheduleBatchUpdate('receipt', payload.new);
         }
       );
 
     // Subscribe to presence events
     if (userId && displayName) {
+      // Helper to update presence state only if changed
+      const updatePresenceState = (eventType: string) => {
+        const state = realtimeChannel.presenceState();
+        const users = Object.values(state).flat() as unknown as PresenceState[];
+        const newOnlineUsers = users.map((u) => u.user_id).sort();
+        const newTypingUsers = users.filter((u) => u.typing).map((u) => u.user_id).sort();
+        
+        // Only update if arrays actually changed (compare sorted strings)
+        setOnlineUsers((prev) => {
+          const prevSorted = [...prev].sort();
+          const hasChanged = prevSorted.length !== newOnlineUsers.length || 
+                           prevSorted.some((id, i) => id !== newOnlineUsers[i]);
+          return hasChanged ? newOnlineUsers : prev;
+        });
+        
+        setTypingUsers((prev) => {
+          const prevSorted = [...prev].sort();
+          const hasChanged = prevSorted.length !== newTypingUsers.length || 
+                           prevSorted.some((id, i) => id !== newTypingUsers[i]);
+          return hasChanged ? newTypingUsers : prev;
+        });
+        
+        return state;
+      };
+      
       realtimeChannel
         .on('presence', { event: 'sync' }, () => {
-          const state = realtimeChannel.presenceState();
-          console.log('👥 Presence sync:', Object.keys(state).length, 'users');
-          // Cast to any first to avoid type issues with Supabase's presence state type
-          handlers.onPresenceSync?.(state as any);
+          const state = updatePresenceState('sync');
+          handlersRef.current.onPresenceSync?.(state as any);
         })
         .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-          console.log('👥 User joined:', key);
+          const state = updatePresenceState('join');
+          
           newPresences.forEach((presence: any) => {
-            handlers.onPresenceJoin?.(key, presence);
+            handlersRef.current.onPresenceJoin?.(key, presence);
           });
         })
         .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-          console.log('👥 User left:', key);
+          const state = updatePresenceState('leave');
+          
           leftPresences.forEach((presence: any) => {
-            handlers.onPresenceLeave?.(key, presence);
+            handlersRef.current.onPresenceLeave?.(key, presence);
           });
         });
     }
 
+    // All event listeners registered
+
     // Subscribe to channel
     realtimeChannel.subscribe(async (status) => {
-      console.log('📡 Consolidated channel status:', status);
       
       if (status === 'SUBSCRIBED') {
         setIsConnected(true);
@@ -339,7 +418,7 @@ export function useConsolidatedRealtime({
           await trackPresence(realtimeChannel);
         }
         
-        console.log('✅ Consolidated realtime channel subscribed');
+        // Channel subscribed successfully
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         console.warn('❌ Consolidated channel error:', status);
         setIsConnected(false);
@@ -353,9 +432,14 @@ export function useConsolidatedRealtime({
     setChannel(realtimeChannel);
 
     return () => {
-      console.log('🧹 Cleaning up consolidated realtime channel');
       clearRetryTimeout();
       clearUpdateTimer();
+      
+      // Clear typing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
       flushUpdates(); // Flush any pending updates before cleanup
       realtimeChannel.unsubscribe();
     };
@@ -364,7 +448,6 @@ export function useConsolidatedRealtime({
     enabled,
     userId,
     displayName,
-    handlers,
     trackPresence,
     attemptReconnect,
     clearRetryTimeout,
@@ -378,5 +461,7 @@ export function useConsolidatedRealtime({
     isConnected,
     isReconnecting,
     updateTypingStatus,
+    onlineUsers,
+    typingUsers,
   };
 }

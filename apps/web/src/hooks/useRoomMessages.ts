@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useConsolidatedRealtime } from './useConsolidatedRealtime';
 
@@ -65,12 +65,16 @@ interface OptimisticMessage {
 
 interface UseRoomMessagesOptions {
   roomId: string;
+  userId?: string;
+  displayName?: string;
   limit?: number;
   enabled?: boolean;
 }
 
 export function useRoomMessages({ 
-  roomId, 
+  roomId,
+  userId,
+  displayName,
   limit = 50,
   enabled = true 
 }: UseRoomMessagesOptions) {
@@ -197,9 +201,10 @@ export function useRoomMessages({
 
   // Handle realtime message insert
   const handleMessageInsert = useCallback(async (newMessage: Message) => {
-    console.log('Received INSERT event:', newMessage);
-    console.log('New message image_url:', newMessage.image_url);
-    console.log('New message details:', { id: newMessage.id, body: newMessage.body?.substring(0, 20) });
+    console.log('🔴 [useRoomMessages] Received INSERT event:', newMessage);
+    console.log('🔴 [useRoomMessages] New message image_url:', newMessage.image_url);
+    console.log('🔴 [useRoomMessages] New message details:', { id: newMessage.id, body: newMessage.body?.substring(0, 20), user_id: newMessage.user_id, room_id: newMessage.room_id });
+    console.log('🔴 [useRoomMessages] Current messages count:', messages.length);
     
     // Only add if not deleted
     if (!newMessage.deleted_at) {
@@ -219,6 +224,9 @@ export function useRoomMessages({
           avatar_color: profileData.avatar_color
         } : undefined
       };
+      
+      console.log('🔴 [useRoomMessages] Profile data fetched:', profileData?.display_name);
+      console.log('🔴 [useRoomMessages] About to update messages state');
       
       setMessages((prev) => {
         console.log('Adding new message to existing:', prev.map(m => ({ id: m.id, isOptimistic: m.isOptimistic, body: m.body?.substring(0, 20) })));
@@ -285,16 +293,27 @@ export function useRoomMessages({
     );
   }, []);
 
+  // Memoize handlers to prevent infinite loop
+  const handlers = useMemo(() => ({
+    onMessageInsert: handleMessageInsert,
+    onMessageUpdate: handleMessageUpdate,
+    onMessageDelete: handleMessageDelete,
+    onReadReceiptInsert: handleReadReceiptInsert,
+  }), [handleMessageInsert, handleMessageUpdate, handleMessageDelete, handleReadReceiptInsert]);
+
   // Use consolidated realtime hook
-  const { isConnected, isReconnecting } = useConsolidatedRealtime({
+  const { 
+    isConnected, 
+    isReconnecting, 
+    updateTypingStatus,
+    onlineUsers,
+    typingUsers,
+  } = useConsolidatedRealtime({
     roomId,
+    userId,
+    displayName,
     enabled,
-    handlers: {
-      onMessageInsert: handleMessageInsert,
-      onMessageUpdate: handleMessageUpdate,
-      onMessageDelete: handleMessageDelete,
-      onReadReceiptInsert: handleReadReceiptInsert,
-    },
+    handlers,
   });
 
   // Load initial messages on mount
@@ -362,6 +381,9 @@ export function useRoomMessages({
     refresh,
     isConnected,
     isReconnecting,
+    updateTypingStatus,
+    onlineUsers,
+    typingUsers,
     addOptimisticMessage,
     updateOptimisticMessage,
     updateOptimisticMessageImage,

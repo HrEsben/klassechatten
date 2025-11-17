@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import NotoEmoji from './NotoEmoji';
 import type { ReactionGroup } from '../hooks/useReactions';
 
@@ -9,7 +9,7 @@ interface ReactionsDisplayProps {
   onToggle: (emoji: string) => void;
 }
 
-export default function ReactionsDisplay({ 
+function ReactionsDisplay({ 
   reactions, 
   onToggle
 }: ReactionsDisplayProps) {
@@ -86,3 +86,5 @@ export default function ReactionsDisplay({
     </div>
   );
 }
+
+export default React.memo(ReactionsDisplay);

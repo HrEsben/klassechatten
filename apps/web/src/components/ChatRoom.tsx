@@ -155,7 +155,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     return atBottom;
   };
 
-  const scrollToBottom = (smooth = false) => {
+  const scrollToBottom = useCallback((smooth = false) => {
     if (mainScrollRef.current) {
       mainScrollRef.current.scrollTo({
         top: mainScrollRef.current.scrollHeight,
@@ -165,7 +165,10 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
       setUnreadCount(0);
       setShowScrollToBottom(false);
     }
-  };
+  }, []);
+
+  // Stable callback for message components to scroll to bottom smoothly
+  const scrollToBottomSmooth = useCallback(() => scrollToBottom(true), [scrollToBottom]);
 
   const handleScroll = () => {
     const atBottom = checkIfAtBottom();
@@ -540,7 +543,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     setTimeout(() => inputRef.current?.focus(), 100);
   };
 
-  const handleRetry = async (failedMessage: any) => {
+  const handleRetry = useCallback(async (failedMessage: any) => {
     if (!failedMessage.id || !user) return;
 
     const messageId = failedMessage.id;
@@ -617,7 +620,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         });
       }
     }
-  };
+  }, [retryAttempts, user, sendMessage, roomId, updateOptimisticMessage]);
 
   const useSuggestion = async () => {
     if (!showSuggestion) return;
@@ -804,7 +807,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
                   isOwnMessage={isOwnMessage}
                   isLastRead={isLastRead}
                   onImageClick={setEnlargedImageUrl}
-                  onScrollToBottom={() => scrollToBottom(true)}
+                  onScrollToBottom={scrollToBottomSmooth}
                   currentUserId={user?.id}
                   onRetry={handleRetry}
                 />

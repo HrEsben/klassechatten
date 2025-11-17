@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useReactions } from '@/hooks/useReactions';
 import ReactionsDisplay from './ReactionsDisplay';
 import ReactionPicker from './ReactionPicker';
@@ -17,7 +17,7 @@ interface MessageProps {
   onRetry?: (message: any) => void;
 }
 
-export default function Message({
+function Message({
   message: msg,
   isOwnMessage,
   isLastRead,
@@ -216,3 +216,19 @@ export default function Message({
     </div>
   );
 }
+
+// Memoize to prevent re-rendering all messages on every keystroke
+export default React.memo(Message, (prevProps, nextProps) => {
+  // Only re-render if these specific props changed
+  return (
+    prevProps.message.id === nextProps.message.id &&
+    prevProps.message.body === nextProps.message.body &&
+    prevProps.message.image_url === nextProps.message.image_url &&
+    prevProps.message.isOptimistic === nextProps.message.isOptimistic &&
+    prevProps.message.isLoading === nextProps.message.isLoading &&
+    prevProps.message.hasError === nextProps.message.hasError &&
+    prevProps.message.reactions?.length === nextProps.message.reactions?.length &&
+    prevProps.isLastRead === nextProps.isLastRead &&
+    prevProps.currentUserId === nextProps.currentUserId
+  );
+});

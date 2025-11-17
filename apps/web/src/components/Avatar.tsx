@@ -11,12 +11,12 @@ interface AvatarProps {
   className?: string;
 }
 
-export default function Avatar({ 
+const Avatar = ({ 
   user, 
   size, 
   placeholder = false,
   className = '' 
-}: AvatarProps) {
+}: AvatarProps) => {
   const displayName = user?.display_name || 'U';
   const avatarUrl = user?.avatar_url;
   const avatarColor = user?.avatar_color || '#3B82F6';
@@ -86,4 +86,6 @@ export default function Avatar({
       </div>
     </div>
   );
-}
+};
+
+export default React.memo(Avatar);

@@ -220,6 +220,23 @@ function Message({
 // Memoize to prevent re-rendering all messages on every keystroke
 export default React.memo(Message, (prevProps, nextProps) => {
   // Only re-render if these specific props changed
+  // Allow ID to change from optimistic to real without re-rendering (prevents flicker)
+  const prevIsOptimistic = prevProps.message.isOptimistic;
+  const nextIsOptimistic = nextProps.message.isOptimistic;
+  
+  // If transitioning from optimistic to real, check content instead of ID
+  if (prevIsOptimistic && !nextIsOptimistic) {
+    // Transitioning from optimistic to real - check if content is same
+    return (
+      prevProps.message.body === nextProps.message.body &&
+      prevProps.message.image_url === nextProps.message.image_url &&
+      prevProps.message.user_id === nextProps.message.user_id &&
+      prevProps.isLastRead === nextProps.isLastRead &&
+      prevProps.currentUserId === nextProps.currentUserId
+    );
+  }
+  
+  // Normal comparison for other cases
   return (
     prevProps.message.id === nextProps.message.id &&
     prevProps.message.body === nextProps.message.body &&

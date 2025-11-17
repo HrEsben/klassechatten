@@ -238,7 +238,33 @@ export function useRoomMessages({
           return prev;
         }
         
-        // Add new message and sort by timestamp to maintain correct order
+        // Check if there's a matching optimistic message to replace
+        const optimisticIndex = prev.findIndex(msg => 
+          msg.isOptimistic && 
+          msg.user_id === newMessage.user_id &&
+          msg.body === newMessage.body &&
+          // Match within 10 seconds to handle rapid messages
+          Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 10000
+        );
+        
+        if (optimisticIndex !== -1) {
+          // Replace optimistic message in-place (no flicker)
+          console.log('Replacing optimistic message in-place:', { 
+            optimisticId: prev[optimisticIndex].id, 
+            realId: newMessage.id 
+          });
+          const updated = [...prev];
+          updated[optimisticIndex] = messageWithProfile;
+          
+          // Sort to ensure correct order (in case timestamp differs slightly)
+          return updated.sort((a, b) => {
+            const timeA = new Date(a.created_at).getTime();
+            const timeB = new Date(b.created_at).getTime();
+            return timeA - timeB;
+          });
+        }
+        
+        // No matching optimistic message - add new message and sort
         const updated = [...prev, messageWithProfile].sort((a, b) => {
           const timeA = new Date(a.created_at).getTime();
           const timeB = new Date(b.created_at).getTime();
@@ -355,23 +381,20 @@ export function useRoomMessages({
 
   const updateOptimisticMessage = useCallback((tempId: string, success: boolean): void => {
     console.log(`updateOptimisticMessage called: tempId=${tempId}, success=${success}`);
-    setMessages(prev => {
-      console.log('Current messages before update:', prev.map(m => ({ id: m.id, isOptimistic: m.isOptimistic, body: m.body?.substring(0, 20) })));
-      
-      if (success) {
-        // Remove optimistic message on success - real message will come via realtime
-        const filtered = prev.filter(msg => msg.id !== tempId);
-        console.log('Messages after removing optimistic:', filtered.map(m => ({ id: m.id, isOptimistic: m.isOptimistic, body: m.body?.substring(0, 20) })));
-        return filtered;
-      } else {
-        // Update optimistic message with error state
+    
+    if (!success) {
+      // Update optimistic message with error state
+      setMessages(prev => {
+        console.log('Current messages before error update:', prev.map(m => ({ id: m.id, isOptimistic: m.isOptimistic, body: m.body?.substring(0, 20) })));
         return prev.map(msg => 
           msg.id === tempId 
             ? { ...msg, isLoading: false, hasError: true }
             : msg
         );
-      }
-    });
+      });
+    }
+    // On success, do nothing - the real message will replace the optimistic one via realtime
+    // This prevents flicker from remove/add cycle
   }, []);
 
   const updateOptimisticMessageImage = useCallback((tempId: string, imageUrl: string): void => {

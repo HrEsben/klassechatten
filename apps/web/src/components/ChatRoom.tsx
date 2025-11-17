@@ -64,6 +64,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   const previousMessageCountRef = useRef(0);
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
   const previousScrollHeightRef = useRef(0);
+  const lastSendTimeRef = useRef<number>(0);
 
   // Handle ESC key to close lightbox
   useEffect(() => {
@@ -352,6 +353,23 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
 
   const handleSend = async (forceSend = false) => {
     if (!messageText.trim() && !selectedImage) return;
+
+    // Rate limiting: 1 second between messages
+    const now = Date.now();
+    const timeSinceLastSend = now - lastSendTimeRef.current;
+    const RATE_LIMIT_MS = 1000; // 1 second
+
+    if (timeSinceLastSend < RATE_LIMIT_MS) {
+      const remainingTime = Math.ceil((RATE_LIMIT_MS - timeSinceLastSend) / 1000);
+      setAlertMessage({
+        type: 'warning',
+        message: `Vent venligst ${remainingTime} sekund${remainingTime > 1 ? 'er' : ''} før du sender næste besked`
+      });
+      return;
+    }
+
+    // Update last send time
+    lastSendTimeRef.current = now;
 
     // Stop typing indicator
     setTyping(false);

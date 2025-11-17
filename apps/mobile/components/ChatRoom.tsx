@@ -86,6 +86,7 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | number | null>(null);
   const inputRef = useRef<TextInput>(null);
+  const lastSendTimeRef = useRef<number>(0);
 
   const { user } = useAuth();
   const { 
@@ -307,6 +308,24 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
 
   const handleSend = async () => {
     if (!messageText.trim() && !selectedImageUri) return;
+
+    // Rate limiting: 1 second between messages
+    const now = Date.now();
+    const timeSinceLastSend = now - lastSendTimeRef.current;
+    const RATE_LIMIT_MS = 1000; // 1 second
+
+    if (timeSinceLastSend < RATE_LIMIT_MS) {
+      const remainingTime = Math.ceil((RATE_LIMIT_MS - timeSinceLastSend) / 1000);
+      Alert.alert(
+        'Vent venligst',
+        `Vent ${remainingTime} sekund${remainingTime > 1 ? 'er' : ''} før du sender næste besked`,
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    // Update last send time
+    lastSendTimeRef.current = now;
 
     // Stop typing indicator
     setTyping(false);

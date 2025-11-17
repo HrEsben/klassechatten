@@ -259,14 +259,18 @@ serve(async (req) => {
             messages: [
               { 
                 role: "system", 
-                content: "Du er en hjælpsom assistent i en dansk skolechat. Brugeren skrev noget upassende. Hvis beskeden indeholder et egentligt budskab (fx en mening, spørgsmål eller kommentar), skal du omskrive det til at være venligt og respektfuldt, men bevare den samme mening. Hvis beskeden kun er et skældsord, fornærmelse eller spam uden nogen mening, skal du svare med teksten: 'BLOCK' (uden citationstegn). Skriv aldrig generiske advarsler eller lærerhenvendelser - kun omskrivninger af brugerens faktiske budskab eller 'BLOCK'. Skriv på dansk." 
+                content: "Du er en hjælpsom assistent i en dansk skolechat. Brugeren skrev noget stødende. Din opgave er at omforme budskabet til noget konstruktivt og venligt. Hvis beskeden udtrykker vrede eller frustration, omform den til at udtrykke følelser uden at være nedladende (fx 'Jeg er ked af det' eller 'Jeg synes ikke det er fedt'). Hvis beskeden er et personangreb, omform den til en 'jeg-besked' om egne følelser. Hold dig kort og brug dansk ungdomssprog. Eksempler: 'du er dum' → 'jeg er uenig', 'fuck dig' → 'jeg er irriteret'. Hvis du IKKE kan finde en meningsfuld måde at omforme beskeden på, skriv da kun ordet: NONE" 
               },
               { role: "user", content: body }
             ],
-            max_tokens: 100,
-            temperature: 0.7
+            max_tokens: 80,
+            temperature: 0.5
           });
-          suggested = completion.choices[0]?.message?.content ?? null;
+          const rawSuggestion = completion.choices[0]?.message?.content ?? null;
+          // Filter out BLOCK/NONE responses - treat as no suggestion
+          if (rawSuggestion && rawSuggestion.trim().toUpperCase() !== 'BLOCK' && rawSuggestion.trim().toUpperCase() !== 'NONE') {
+            suggested = rawSuggestion;
+          }
           console.log("Suggestion generated:", suggested);
         } catch (error) {
           console.error("Error generating suggestion:", error);
@@ -280,7 +284,7 @@ serve(async (req) => {
           JSON.stringify({ 
             status: "requires_confirmation",
             flagged: true,
-            warning: "Din besked indeholder muligt upassende indhold. Den vil blive sendt, men markeret til gennemgang af en lærer.",
+            warning: "Din besked indeholder muligt upassende indhold. Den vil blive sendt, men markeret til gennemgang af en voksen.",
             suggested: suggested,
             original_message: body
           }), 

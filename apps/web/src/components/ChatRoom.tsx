@@ -367,6 +367,36 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     // Already in messageText state
   };
 
+  const handleUseSuggestion = async () => {
+    if (!showFlagConfirmation?.suggested || !pendingMessage) return;
+
+    const suggestedText = showFlagConfirmation.suggested;
+    const imageUrl = pendingMessage.imageUrl;
+
+    // Close confirmation modal
+    setShowFlagConfirmation(null);
+    setPendingMessage(null);
+
+    // Clear input
+    setMessageText('');
+    handleRemoveImage();
+
+    // Send the suggested message directly with force_send=true
+    // (AI-generated suggestions should bypass moderation)
+    const result = await sendMessage(
+      roomId,
+      suggestedText,
+      imageUrl || undefined,
+      undefined, // replyTo
+      (message) => {
+        addOptimisticMessage(message);
+        setTimeout(() => scrollToBottom(false), 50);
+      },
+      updateOptimisticMessage,
+      true // force_send: true - bypass moderation for AI suggestions
+    );
+  };
+
   const useSuggestion = async () => {
     if (!showSuggestion) return;
     
@@ -732,60 +762,51 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         <dialog open className="modal modal-open">
           <div className="modal-box border-2 border-warning/20 bg-base-100">
             {/* Warning Header */}
-            <div className="flex items-start gap-4 mb-6">
-              <div className="w-12 h-12 bg-warning/20 flex items-center justify-center shrink-0">
-                <svg className="w-6 h-6 text-warning" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-2">
-                  Advarsel om indhold
-                </h3>
-                <p className="text-sm text-base-content/70">
-                  {showFlagConfirmation.warning}
-                </p>
-              </div>
+            <div className="flex items-center gap-3 mb-4">
+              <svg className="w-6 h-6 text-warning shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="square" strokeLinejoin="miter" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <p className="text-sm text-base-content/80">
+                {showFlagConfirmation.warning}
+              </p>
             </div>
 
             {/* Original Message */}
-            <div className="bg-base-200/50 border-2 border-base-content/10 p-4 mb-4">
-              <p className="text-xs font-bold uppercase tracking-widest text-base-content/50 mb-2">
-                Din besked:
-              </p>
-              <p className="text-sm text-base-content whitespace-pre-wrap">
+            <div className="bg-base-200 border-2 border-base-content/10 p-4 mb-3">
+              <p className="text-sm text-base-content">
                 {showFlagConfirmation.originalMessage}
               </p>
             </div>
 
             {/* Suggested Alternative (if available) */}
-            {showFlagConfirmation.suggested && showFlagConfirmation.suggested !== 'BLOCK' && (
+            {showFlagConfirmation.suggested && 
+             showFlagConfirmation.suggested !== 'BLOCK' && 
+             showFlagConfirmation.suggested.toUpperCase() !== 'NONE' && (
               <div className="bg-success/10 border-2 border-success/20 p-4 mb-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-success/70 mb-2">
-                  Foreslået alternativ:
-                </p>
-                <p className="text-sm text-base-content whitespace-pre-wrap">
+                <p className="text-sm text-base-content">
                   {showFlagConfirmation.suggested}
                 </p>
               </div>
             )}
 
-            {/* Info Box */}
-            <div className="bg-info/10 border-2 border-info/20 p-4 mb-6">
-              <p className="text-xs text-info-content/80">
-                ℹ️ Hvis du sender beskeden, vil den blive markeret til gennemgang af en lærer. 
-                Din besked sendes stadig med det samme, men vil have et lille flag-ikon.
-              </p>
-            </div>
-
             {/* Action Buttons */}
-            <div className="flex gap-3">
+            <div className="flex gap-2 mt-4">
               <button
                 onClick={handleCancelFlaggedMessage}
                 className="btn btn-ghost flex-1"
               >
-                Annuller
+                Ret besked
               </button>
+              {showFlagConfirmation.suggested && 
+               showFlagConfirmation.suggested !== 'BLOCK' && 
+               showFlagConfirmation.suggested.toUpperCase() !== 'NONE' && (
+                <button
+                  onClick={handleUseSuggestion}
+                  className="btn btn-success flex-1"
+                >
+                  Brug forslag
+                </button>
+              )}
               <button
                 onClick={handleConfirmFlaggedMessage}
                 className="btn bg-base-content text-base-100 hover:bg-warning hover:text-warning-content flex-1"

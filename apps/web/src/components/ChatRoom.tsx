@@ -294,25 +294,50 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     };
   }, [roomId]);
 
-  // Handle typing indicator
+  // Handle typing indicator with simple 5-second window
+  const isTypingRef = useRef(false);
+  const lastTypingUpdateRef = useRef(0);
+  
   const handleInputChange = (value: string) => {
     setMessageText(value);
 
-    // Set typing to true
+    // Only update typing state if it's been more than 4 seconds since last update
+    // This reduces frequency of presence updates
     if (value.length > 0) {
-      setTyping(true);
+      const now = Date.now();
+      const timeSinceLastUpdate = now - lastTypingUpdateRef.current;
+      
+      // Only trigger typing update if we haven't updated in the last 4 seconds
+      if (timeSinceLastUpdate > 4000) {
+        lastTypingUpdateRef.current = now;
+        
+        if (!isTypingRef.current) {
+          isTypingRef.current = true;
+          setTyping(true);
+        }
 
-      // Clear existing timeout
+        // Clear existing timeout
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+
+        // Auto-clear typing after 5 seconds
+        typingTimeoutRef.current = setTimeout(() => {
+          isTypingRef.current = false;
+          setTyping(false);
+          lastTypingUpdateRef.current = 0;
+        }, 5000);
+      }
+    } else {
+      // Clear typing immediately when input is empty
+      if (isTypingRef.current) {
+        isTypingRef.current = false;
+        setTyping(false);
+        lastTypingUpdateRef.current = 0;
+      }
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
-
-      // Set typing to false after 2 seconds of no typing
-      typingTimeoutRef.current = setTimeout(() => {
-        setTyping(false);
-      }, 2000);
-    } else {
-      setTyping(false);
     }
   };
 

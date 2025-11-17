@@ -323,13 +323,6 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
         return;
       }
 
-      if (result.status === 'flag' && result.suggested) {
-        // Remove optimistic message and show suggestion
-        removeOptimisticMessage(tempId);
-        setShowSuggestion(result.suggested);
-        return;
-      }
-
       // Success - mark as sent and it will be removed when real message arrives
       updateOptimisticMessage(tempId, {
         isLoading: false,

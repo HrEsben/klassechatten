@@ -6,7 +6,6 @@ import { supabase } from '@/lib/supabase';
 interface SendMessageResult {
   status: 'allow' | 'flag' | 'flagged' | 'block' | 'blocked' | 'requires_confirmation';
   message_id?: number;
-  suggested?: string;
   warning?: string;
   reason?: string;
   error?: string;

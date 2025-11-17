@@ -6,7 +6,6 @@ import { supabase } from '../utils/supabase';
 interface SendMessageResult {
   status: 'allow' | 'flag' | 'block' | 'blocked';
   message_id?: number;
-  suggested?: string;
   warning?: string;
   reason?: string;
   error?: string;
@@ -158,9 +157,6 @@ export function useSendMessage() {
           result.reason || 'Din besked indeholder upassende indhold (fx stødende sprog, hadefulde udtryk eller vold) og kan ikke sendes.',
           [{ text: 'OK' }]
         );
-        return result;
-      } else if (result.status === 'flag' && result.suggested) {
-        // Message was NOT sent - suggestion returned instead
         return result;
       }
 

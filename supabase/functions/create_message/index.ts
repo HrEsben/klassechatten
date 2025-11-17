@@ -184,7 +184,6 @@ serve(async (req) => {
     }
 
     const flagged = moderationFailed ? false : (moderation?.results?.[0]?.flagged ?? false);
-    let suggested: string | null = null;
     let action: "allow" | "flag" = "allow";  // Removed "block" - we only flag now
     let flagReason: string | null = null;
     
@@ -248,36 +247,6 @@ serve(async (req) => {
     }
 
     if (flagged || action === "flag") {
-
-      // 3) If flagged, generate kind suggestion using GPT-4o-mini
-      if (action === "flag" && body) {
-        // Only generate suggestions for text messages, not image-only
-        try {
-          console.log("Generating suggestion with GPT-4o-mini...");
-          const completion = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-              { 
-                role: "system", 
-                content: "Du er en hjælpsom assistent i en dansk skolechat. Brugeren skrev noget stødende. Din opgave er at omforme budskabet til noget konstruktivt og venligt. Hvis beskeden udtrykker vrede eller frustration, omform den til at udtrykke følelser uden at være nedladende (fx 'Jeg er ked af det' eller 'Jeg synes ikke det er fedt'). Hvis beskeden er et personangreb, omform den til en 'jeg-besked' om egne følelser. Hold dig kort og brug dansk ungdomssprog. Eksempler: 'du er dum' → 'jeg er uenig', 'fuck dig' → 'jeg er irriteret'. Hvis du IKKE kan finde en meningsfuld måde at omforme beskeden på, skriv da kun ordet: NONE" 
-              },
-              { role: "user", content: body }
-            ],
-            max_tokens: 80,
-            temperature: 0.5
-          });
-          const rawSuggestion = completion.choices[0]?.message?.content ?? null;
-          // Filter out BLOCK/NONE responses - treat as no suggestion
-          if (rawSuggestion && rawSuggestion.trim().toUpperCase() !== 'BLOCK' && rawSuggestion.trim().toUpperCase() !== 'NONE') {
-            suggested = rawSuggestion;
-          }
-          console.log("Suggestion generated:", suggested);
-        } catch (error) {
-          console.error("Error generating suggestion:", error);
-          // Continue without suggestion if GPT-4o-mini fails
-        }
-      }
-      
       // If check_only mode, return the flag warning without inserting
       if (check_only && !force_send) {
         return new Response(
@@ -285,7 +254,6 @@ serve(async (req) => {
             status: "requires_confirmation",
             flagged: true,
             warning: "Din besked indeholder muligt upassende indhold. Den vil blive sendt, men markeret til gennemgang af en voksen.",
-            suggested: suggested,
             original_message: body
           }), 
           { 
@@ -371,8 +339,7 @@ serve(async (req) => {
         message_id: message.id,
         created_at: message.created_at,
         flagged: action === "flag",
-        warning: action === "flag" ? "Din besked blev sendt, men markeret til gennemgang på grund af muligt upassende indhold." : undefined,
-        suggested: action === "flag" ? suggested : undefined
+        warning: action === "flag" ? "Din besked blev sendt, men markeret til gennemgang på grund af muligt upassende indhold." : undefined
       }), 
       { 
         status: 200,

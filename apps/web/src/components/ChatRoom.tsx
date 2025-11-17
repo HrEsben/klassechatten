@@ -24,7 +24,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   const [showSuggestion, setShowSuggestion] = useState<string | null>(null);
   const [alertMessage, setAlertMessage] = useState<{ type: 'error' | 'warning' | 'success' | 'info', message: string, blockedText?: string } | null>(null);
   const [roomName, setRoomName] = useState<string>('Chat Room');
-  const [showFlagConfirmation, setShowFlagConfirmation] = useState<{ warning: string, suggested?: string, originalMessage: string } | null>(null);
+  const [showFlagConfirmation, setShowFlagConfirmation] = useState<{ warning: string, originalMessage: string } | null>(null);
   const [pendingMessage, setPendingMessage] = useState<{ text?: string, imageUrl?: string } | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -375,7 +375,6 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     if (result.status === 'requires_confirmation') {
       setShowFlagConfirmation({
         warning: result.warning || 'Din besked indeholder muligt upassende indhold.',
-        suggested: result.suggested,
         originalMessage: result.original_message || messageText.trim()
       });
       setPendingMessage({
@@ -387,11 +386,6 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
 
     // Messages are never blocked, only flagged
     // The flag indicator will show on the message itself
-    
-    if (result.status === 'flag' && result.suggested) {
-      setShowSuggestion(result.suggested);
-      return;
-    }
 
     // Clear suggestion if message was successful
     if (result.message_id) {
@@ -419,36 +413,6 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     
     // Keep the message text so user can edit it
     // Already in messageText state
-  };
-
-  const handleUseSuggestion = async () => {
-    if (!showFlagConfirmation?.suggested || !pendingMessage) return;
-
-    const suggestedText = showFlagConfirmation.suggested;
-    const imageUrl = pendingMessage.imageUrl;
-
-    // Close confirmation modal
-    setShowFlagConfirmation(null);
-    setPendingMessage(null);
-
-    // Clear input
-    setMessageText('');
-    handleRemoveImage();
-
-    // Send the suggested message directly with force_send=true
-    // (AI-generated suggestions should bypass moderation)
-    const result = await sendMessage(
-      roomId,
-      suggestedText,
-      imageUrl || undefined,
-      undefined, // replyTo
-      (message) => {
-        addOptimisticMessage(message);
-        setTimeout(() => scrollToBottom(false), 50);
-      },
-      updateOptimisticMessage,
-      true // force_send: true - bypass moderation for AI suggestions
-    );
   };
 
   const useSuggestion = async () => {
@@ -848,22 +812,11 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             </div>
 
             {/* Original Message */}
-            <div className="bg-base-200 border-2 border-base-content/10 p-4 mb-3">
+            <div className="bg-base-200 border-2 border-base-content/10 p-4 mb-4">
               <p className="text-sm text-base-content">
                 {showFlagConfirmation.originalMessage}
               </p>
             </div>
-
-            {/* Suggested Alternative (if available) */}
-            {showFlagConfirmation.suggested && 
-             showFlagConfirmation.suggested !== 'BLOCK' && 
-             showFlagConfirmation.suggested.toUpperCase() !== 'NONE' && (
-              <div className="bg-success/10 border-2 border-success/20 p-4 mb-4">
-                <p className="text-sm text-base-content">
-                  {showFlagConfirmation.suggested}
-                </p>
-              </div>
-            )}
 
             {/* Action Buttons */}
             <div className="flex gap-2 mt-4">
@@ -873,16 +826,6 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
               >
                 Ret besked
               </button>
-              {showFlagConfirmation.suggested && 
-               showFlagConfirmation.suggested !== 'BLOCK' && 
-               showFlagConfirmation.suggested.toUpperCase() !== 'NONE' && (
-                <button
-                  onClick={handleUseSuggestion}
-                  className="btn btn-success flex-1"
-                >
-                  Brug forslag
-                </button>
-              )}
               <button
                 onClick={handleConfirmFlaggedMessage}
                 className="btn bg-base-content text-base-100 hover:bg-warning hover:text-warning-content flex-1"

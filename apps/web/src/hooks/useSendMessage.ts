@@ -125,7 +125,16 @@ export function useSendMessage() {
       if (!response.ok) {
         console.error('Edge Function error:', result);
         setSending(false);
+        // Call callback with failure
+        if (onOptimisticUpdate) {
+          onOptimisticUpdate('', false);
+        }
         throw new Error(result.error || result.reason || 'Failed to send message');
+      }
+
+      // Call callback with success
+      if (onOptimisticUpdate) {
+        onOptimisticUpdate('', true);
       }
 
       setSending(false);
@@ -133,6 +142,10 @@ export function useSendMessage() {
     } catch (error) {
       console.error('Error sending message:', error);
       setSending(false);
+      // Call callback with failure
+      if (onOptimisticUpdate) {
+        onOptimisticUpdate('', false);
+      }
       return {
         status: 'blocked' as const,
         error: error instanceof Error ? error.message : 'Unknown error'

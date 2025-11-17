@@ -231,18 +231,21 @@ export function useRoomMessages({
       setMessages((prev) => {
         console.log('Adding new message to existing:', prev.map(m => ({ id: m.id, isOptimistic: m.isOptimistic, body: m.body?.substring(0, 20) })));
         
-        // Check if this message content matches any optimistic message
-        // If so, remove the optimistic message and add the real one
-        const filteredPrev = prev.filter(msg => {
-          if (msg.isOptimistic && msg.body === newMessage.body && msg.user_id === newMessage.user_id) {
-            console.log('Found matching optimistic message, removing:', { optimisticId: msg.id, realId: newMessage.id });
-            return false; // Remove the optimistic message
-          }
-          return true; // Keep other messages
+        // Check if message already exists (dedupe)
+        const messageExists = prev.some(msg => msg.id === newMessage.id);
+        if (messageExists) {
+          console.log('Message already exists, skipping:', newMessage.id);
+          return prev;
+        }
+        
+        // Add new message and sort by timestamp to maintain correct order
+        const updated = [...prev, messageWithProfile].sort((a, b) => {
+          const timeA = new Date(a.created_at).getTime();
+          const timeB = new Date(b.created_at).getTime();
+          return timeA - timeB;
         });
         
-        const updated = [...filteredPrev, messageWithProfile];
-        console.log('Messages after adding new message:', updated.map(m => ({ id: m.id, isOptimistic: m.isOptimistic, body: m.body?.substring(0, 20) })));
+        console.log('Messages after adding and sorting:', updated.map(m => ({ id: m.id, isOptimistic: m.isOptimistic, body: m.body?.substring(0, 20), created_at: m.created_at })));
         return updated;
       });
     }
@@ -338,7 +341,15 @@ export function useRoomMessages({
       hasError: false,
     };
     
-    setMessages(prev => [...prev, fullOptimisticMessage]);
+    setMessages(prev => {
+      // Add optimistic message and sort by timestamp to maintain order
+      const updated = [...prev, fullOptimisticMessage].sort((a, b) => {
+        const timeA = new Date(a.created_at).getTime();
+        const timeB = new Date(b.created_at).getTime();
+        return timeA - timeB;
+      });
+      return updated;
+    });
     return tempId;
   }, []);
 

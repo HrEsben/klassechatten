@@ -479,12 +479,10 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         messageBody || undefined,
         imageUrl || undefined,
         undefined, // replyTo
-        undefined, // onOptimisticAdd - already done
+        optimisticMessageId, // Pass tempId so callback knows which optimistic message to remove
         (tempId: string, success: boolean) => {
           // updateOptimisticMessage callback - this handles the optimistic update
-          if (optimisticMessageId) {
-            updateOptimisticMessage(optimisticMessageId, success);
-          }
+          updateOptimisticMessage(tempId, success);
         }
       );
 
@@ -589,7 +587,18 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         return;
       }
 
-      const result = await sendMessage(roomId, failedMessage.body || undefined, imageUrl || undefined);
+      const result = await sendMessage(
+        roomId, 
+        failedMessage.body || undefined, 
+        imageUrl || undefined,
+        undefined, // replyTo
+        messageId, // Pass the failed message ID as tempId for callback
+        (tempId: string, success: boolean) => {
+          if (success) {
+            updateOptimisticMessage(tempId, true);
+          }
+        }
+      );
 
       if (result.status === 'allow' || result.status === 'flag') {
         // Success! Clear retry count and remove failed message (real one will arrive via realtime)
@@ -625,21 +634,46 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   const useSuggestion = async () => {
     if (!showSuggestion) return;
     
+    // Create optimistic message for suggestion
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (!currentUser) return;
+
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
+    const optimisticMessage = {
+      room_id: roomId,
+      user_id: currentUser.id,
+      body: showSuggestion,
+      image_url: null,
+      created_at: new Date().toISOString(),
+      user: {
+        id: currentUser.id,
+        email: currentUser.email || '',
+        user_metadata: {
+          display_name: currentUser.user_metadata?.display_name || currentUser.email || 'You'
+        }
+      },
+      reply_to: null,
+      edited_at: null,
+      deleted_at: null,
+    };
+
+    const optimisticMessageId = addOptimisticMessage(optimisticMessage as any);
+    
+    // Clear input and suggestion immediately
+    setShowSuggestion(null);
+    handleRemoveImage();
+    setTimeout(() => scrollToBottom(false), 50);
+    
     // Send the suggested text
     await sendMessage(
       roomId, 
       showSuggestion, 
       undefined, // imageUrl
       undefined, // replyTo
-      (message) => { 
-        addOptimisticMessage(message);
-        // Clear input and suggestion immediately after optimistic message is added
-        setShowSuggestion(null);
-        handleRemoveImage();
-        // Always scroll to bottom when sending a message
-        setTimeout(() => scrollToBottom(false), 50);
-      },
-      updateOptimisticMessage
+      optimisticMessageId, // tempId
+      (tempId: string, success: boolean) => {
+        updateOptimisticMessage(tempId, success);
+      }
     );
   };
 

@@ -77,7 +77,7 @@ export function useSendMessage() {
     body?: string, 
     imageUrl?: string,
     replyTo?: number,
-    onOptimisticAdd?: (message: OptimisticMessage) => void,
+    tempId?: string, // Add tempId parameter
     onOptimisticUpdate?: (tempId: string, success: boolean) => void
   ): Promise<SendMessageResult> => {
     setSending(true);
@@ -126,15 +126,15 @@ export function useSendMessage() {
         console.error('Edge Function error:', result);
         setSending(false);
         // Call callback with failure
-        if (onOptimisticUpdate) {
-          onOptimisticUpdate('', false);
+        if (onOptimisticUpdate && tempId) {
+          onOptimisticUpdate(tempId, false);
         }
         throw new Error(result.error || result.reason || 'Failed to send message');
       }
 
       // Call callback with success
-      if (onOptimisticUpdate) {
-        onOptimisticUpdate('', true);
+      if (onOptimisticUpdate && tempId) {
+        onOptimisticUpdate(tempId, true);
       }
 
       setSending(false);
@@ -143,8 +143,8 @@ export function useSendMessage() {
       console.error('Error sending message:', error);
       setSending(false);
       // Call callback with failure
-      if (onOptimisticUpdate) {
-        onOptimisticUpdate('', false);
+      if (onOptimisticUpdate && tempId) {
+        onOptimisticUpdate(tempId, false);
       }
       return {
         status: 'blocked' as const,

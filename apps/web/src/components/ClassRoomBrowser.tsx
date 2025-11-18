@@ -6,6 +6,7 @@ import { useUserClasses } from '@/hooks/useUserClasses';
 import { useUnreadCounts } from '@/hooks/useUnreadCounts';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import ChatRoom from './ChatRoom';
+import FlaggedMessagesSection from './FlaggedMessagesSection';
 
 export default function ClassRoomBrowser() {
   const router = useRouter();
@@ -145,6 +146,9 @@ export default function ClassRoomBrowser() {
           </p>
         </div>
       )}
+
+      {/* Flagged Messages Section - Only for admins */}
+      {selectedClass && <FlaggedMessagesSection classId={selectedClass.id} />}
 
       {/* Channels Grid */}
       {selectedClass && selectedClass.rooms.length === 0 ? (

@@ -95,7 +95,84 @@ serve(async (req) => {
 
     // Get moderation settings from class
     const moderationLevel = (room as any).classes?.moderation_level || 'moderate';
-    console.log(`Class moderation level: ${moderationLevel}`);
+    const profanityFilterEnabled = (room as any).classes?.profanity_filter_enabled ?? true;
+    console.log(`Class moderation level: ${moderationLevel}, profanity filter: ${profanityFilterEnabled}`);
+
+    // 1.5) Apply Danish profanity filter (if enabled) - replaces words with asterisks
+    let filteredBody = body;
+    if (profanityFilterEnabled && body) {
+      // Comprehensive list of Danish curse words and creative spellings
+      const danishProfanity = [
+        // Base words
+        'lort', 'pis', 'fanden', 'helvede', 'satan', 'skide', 'pisse',
+        'fisse', 'kusse', 'møg', 'sgu', 'fuck', 'shit', 'bitch',
+        'røv', 'røvhul', 'pikk', 'pik', 'tissemand', 'nederen', 'idiot',
+        'spasser', 'mongo', 'tåbe', 'fjols', 'svin', 'kælling', 'luder',
+        'nar', 'dumme', 'åndssvag', 'taber', 'nørd', 'perker', 'neger',
+        
+        // Compound words and variations
+        'lorte', 'pisse', 'fucking', 'shitty', 'pisser', 'fandme',
+        'helvedes', 'skide', 'møgsvin', 'røvbanan', 'pikansjos',
+        'kraftedeme', 'kraftedme', 'fandens', 'satans', 'djævelen',
+        'møgso', 'kusse', 'fissetryne', 'pikhoveder', 'pikansjos',
+        
+        // Creative spellings (1337 speak, typos, etc)
+        'l0rt', 'p1s', 'f1sse', 'kuss3', 'røvv', 'pikke', 'pikkk',
+        'fuckk', 'fucck', 'shitt', 'shiit', 'b1tch', 'bitchh',
+        'sgu\'', 'sguu', 'pisse', 'skid3', 'skiiide', 'møøg',
+        'fandennn', 'helveeede', 'sataan', 'røvhøl', 'røvvhul',
+        'spazz', 'mongol', 'mongoo', 'idiott', 'idiooot',
+        'tåber', 'tåååbe', 'sviiin', 'svinne', 'kællingg',
+        'ludder', 'luuder', 'narre', 'dumm', 'duuumme',
+        'åndsvag', 'taaber', 'nørrd', 'perkerr', 'negger',
+        
+        // Letter substitutions
+        'ph1s', 'sk1d3', 'f4nd3n', 'h3lv3d3', 's4t4n',
+        'røøv', 'røww', 'p!kk', 'p1kk', 't!ssemand',
+        'sp@sser', 'm0ng0', 't@be', 'fj0ls', 'k@lling',
+        'lud3r', 'n@r', 'dumm3', '@ndssvag', 't@ber',
+      ];
+
+      // Create regex pattern - match whole words with word boundaries
+      // Handle words with spaces/special chars separately from regular words
+      const pattern = danishProfanity
+        .map(word => {
+          // For words with spaces or underscores already in them, match as-is
+          if (word.includes(' ') || word.includes('_')) {
+            // Escape special regex characters but keep spaces/underscores
+            return '\\b' + word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b';
+          }
+          
+          // For regular words, allow optional spaces/underscores between each character
+          // Split into characters, escape each, then join with optional separators
+          const chars = word.split('').map(char => {
+            // Escape special regex characters
+            if (/[.*+?^${}()|[\]\\]/.test(char)) {
+              return '\\' + char;
+            }
+            return char;
+          });
+          
+          // Join characters with optional space/underscore pattern
+          const withSpaces = chars.join('[\\s_]*');
+          return `\\b${withSpaces}\\b`;
+        })
+        .join('|');
+      
+      const profanityRegex = new RegExp(pattern, 'gi');
+      
+      // Replace profanity with asterisks, preserving length
+      filteredBody = body.replace(profanityRegex, (match: string) => {
+        // Remove spaces and underscores to get actual length
+        const cleanLength = match.replace(/[\s_]/g, '').length;
+        return '*'.repeat(Math.max(3, cleanLength));
+      });
+      
+      if (filteredBody !== body) {
+        console.log(`Profanity filter: Replaced ${body.length - filteredBody.length} characters`);
+        console.log(`Original length: ${body.length}, Filtered length: ${filteredBody.length}`);
+      }
+    }
 
     // 2) Run OpenAI Moderation (FREE - omni-moderation-latest)
     let moderation;
@@ -149,55 +226,84 @@ serve(async (req) => {
       console.log(`Category scores:`, JSON.stringify(categories));
       
       // Dynamic thresholds based on class moderation level
-      let hardBlockThresholds = { sexual_minors: 0.5, hate_threatening: 0.5, violence_graphic: 0.5, sexual: 0.7, violence: 0.7 };
-      let flagThresholds = { harassment: 0.5, hate: 0.5, illicit: 0.5 };
+      // Note: Death threats fall under "hate/threatening" category
+      let criticalThresholds = { sexual_minors: 0.3, hate_threatening: 0.3, violence_graphic: 0.5 };
+      let highSeverityThresholds = { sexual: 0.6, violence: 0.6, harassment_threatening: 0.5 };
+      let flagThresholds = { harassment: 0.5, hate: 0.5, illicit: 0.5, self_harm: 0.4 };
       
       if (moderationLevel === 'strict') {
         // Strict: Lower thresholds, blocks more content
-        hardBlockThresholds = { sexual_minors: 0.3, hate_threatening: 0.3, violence_graphic: 0.3, sexual: 0.5, violence: 0.5 };
-        flagThresholds = { harassment: 0.3, hate: 0.3, illicit: 0.3 };
+        criticalThresholds = { sexual_minors: 0.2, hate_threatening: 0.2, violence_graphic: 0.3 };
+        highSeverityThresholds = { sexual: 0.4, violence: 0.4, harassment_threatening: 0.3 };
+        flagThresholds = { harassment: 0.3, hate: 0.3, illicit: 0.3, self_harm: 0.3 };
         console.log('Using STRICT moderation thresholds');
       } else if (moderationLevel === 'relaxed') {
         // Relaxed: Higher thresholds, allows more content
-        hardBlockThresholds = { sexual_minors: 0.7, hate_threatening: 0.7, violence_graphic: 0.7, sexual: 0.9, violence: 0.9 };
-        flagThresholds = { harassment: 0.7, hate: 0.7, illicit: 0.7 };
+        criticalThresholds = { sexual_minors: 0.5, hate_threatening: 0.5, violence_graphic: 0.7 };
+        highSeverityThresholds = { sexual: 0.8, violence: 0.8, harassment_threatening: 0.7 };
+        flagThresholds = { harassment: 0.7, hate: 0.7, illicit: 0.7, self_harm: 0.6 };
         console.log('Using RELAXED moderation thresholds');
       } else {
         // Moderate (default): Balanced thresholds
+        // Death threats should trigger at 0.3 for hate/threatening (critical)
         console.log('Using MODERATE moderation thresholds');
       }
       
       // Flag if ANY concerning content (we no longer block, only flag)
       const shouldFlag =
-        (categories["sexual/minors"] ?? 0) > hardBlockThresholds.sexual_minors ||
-        (categories["hate/threatening"] ?? 0) > hardBlockThresholds.hate_threatening ||
-        (categories["violence/graphic"] ?? 0) > hardBlockThresholds.violence_graphic ||
-        (categories["sexual"] ?? 0) > hardBlockThresholds.sexual ||
-        (categories["violence"] ?? 0) > hardBlockThresholds.violence ||
+        (categories["sexual/minors"] ?? 0) > criticalThresholds.sexual_minors ||
+        (categories["hate/threatening"] ?? 0) > criticalThresholds.hate_threatening ||
+        (categories["violence/graphic"] ?? 0) > criticalThresholds.violence_graphic ||
+        (categories["sexual"] ?? 0) > highSeverityThresholds.sexual ||
+        (categories["violence"] ?? 0) > highSeverityThresholds.violence ||
+        (categories["harassment/threatening"] ?? 0) > highSeverityThresholds.harassment_threatening ||
         (categories["harassment"] ?? 0) > flagThresholds.harassment ||
         (categories["hate"] ?? 0) > flagThresholds.hate ||
-        (categories["illicit"] ?? 0) > flagThresholds.illicit;
+        (categories["illicit"] ?? 0) > flagThresholds.illicit ||
+        (categories["self-harm"] ?? 0) > flagThresholds.self_harm;
 
       if (shouldFlag || flagged) {
         action = "flag";
         // Determine severity for notification
+        // CRITICAL: Death threats, sexual/minors, graphic violence
+        const criticalSeverity = 
+          (categories["sexual/minors"] ?? 0) > criticalThresholds.sexual_minors ||
+          (categories["hate/threatening"] ?? 0) > criticalThresholds.hate_threatening ||
+          (categories["violence/graphic"] ?? 0) > criticalThresholds.violence_graphic;
+        
+        // HIGH: Severe violence, sexual content, threatening harassment, self-harm
         const highSeverity = 
-          (categories["sexual/minors"] ?? 0) > hardBlockThresholds.sexual_minors ||
-          (categories["hate/threatening"] ?? 0) > hardBlockThresholds.hate_threatening ||
-          (categories["violence/graphic"] ?? 0) > hardBlockThresholds.violence_graphic;
-        flagReason = highSeverity ? 'high_severity' : 'moderate_severity';
+          !criticalSeverity && (
+            (categories["sexual"] ?? 0) > highSeverityThresholds.sexual ||
+            (categories["violence"] ?? 0) > highSeverityThresholds.violence ||
+            (categories["harassment/threatening"] ?? 0) > highSeverityThresholds.harassment_threatening ||
+            (categories["self-harm"] ?? 0) > (flagThresholds.self_harm + 0.2)
+          );
+        
+        // Determine final severity
+        if (criticalSeverity) {
+          flagReason = 'high_severity';
+          console.log('CRITICAL SEVERITY: Death threats, sexual/minors, or graphic violence detected');
+        } else if (highSeverity) {
+          flagReason = 'high_severity';
+          console.log('HIGH SEVERITY: Severe violence, sexual content, or threatening behavior detected');
+        } else {
+          flagReason = 'moderate_severity';
+          console.log('MODERATE SEVERITY: General harassment, hate speech, or illicit content detected');
+        }
       }
       
       console.log(`Score check - harassment: ${categories["harassment"]}, hate: ${categories["hate"]}, illicit: ${categories["illicit"]}, decision: ${action}`);
     }
 
     // 4) Insert ALL messages immediately (flagged or not)
+    // Use filteredBody if profanity filter was applied
     const { data: message, error: messageError } = await supabase
       .from("messages")
       .insert({
         room_id,
         class_id: room.class_id,  // Required for RLS policies
-        body: body || null,
+        body: filteredBody || null,  // Use filtered body with replaced profanity
         image_url: image_url || null,
         reply_to: reply_to || null,
         user_id: user.id,

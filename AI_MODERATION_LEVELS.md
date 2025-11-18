@@ -18,10 +18,16 @@ This feature allows class admins and global admins to fine-tune AI moderation pe
 **File**: `supabase/functions/create_message/index.ts`
 - Fetches class's `moderation_level` when processing messages
 - Adjusts AI moderation thresholds dynamically based on level:
-  - **Strict**: Sexual/minors 0.3, hate/threatening 0.3, harassment 0.3
-  - **Moderate**: Sexual/minors 0.5, hate/threatening 0.5, harassment 0.5
-  - **Relaxed**: Sexual/minors 0.7, hate/threatening 0.7, harassment 0.7
+  - **Strict**: Critical 0.2 (death threats, sexual/minors, graphic violence), High severity 0.4, Moderate 0.3
+  - **Moderate**: Critical 0.3 (death threats, sexual/minors), High severity 0.6, Moderate 0.5 (DEFAULT)
+  - **Relaxed**: Critical 0.5 (death threats, sexual/minors), High severity 0.8, Moderate 0.7
+- **IMPORTANT**: Death threats are categorized as "hate/threatening" by OpenAI and trigger high_severity flags
+- Two severity tiers for notifications:
+  - **high_severity**: Death threats, sexual/minors, graphic violence, severe violence/sexual content
+  - **moderate_severity**: General harassment, hate speech, illicit content
 - Danish profanity filter remains active at all levels
+
+**Updated**: November 18, 2025 - Lowered critical thresholds to properly flag death threats as high severity
 
 ### 3. Settings UI
 **File**: `apps/web/src/app/class/[id]/settings/page.tsx`

@@ -406,9 +406,10 @@ export function ClassSettingsClient({ classId }: { classId: string }) {
                         <span className="text-sm font-black uppercase tracking-tight text-base-content">
                           Danske bandeord filter
                         </span>
+                        <span className="badge badge-accent badge-xs shrink-0">Erstatter med *****</span>
                       </div>
                       <p className="text-xs text-base-content/60 leading-relaxed">
-                        Blokerer danske bandeord og stødende sprog uafhængigt af moderation niveau.
+                        Erstatter automatisk danske bandeord med stjerner (*****). Inkluderer kreative stavemåder og 1337-speak.
                       </p>
                     </div>
                   </div>
@@ -425,8 +426,8 @@ export function ClassSettingsClient({ classId }: { classId: string }) {
                         : 'Afslappet moderation - højeste tærskler, kun alvorlige problemer blokeres.'
                     }
                     {profanityFilterEnabled 
-                      ? ' Bandeordfilter aktiveret.'
-                      : ' Bandeordfilter deaktiveret.'}
+                      ? ' Bandeord erstattes automatisk med stjerner.'
+                      : ' Bandeordfilter deaktiveret (ikke anbefalet).'}
                   </p>
                 </div>
               </div>

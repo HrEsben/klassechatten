@@ -79,8 +79,10 @@ export async function GET(request: NextRequest) {
     console.log('[Flagged Messages API] Is admin:', isAdmin);
     console.log('[Flagged Messages API] Parent access via class admin:', parentAccessViaClassAdmin);
 
-    // Get status filter from query params (default to 'flagged')
-    const statusFilter = searchParams.get('status') || 'flagged';
+    // Get status filter from query params
+    // Default behavior: only show 'flagged' messages (not reviewed ones)
+    const statusFilter = searchParams.get('status');
+    const showAll = searchParams.get('show_all') === 'true';
 
     // Build base query - fetch moderation_events only
     let query = supabaseAdmin
@@ -99,8 +101,17 @@ export async function GET(request: NextRequest) {
         reviewed_at
       `)
       .eq('subject_type', 'message')
-      .eq('status', statusFilter)
       .order('created_at', { ascending: false });
+
+    // Filter by status
+    if (statusFilter) {
+      // Specific status requested
+      query = query.eq('status', statusFilter);
+    } else if (!showAll) {
+      // Default: only show 'flagged' (not reviewed/dismissed)
+      query = query.eq('status', 'flagged');
+    }
+    // If showAll=true, no status filter applied
 
     // Filter by class if provided
     if (classId) {
@@ -115,7 +126,13 @@ export async function GET(request: NextRequest) {
     // Execute query
     const { data: moderationEvents, error } = await query;
 
-    console.log('[Flagged Messages API] Query params:', { classId, severity });
+    console.log('[Flagged Messages API] Query params:', { 
+      classId, 
+      severity, 
+      statusFilter, 
+      showAll,
+      defaultBehavior: !statusFilter && !showAll ? 'Only flagged (not reviewed)' : 'Custom filter'
+    });
     console.log('[Flagged Messages API] Moderation events found:', moderationEvents?.length || 0);
 
     if (error) {

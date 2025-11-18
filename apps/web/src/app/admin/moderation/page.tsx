@@ -50,6 +50,7 @@ function AdminModerationContent({ classId }: { classId?: string }) {
   const [loading, setLoading] = useState(true);
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [expandedMessageId, setExpandedMessageId] = useState<number | null>(null);
+  const [accessError, setAccessError] = useState<string | null>(null);
 
   // Check permissions
   useEffect(() => {
@@ -67,7 +68,8 @@ function AdminModerationContent({ classId }: { classId?: string }) {
         profile?.role === 'adult';
 
       if (!profile || !isAuthorized) {
-        router.push('/');
+        setAccessError('Du har ikke adgang til at se flaggede beskeder. Kontakt en administrator.');
+        setLoading(false);
         return;
       }
 
@@ -254,7 +256,17 @@ function AdminModerationContent({ classId }: { classId?: string }) {
       </div>
 
       {/* Messages List */}
-      {loading ? (
+      {accessError ? (
+        <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 text-center space-y-4">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-16 h-16 stroke-current text-error mx-auto" strokeWidth={2}>
+            <path strokeLinecap="square" strokeLinejoin="miter" d="M12 9v6m0 4v0M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h2 className="text-2xl font-black uppercase tracking-tight text-base-content">
+            Adgang nægtet
+          </h2>
+          <p className="text-base-content/60">{accessError}</p>
+        </div>
+      ) : loading ? (
         <div className="flex justify-center items-center min-h-[60vh]">
           <div className="flex flex-col items-center gap-4">
             <span className="loading loading-ball loading-lg text-primary"></span>

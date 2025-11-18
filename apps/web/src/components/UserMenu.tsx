@@ -1,10 +1,12 @@
 'use client';
 
 import { useNotifications } from '@/hooks/useNotifications';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { da } from 'date-fns/locale';
 import { supabase } from '@/lib/supabase';
+import { useUserClasses } from '@/hooks/useUserClasses';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 interface UserMenuProps {
   userName: string | null | undefined;
@@ -15,6 +17,14 @@ interface UserMenuProps {
 export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProps) {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { classes } = useUserClasses();
+  const classParam = searchParams.get('class');
+  const { profile } = useUserProfile(classParam || undefined);
+  
+  const isGlobalAdmin = profile?.role === 'admin';
+  const selectedClass = classes.find(c => c.id === classParam);
+  const isClassAdmin = selectedClass?.is_class_admin;
 
   const handleNotificationClick = async (notification: any) => {
     // Mark as read
@@ -99,7 +109,7 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
         </div>
         {/* Unread Badge */}
         {unreadCount > 0 && (
-          <span className="indicator-item badge badge-primary badge-sm font-bold absolute -top-1 -right-1">
+          <span className="indicator-item badge badge-primary badge-sm font-bold absolute -top-2 -right-2">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -190,6 +200,85 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
                 </li>
               ))}
             </div>
+            
+            <li className="border-t-2 border-base-content/10"></li>
+          </>
+        )}
+
+        {/* Quick Actions for Admins and Class Admins */}
+        {(isGlobalAdmin || isClassAdmin) && (
+          <>
+            <li className="menu-title border-b-2 border-base-content/10 px-4 py-2">
+              <span className="text-xs font-black uppercase tracking-tight text-base-content">
+                Hurtige Genveje
+              </span>
+            </li>
+
+            {isGlobalAdmin && (
+              <>
+                <li>
+                  <button
+                    onClick={() => {
+                      router.push('/admin');
+                      (document.activeElement as HTMLElement)?.blur();
+                    }}
+                    className="px-4 py-3 hover:bg-base-200"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="square" strokeLinejoin="miter" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    </svg>
+                    Admin Dashboard
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => {
+                      router.push('/admin/flagged-messages');
+                      (document.activeElement as HTMLElement)?.blur();
+                    }}
+                    className="px-4 py-3 hover:bg-base-200"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="square" strokeLinejoin="miter" d="M3 21l1.65-3.8a9 9 0 1111.15 0L18 21M12 12v-2M12 6h.01" />
+                    </svg>
+                    Alle Flaggede Beskeder
+                  </button>
+                </li>
+              </>
+            )}
+
+            {isClassAdmin && !isGlobalAdmin && classParam && (
+              <>
+                <li>
+                  <button
+                    onClick={() => {
+                      router.push(`/class/${classParam}/flagged`);
+                      (document.activeElement as HTMLElement)?.blur();
+                    }}
+                    className="px-4 py-3 hover:bg-base-200"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="square" strokeLinejoin="miter" d="M3 21l1.65-3.8a9 9 0 1111.15 0L18 21M12 12v-2M12 6h.01" />
+                    </svg>
+                    Flaggede Beskeder
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => {
+                      router.push(`/class/${classParam}/settings`);
+                      (document.activeElement as HTMLElement)?.blur();
+                    }}
+                    className="px-4 py-3 hover:bg-base-200"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="square" strokeLinejoin="miter" d="M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
+                    </svg>
+                    Klasseindstillinger
+                  </button>
+                </li>
+              </>
+            )}
             
             <li className="border-t-2 border-base-content/10"></li>
           </>

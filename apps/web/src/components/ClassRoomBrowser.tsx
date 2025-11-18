@@ -5,8 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useUserClasses } from '@/hooks/useUserClasses';
 import { useUnreadCounts } from '@/hooks/useUnreadCounts';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { supabase } from '@/lib/supabase';
+import { Flag, Settings } from 'lucide-react';
 import ChatRoom from './ChatRoom';
-import FlaggedMessagesSection from './FlaggedMessagesSection';
 
 export default function ClassRoomBrowser() {
   const router = useRouter();
@@ -63,6 +64,47 @@ export default function ClassRoomBrowser() {
   
   // Check if user can access settings (global admin or class admin)
   const canAccessSettings = profile?.role === 'admin' || selectedClass?.is_class_admin;
+
+  // High severity flagged count for badge on flag icon
+  const [flaggedHighCount, setFlaggedHighCount] = useState(0);
+
+  useEffect(() => {
+    let aborted = false;
+    async function fetchHighSeverityCount() {
+      try {
+        if (!canAccessSettings || !selectedClassId) {
+          setFlaggedHighCount(0);
+          return;
+        }
+        const { data: sessionData } = await supabase.auth.getSession();
+        const session = sessionData?.session;
+        if (!session) return;
+        const params = new URLSearchParams({ severity: 'high_severity' });
+        if (selectedClass?.is_class_admin && selectedClass?.id) {
+          params.append('class_id', selectedClass.id);
+        }
+        const res = await fetch(`/api/moderation/flagged-messages?${params.toString()}`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          cache: 'no-store',
+        });
+        if (!res.ok) {
+          setFlaggedHighCount(0);
+          return;
+        }
+        const data = await res.json();
+        if (!aborted) {
+          const messages = data.flagged_messages || [];
+          setFlaggedHighCount(Array.isArray(messages) ? messages.length : 0);
+        }
+      } catch (_) {
+        if (!aborted) setFlaggedHighCount(0);
+      }
+    }
+    fetchHighSeverityCount();
+    return () => {
+      aborted = true;
+    };
+  }, [canAccessSettings, selectedClassId, selectedClass?.is_class_admin, selectedClass?.id]);
 
   if (loading) {
     return (
@@ -122,6 +164,35 @@ export default function ClassRoomBrowser() {
               {selectedClass.nickname || selectedClass.label}
             </h2>
             <div className="flex-1 h-px bg-base-content/10"></div>
+            {/* Flagged messages icon for admins and class admins */}
+            {canAccessSettings && (
+              <div className="indicator">
+                {flaggedHighCount > 0 && (
+                  <span className="indicator-item badge badge-error badge-xs font-bold">
+                    {flaggedHighCount}
+                  </span>
+                )}
+                <button
+                  onClick={() => {
+                    // Global admins go to admin area, class admins stay in class context
+                    if (profile?.role === 'admin') {
+                      const params = new URLSearchParams();
+                      if (selectedClass?.id) {
+                        params.set('class_id', selectedClass.id);
+                      }
+                      router.push(`/admin/flagged-messages?${params.toString()}`);
+                    } else {
+                      // Class admins go to class-scoped flagged page
+                      router.push(`/class/${selectedClass?.id}/flagged`);
+                    }
+                  }}
+                  className="btn btn-ghost btn-square hover:text-warning"
+                  aria-label="Flaggede beskeder"
+                >
+                  <Flag size={24} strokeWidth={2} className="stroke-current" />
+                </button>
+              </div>
+            )}
             {/* Settings icon for admins and class admins */}
             {canAccessSettings && (
               <button
@@ -133,10 +204,7 @@ export default function ClassRoomBrowser() {
                 className="btn btn-ghost btn-square"
                 aria-label="Indstillinger"
               >
-                <svg className="w-6 h-6 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="square" strokeLinejoin="miter" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="square" strokeLinejoin="miter" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+                <Settings size={24} strokeWidth={2} className="stroke-current" />
               </button>
             )}
           </div>
@@ -146,9 +214,6 @@ export default function ClassRoomBrowser() {
           </p>
         </div>
       )}
-
-      {/* Flagged Messages Section - Only for admins */}
-      {selectedClass && <FlaggedMessagesSection classId={selectedClass.id} />}
 
       {/* Channels Grid */}
       {selectedClass && selectedClass.rooms.length === 0 ? (

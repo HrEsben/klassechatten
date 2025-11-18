@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/lib/supabase';
+import UserMenu from '@/components/UserMenu';
+import { ArrowLeft } from 'lucide-react';
 
 interface ClassData {
   id: string;
@@ -214,70 +216,42 @@ export function ClassSettingsClient({ classId }: { classId: string }) {
 
   return (
     <div className="min-h-screen bg-base-300 flex flex-col">
-      {/* Edgy Berlin Header */}
+      {/* Consistent Header with Back Button and UserMenu */}
       <header className="bg-base-100 border-b-2 border-base-content/10">
-        <div className="w-full px-4 lg:px-0 lg:grid lg:grid-cols-[256px_1fr]">
-          <div className="flex items-center justify-between py-4 lg:justify-end lg:pl-12">
-            {/* Logo/Brand with accent bar - right aligned on desktop */}
-            <div className="flex flex-col lg:items-end">
-              <h1 
-                onClick={() => router.push('/')}
-                className="text-xl lg:text-2xl font-black uppercase tracking-tight text-base-content cursor-pointer hover:text-primary transition-colors"
-              >
-                KlasseChatten
-              </h1>
-              <div className="h-0.5 w-16 lg:w-20 bg-primary mt-1 lg:ml-auto"></div>
-            </div>
-
-            {/* Mobile menu button - shows user controls */}
-            <div className="lg:hidden">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-12 py-4">
+          <div className="flex items-center justify-between gap-4">
+            {/* Back Button + Page Title */}
+            <div className="flex items-center gap-4">
               <button
                 onClick={handleBack}
-                className="btn btn-sm bg-base-content text-base-100 hover:bg-primary hover:text-primary-content"
+                className="btn btn-ghost btn-square"
+                aria-label="Tilbage til klasse"
               >
-                Tilbage
+                <ArrowLeft size={24} strokeWidth={2} />
               </button>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-base-content">
+                  Indstillinger
+                </h1>
+                <p className="text-xs font-mono uppercase tracking-wider text-base-content/50 mt-1">
+                  {classData.label}
+                </p>
+              </div>
             </div>
-          </div>
-          
-          {/* User Controls for large screens - in second grid column */}
-          <div className="hidden lg:flex items-center justify-end gap-6 py-4 px-12">
-            {/* User Info */}
-            <div className="flex flex-col items-end">
-              <span className="text-xs font-bold uppercase tracking-widest text-base-content/50">
-                {profile?.role === 'child' ? 'Elev' : profile?.role === 'guardian' ? 'Forælder' : 'Voksen'}
-              </span>
-              <span className="text-sm font-medium text-base-content">
-                {profile?.display_name || user?.user_metadata?.display_name || user?.email}
-              </span>
-            </div>
-            
-            {/* Back Button */}
-            <button
-              onClick={handleBack}
-              className="btn bg-base-content text-base-100 hover:bg-primary hover:text-primary-content"
-            >
-              Tilbage
-            </button>
+
+            {/* User Menu */}
+            <UserMenu 
+              userName={profile?.display_name || user?.user_metadata?.display_name || user?.email}
+              userRole={(profile?.role === 'child' ? 'Elev' : profile?.role === 'guardian' ? 'Forælder' : 'Voksen') + (isClassAdmin ? ' ⊕' : '')}
+              avatarUrl={profile?.avatar_url}
+            />
           </div>
         </div>
       </header>
 
       {/* Main Content Area */}
       <main className="flex-1 py-8 bg-base-300">
-        <div className="w-full max-w-4xl mx-auto px-12">
-          {/* Page Header */}
-          <div className="mb-12">
-            <h1 className="text-3xl font-black uppercase tracking-tight text-base-content">
-              Indstillinger
-            </h1>
-            <div className="h-1 w-24 bg-primary mt-2"></div>
-            
-            <p className="text-xs font-mono uppercase tracking-wider text-base-content/50 mt-4">
-              {classData.label} • {classData.grade_level}. klasse
-            </p>
-          </div>
-
+        <div className="w-full max-w-4xl mx-auto px-4 sm:px-12">
           {/* Settings Form */}
           <div className="space-y-8">
             {/* Nickname Section */}

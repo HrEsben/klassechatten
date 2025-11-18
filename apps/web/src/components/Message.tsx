@@ -70,13 +70,14 @@ function Message({
     enabled: !!messageId && !isOptimistic,
   });
 
-  const handleAddReactionClick = (event: React.MouseEvent) => {
+  const handleAddReactionClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
     
-    // Just toggle the picker - position it absolutely in CSS
+    // Get button position for picker placement
+    const buttonRect = event.currentTarget.getBoundingClientRect();
     setShowReactionPicker(true);
-    setPickerPosition({ x: 0, y: 0 }); // Dummy values, we'll use CSS positioning
+    setPickerPosition({ x: buttonRect.left, y: buttonRect.top });
   };
 
   const handleReactionSelect = (emoji: string) => {

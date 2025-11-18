@@ -235,19 +235,27 @@ serve(async (req) => {
         score = Math.max(...Object.values(moderation.results[0].category_scores ?? {}).map(v => Number(v) || 0));
       }
       
-      const moderationEvent = await supabase.from("moderation_events").insert({
-        subject_type: "message",
-        subject_id: message.id,
-        class_id: room.class_id,
-        rule: rule,
-        status: "flagged",
-        severity: flagReason || 'moderate_severity',
-        labels: labels,
-        score: score
-      }).select().single();
+      const { data: moderationEvent, error: moderationInsertError } = await supabaseAdmin
+        .from("moderation_events")
+        .insert({
+          subject_type: "message",
+          subject_id: String(message.id),
+          class_id: room.class_id,
+          rule: rule,
+          status: "flagged",
+          severity: flagReason || 'moderate_severity',
+          labels: labels,
+          score: score
+        })
+        .select()
+        .single();
 
-      // Trigger parent notification (database trigger will handle batching)
-      console.log('Flagged message inserted, parent notification will be triggered by database');
+      if (moderationInsertError) {
+        console.error("Error inserting moderation_event:", moderationInsertError);
+      } else {
+        // Trigger parent notification (database trigger will handle batching)
+        console.log('Flagged moderation_event inserted:', moderationEvent?.id || moderationEvent);
+      }
     }
 
     // 6) Return success response with flag warning

@@ -1,8 +1,10 @@
 'use client';
 
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useUserClasses } from '@/hooks/useUserClasses';
 import Breadcrumbs from './Breadcrumbs';
 
 export default function AdminLayout({ 
@@ -17,6 +19,10 @@ export default function AdminLayout({
   const { user, signOut } = useAuth();
   const router = useRouter();
   const { profile, roleLabel, isClassAdmin } = useUserProfile(classId);
+  const { classes } = useUserClasses();
+  
+  const isGlobalAdmin = profile?.role === 'admin';
+  const adminClasses = classes.filter(c => c.is_class_admin);
 
   const handleSignOut = async () => {
     await signOut();
@@ -32,7 +38,7 @@ export default function AdminLayout({
             {/* Logo/Brand with accent bar - right aligned on desktop */}
             <div className="flex flex-col lg:items-end">
               <h1 
-                onClick={() => router.push('/')}
+                onClick={() => router.push('/admin')}
                 className="text-xl lg:text-2xl font-black uppercase tracking-tight text-base-content cursor-pointer hover:text-primary transition-colors"
               >
                 KlasseChatten
@@ -76,56 +82,121 @@ export default function AdminLayout({
 
       {/* Sidebar Navigation - Desktop Only */}
       <aside className="hidden lg:flex flex-col bg-base-100 border-r-2 border-base-content/10 h-full">
-        <nav className="flex-1 p-6 space-y-2">
-          <div className="mb-6">
-            <p className="text-xs font-bold uppercase tracking-widest text-base-content/50 px-4 mb-4">
-              Administration
-            </p>
-            
-            {/* Classes */}
-            <a
-              href="/admin/classes"
-              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
-            >
-              <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                <path strokeLinecap="square" strokeLinejoin="miter" d="M12 6.253v13m0-13C6.5 6.253 2 10.753 2 16.253S6.5 26.253 12 26.253s10-4.5 10-10 -4.5-10-10-10z" />
-              </svg>
-              Klasser
-            </a>
+        <nav className="flex-1 p-6 space-y-6 overflow-y-auto">
+          {/* Global Admin Menu */}
+          {isGlobalAdmin && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-base-content/50 px-4 mb-4">
+                System Administration
+              </p>
+              <a
+                href="/admin"
+                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+              >
+                <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                </svg>
+                Dashboard
+              </a>
+              <a
+                href="/admin/classes"
+                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+              >
+                <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M3 5h18M3 10h18M3 15h18M3 20h18" />
+                </svg>
+                Alle Klasser
+              </a>
+              <a
+                href="/admin/users"
+                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+              >
+                <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 108 0 4 4 0 00-8 0z" />
+                </svg>
+                Alle Brugere
+              </a>
+              <a
+                href="/admin/flagged-messages"
+                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+              >
+                <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M3 21l1.65-3.8a9 9 0 1111.15 0L18 21M12 12v-2M12 6h.01" />
+                </svg>
+                Alle Flaggede Beskeder
+              </a>
+              <a
+                href="/admin/settings"
+                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+              >
+                <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
+                </svg>
+                Systemindstillinger
+              </a>
+            </div>
+          )}
 
-            {/* Users */}
-            <a
-              href="/admin/users"
-              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
-            >
-              <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                <path strokeLinecap="square" strokeLinejoin="miter" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-              </svg>
-              Brugere
-            </a>
+          {/* Class Admin Menu */}
+          {!isGlobalAdmin && adminClasses.length > 0 && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-base-content/50 px-4 mb-4">
+                Mine Klasser
+              </p>
+              {adminClasses.map((cls) => (
+                <div key={cls.id} className="mb-4">
+                  <div className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-base-content/70">
+                    {cls.nickname || cls.label}
+                  </div>
+                  <a
+                    href={`/?class=${cls.id}`}
+                    className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+                  >
+                    <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                      <path strokeLinecap="square" strokeLinejoin="miter" d="M8 12h8M12 8v8M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Kanaler
+                  </a>
+                  <a
+                    href={`/admin/flagged-messages?class_id=${cls.id}`}
+                    className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+                  >
+                    <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                      <path strokeLinecap="square" strokeLinejoin="miter" d="M3 21l1.65-3.8a9 9 0 1111.15 0L18 21M12 12v-2M12 6h.01" />
+                    </svg>
+                    Flaggede Beskeder
+                  </a>
+                  <a
+                    href={`/class/${cls.id}/settings`}
+                    className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+                  >
+                    <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                      <path strokeLinecap="square" strokeLinejoin="miter" d="M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
+                    </svg>
+                    Indstillinger
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
 
-            {/* Moderation */}
-            <a
-              href={isClassAdmin && classId ? `/admin/moderation?class_id=${classId}` : '/admin/moderation'}
-              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
-            >
-              <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                <path strokeLinecap="square" strokeLinejoin="miter" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-              </svg>
-              Flaggede Beskeder
-            </a>
-
-            {/* Settings */}
-            <a
-              href="/admin/settings"
-              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
-            >
-              <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                <path strokeLinecap="square" strokeLinejoin="miter" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.64l-1.92-3.32c-.12-.22-.38-.3-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.5-.41h-3.84c-.26 0-.46.17-.49.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.21-.09-.47 0-.59.22L2.74 8.87c-.12.22-.07.49.12.64l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.64l1.92 3.32c.12.22.38.3.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.5.41h3.84c.26 0 .46-.17.49-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.21.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.49-.12-.64l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
-              </svg>
-              Indstillinger
-            </a>
-          </div>
+          {/* Quick Actions */}
+          {(isGlobalAdmin || adminClasses.length > 0) && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-base-content/50 px-4 mb-4">
+                Hurtige Genveje
+              </p>
+              <a
+                href="/"
+                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+              >
+                <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
+                </svg>
+                Mine Beskeder
+              </a>
+            </div>
+          )}
         </nav>
 
         {/* Sidebar Footer */}
@@ -151,12 +222,35 @@ export default function AdminLayout({
         </button>
         <ul
           tabIndex={0}
-          className="dropdown-content z-1 menu p-2 shadow bg-base-100 rounded-none border-2 border-base-content/10 w-52"
+          className="dropdown-content z-1 menu p-2 shadow bg-base-100 rounded-none border-2 border-base-content/10 w-64 max-h-96 overflow-y-auto"
         >
-          <li><a href="/admin/classes">Klasser</a></li>
-          <li><a href="/admin/users">Brugere</a></li>
-          <li><a href={isClassAdmin && classId ? `/admin/moderation?class_id=${classId}` : '/admin/moderation'}>Flaggede Beskeder</a></li>
-          <li><a href="/admin/settings">Indstillinger</a></li>
+          {isGlobalAdmin ? (
+            <>
+              <li className="menu-title"><span>System Administration</span></li>
+              <li><a href="/admin">Dashboard</a></li>
+              <li><a href="/admin/classes">Alle Klasser</a></li>
+              <li><a href="/admin/users">Alle Brugere</a></li>
+              <li><a href="/admin/flagged-messages">Alle Flaggede Beskeder</a></li>
+              <li><a href="/admin/settings">Systemindstillinger</a></li>
+              <li className="menu-title"><span>Hurtige Genveje</span></li>
+              <li><a href="/">Mine Beskeder</a></li>
+            </>
+          ) : adminClasses.length > 0 ? (
+            <>
+              {adminClasses.map((cls) => (
+                <React.Fragment key={cls.id}>
+                  <li className="menu-title"><span>{cls.nickname || cls.label}</span></li>
+                  <li><a href={`/?class=${cls.id}`}>Kanaler</a></li>
+                  <li><a href={`/admin/flagged-messages?class_id=${cls.id}`}>Flaggede Beskeder</a></li>
+                  <li><a href={`/class/${cls.id}/settings`}>Indstillinger</a></li>
+                </React.Fragment>
+              ))}
+              <li className="menu-title"><span>Hurtige Genveje</span></li>
+              <li><a href="/">Mine Beskeder</a></li>
+            </>
+          ) : (
+            <li><a href="/">Mine Beskeder</a></li>
+          )}
         </ul>
       </div>
 

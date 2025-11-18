@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useAuth } from '@/contexts/AuthContext';
-import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 interface FlaggedMessage {
   id: string;
@@ -41,12 +41,10 @@ export default function FlaggedMessagesSection({ classId }: { classId: string })
         setLoading(true);
         setError(null);
 
-        const session = await (createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        )).auth.getSession();
+        const { data: sessionData } = await supabase.auth.getSession();
+        const session = sessionData?.session;
 
-        if (!session.data?.session) {
+        if (!session) {
           throw new Error('Unauthorized');
         }
 
@@ -59,7 +57,7 @@ export default function FlaggedMessagesSection({ classId }: { classId: string })
           `/api/moderation/flagged-messages?${params.toString()}`,
           {
             headers: {
-              Authorization: `Bearer ${session.data.session.access_token}`,
+              Authorization: `Bearer ${session.access_token}`,
             },
           }
         );
@@ -185,7 +183,7 @@ export default function FlaggedMessagesSection({ classId }: { classId: string })
                       {msg.rule.replace(/_/g, ' ')}
                     </span>
                   </div>
-                  <p className="text-sm text-base-content break-words">
+                  <p className="text-sm text-base-content wrap-break-word">
                     {msg.messages?.body || '(Ingen besked)'}
                   </p>
                 </div>

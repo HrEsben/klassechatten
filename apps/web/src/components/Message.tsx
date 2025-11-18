@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useReactions } from '@/hooks/useReactions';
 import ReactionsDisplay from './ReactionsDisplay';
 import ReactionPicker from './ReactionPicker';
@@ -28,11 +28,39 @@ function Message({
 }: MessageProps) {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [pickerPosition, setPickerPosition] = useState<{ x: number; y: number } | null>(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [isImageVisible, setIsImageVisible] = useState(false);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
 
   const isOptimistic = msg.isOptimistic;
   const isLoading = msg.isLoading;
   const hasError = msg.hasError;
   const isUploadingImage = msg.isUploadingImage;
+  
+  // Lazy loading with IntersectionObserver
+  useEffect(() => {
+    if (!msg.image_url || !imageContainerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsImageVisible(true);
+            observer.disconnect();
+          }
+        });
+      },
+      {
+        rootMargin: '50px', // Start loading 50px before visible
+      }
+    );
+
+    observer.observe(imageContainerRef.current);
+
+    return () => observer.disconnect();
+  }, [msg.image_url]);
   
   // Only enable reactions for non-optimistic messages with numeric IDs
   const messageId = typeof msg.id === 'number' ? msg.id : null;
@@ -122,17 +150,65 @@ function Message({
         )}
         
         {msg.image_url && (
-          <div className="relative">
-            <img
-              src={msg.image_url}
-              alt="Uploaded image"
-              onClick={() => !isUploadingImage && onImageClick(msg.image_url || '')}
-              className={`max-w-xs w-full h-auto object-cover ${!isUploadingImage ? 'cursor-pointer hover:brightness-90' : 'cursor-wait'} transition-all block ${isOptimistic && isLoading ? 'opacity-50' : ''} ${msg.body ? 'mb-3' : ''}`}
-              onError={e => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'320\' height=\'240\'><rect width=\'100%\' height=\'100%\' fill=\'#f3f4f6\'/><text x=\'50%\' y=\'50%\' text-anchor=\'middle\' dy=\'.3em\' font-size=\'16\' fill=\'#9ca3af\'>Billede fejler</text></svg>';
-              }}
-            />
+          <div ref={imageContainerRef} className="relative">
+            {/* Skeleton loader */}
+            {!imageLoaded && !imageError && (
+              <div className="skeleton w-full h-48 mb-3"></div>
+            )}
+            
+            {/* Actual image - only load when visible */}
+            {isImageVisible && (
+              <img
+                ref={imageRef}
+                src={msg.image_url}
+                alt="Uploaded image"
+                onClick={() => !isUploadingImage && !imageError && onImageClick(msg.image_url || '')}
+                className={`max-w-xs w-full h-auto object-cover transition-all block ${msg.body ? 'mb-3' : ''} ${
+                  !isUploadingImage && !imageError ? 'cursor-pointer hover:brightness-90' : ''
+                } ${
+                  isOptimistic && isLoading ? 'opacity-50' : ''
+                } ${
+                  !imageLoaded ? 'hidden' : ''
+                }`}
+                onLoad={() => {
+                  setImageLoaded(true);
+                  setImageError(false);
+                }}
+                onError={() => {
+                  setImageLoaded(true);
+                  setImageError(true);
+                }}
+              />
+            )}
+            
+            {/* Error state with retry */}
+            {imageError && (
+              <div className="w-full max-w-xs h-48 bg-base-200 border-2 border-error/20 flex flex-col items-center justify-center gap-2 mb-3">
+                <svg className="w-12 h-12 text-error/60" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p className="text-xs text-error/80 font-medium uppercase tracking-wider">Billede kunne ikke indlæses</p>
+                <button
+                  onClick={() => {
+                    setImageError(false);
+                    setImageLoaded(false);
+                    // Force reload by changing src
+                    if (imageRef.current) {
+                      const src = imageRef.current.src;
+                      imageRef.current.src = '';
+                      setTimeout(() => {
+                        if (imageRef.current) imageRef.current.src = src;
+                      }, 10);
+                    }
+                  }}
+                  className="btn btn-xs btn-error btn-outline"
+                >
+                  Prøv igen
+                </button>
+              </div>
+            )}
+            
+            {/* Upload progress overlay */}
             {isUploadingImage && (
               <div className="absolute inset-0 flex items-center justify-center bg-base-content/20">
                 <div className="flex flex-col items-center gap-2">

@@ -121,16 +121,24 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
         className="menu menu-sm dropdown-content bg-base-100 border-2 border-base-content/10 z-50 w-80 sm:w-md shadow-lg mt-3 p-0"
         style={{ maxHeight: '32rem' }}
       >
-        {/* User Info Header */}
-        <li className="menu-title border-b-2 border-base-content/10 px-4 py-3">
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-black uppercase tracking-tight text-base-content">
-              {userName || 'Bruger'}
-            </span>
-            <span className="text-xs font-mono uppercase tracking-wider text-base-content/50">
-              {userRole}
-            </span>
-          </div>
+        {/* User Info Header - Clickable */}
+        <li>
+          <button
+            onClick={() => {
+              router.push('/profile');
+              (document.activeElement as HTMLElement)?.blur();
+            }}
+            className="border-b-2 border-base-content/10 px-4 py-3 hover:bg-base-200 transition-colors"
+          >
+            <div className="flex flex-col gap-1 items-start">
+              <span className="text-sm font-black uppercase tracking-tight text-base-content">
+                {userName || 'Bruger'}
+              </span>
+              <span className="text-xs font-mono uppercase tracking-wider text-base-content/50">
+                {userRole}
+              </span>
+            </div>
+          </button>
         </li>
 
         {/* Notifications Section */}
@@ -200,85 +208,6 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
                 </li>
               ))}
             </div>
-            
-            <li className="border-t-2 border-base-content/10"></li>
-          </>
-        )}
-
-        {/* Quick Actions for Admins and Class Admins */}
-        {(isGlobalAdmin || isClassAdmin) && (
-          <>
-            <li className="menu-title border-b-2 border-base-content/10 px-4 py-2">
-              <span className="text-xs font-black uppercase tracking-tight text-base-content">
-                Hurtige Genveje
-              </span>
-            </li>
-
-            {isGlobalAdmin && (
-              <>
-                <li>
-                  <button
-                    onClick={() => {
-                      router.push('/admin');
-                      (document.activeElement as HTMLElement)?.blur();
-                    }}
-                    className="px-4 py-3 hover:bg-base-200"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="square" strokeLinejoin="miter" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    </svg>
-                    Admin Dashboard
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => {
-                      router.push('/admin/flagged-messages');
-                      (document.activeElement as HTMLElement)?.blur();
-                    }}
-                    className="px-4 py-3 hover:bg-base-200"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="square" strokeLinejoin="miter" d="M3 21l1.65-3.8a9 9 0 1111.15 0L18 21M12 12v-2M12 6h.01" />
-                    </svg>
-                    Alle Flaggede Beskeder
-                  </button>
-                </li>
-              </>
-            )}
-
-            {isClassAdmin && !isGlobalAdmin && classParam && (
-              <>
-                <li>
-                  <button
-                    onClick={() => {
-                      router.push(`/class/${classParam}/flagged`);
-                      (document.activeElement as HTMLElement)?.blur();
-                    }}
-                    className="px-4 py-3 hover:bg-base-200"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="square" strokeLinejoin="miter" d="M3 21l1.65-3.8a9 9 0 1111.15 0L18 21M12 12v-2M12 6h.01" />
-                    </svg>
-                    Flaggede Beskeder
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => {
-                      router.push(`/class/${classParam}/settings`);
-                      (document.activeElement as HTMLElement)?.blur();
-                    }}
-                    className="px-4 py-3 hover:bg-base-200"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="square" strokeLinejoin="miter" d="M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
-                    </svg>
-                    Klasseindstillinger
-                  </button>
-                </li>
-              </>
-            )}
             
             <li className="border-t-2 border-base-content/10"></li>
           </>

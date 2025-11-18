@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import imageCompression from 'browser-image-compression';
 
 interface SendMessageResult {
   status: 'allow' | 'flag' | 'flagged' | 'block' | 'blocked' | 'requires_confirmation';
@@ -38,35 +39,90 @@ export function useSendMessage() {
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const uploadImage = async (file: File): Promise<string | null> => {
+  const uploadImage = async (
+    file: File, 
+    onProgress?: (progress: number) => void
+  ): Promise<{ url: string | null; thumbnail: string | null }> => {
     setUploading(true);
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      // Create unique filename with user ID folder structure
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${session.user.id}/${Date.now()}.${fileExt}`;
+      // Compress main image
+      if (onProgress) onProgress(10);
+      
+      const compressedFile = await imageCompression(file, {
+        maxSizeMB: 2,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        initialQuality: 0.85,
+        onProgress: (p) => {
+          if (onProgress) onProgress(10 + (p * 0.4)); // 10-50%
+        }
+      });
 
-      const { data, error } = await supabase.storage
+      if (onProgress) onProgress(50);
+
+      // Generate thumbnail
+      const thumbnailFile = await imageCompression(file, {
+        maxSizeMB: 0.1,
+        maxWidthOrHeight: 320,
+        useWebWorker: true,
+        initialQuality: 0.7,
+      });
+
+      if (onProgress) onProgress(60);
+
+      // Upload main image
+      const fileExt = file.name.split('.').pop();
+      const timestamp = Date.now();
+      const mainFileName = `${session.user.id}/${timestamp}.${fileExt}`;
+
+      const { data: mainData, error: mainError } = await supabase.storage
         .from('chat-images')
-        .upload(fileName, file, {
+        .upload(mainFileName, compressedFile, {
           cacheControl: '3600',
           upsert: false
         });
 
-      if (error) throw error;
+      if (mainError) throw mainError;
+      if (onProgress) onProgress(80);
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
+      // Upload thumbnail
+      const thumbFileName = `${session.user.id}/${timestamp}_thumb.${fileExt}`;
+
+      const { data: thumbData, error: thumbError } = await supabase.storage
         .from('chat-images')
-        .getPublicUrl(data.path);
+        .upload(thumbFileName, thumbnailFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-      return publicUrl;
+      if (thumbError) {
+        console.warn('Thumbnail upload failed:', thumbError);
+      }
+
+      if (onProgress) onProgress(95);
+
+      // Get public URLs
+      const { data: { publicUrl: mainUrl } } = supabase.storage
+        .from('chat-images')
+        .getPublicUrl(mainData.path);
+
+      const thumbnailUrl = thumbData ? 
+        supabase.storage.from('chat-images').getPublicUrl(thumbData.path).data.publicUrl : 
+        null;
+
+      if (onProgress) onProgress(100);
+
+      return { 
+        url: mainUrl, 
+        thumbnail: thumbnailUrl 
+      };
     } catch (error) {
       console.error('Error uploading image:', error);
-      return null;
+      return { url: null, thumbnail: null };
     } finally {
       setUploading(false);
     }

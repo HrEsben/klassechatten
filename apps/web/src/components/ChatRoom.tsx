@@ -47,6 +47,7 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
   const [pendingMessage, setPendingMessage] = useState<{ text?: string, imageUrl?: string } | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -478,9 +479,14 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
     // 2. ASYNC: Upload image in background (if needed)
     let imageUrl: string | null = null;
     if (imageFile) {
-      // Upload happens in background while user sees optimistic message
-      imageUrl = await uploadImage(imageFile);
-      if (!imageUrl) {
+      // Upload happens in background while user sees optimistic message with progress
+      const result = await uploadImage(imageFile, (progress) => {
+        setUploadProgress(progress);
+      });
+      
+      setUploadProgress(0); // Reset progress
+      
+      if (!result.url) {
         // Mark optimistic message as failed
         if (optimisticMessageId) {
           updateOptimisticMessage(optimisticMessageId, false);
@@ -491,6 +497,9 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
         });
         return;
       }
+      
+      imageUrl = result.url;
+      
       // Update optimistic message with real image URL
       if (optimisticMessageId) {
         updateOptimisticMessageImage(optimisticMessageId, imageUrl);
@@ -985,6 +994,21 @@ export default function ChatRoom({ roomId, onBack }: ChatRoomProps) {
             >
               ×
             </button>
+          </div>
+        )}
+        
+        {/* Upload Progress */}
+        {uploading && uploadProgress > 0 && (
+          <div className="mb-4">
+            <div className="flex items-center gap-2 text-xs text-base-content/60 mb-1">
+              <span>Uploader billede...</span>
+              <span className="font-medium">{Math.round(uploadProgress)}%</span>
+            </div>
+            <progress 
+              className="progress progress-primary w-full" 
+              value={uploadProgress} 
+              max="100"
+            ></progress>
           </div>
         )}
         

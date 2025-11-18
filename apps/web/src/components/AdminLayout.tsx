@@ -24,9 +24,9 @@ export default function AdminLayout({
   };
 
   return (
-    <div className="min-h-screen bg-base-300 flex flex-col">
+    <div className="min-h-screen bg-base-300 flex flex-col lg:grid lg:grid-rows-[auto_1fr_auto] lg:grid-cols-[256px_1fr]">
       {/* Edgy Berlin Header */}
-      <header className="bg-base-100 border-b-2 border-base-content/10">
+      <header className="bg-base-100 border-b-2 border-base-content/10 lg:col-span-2">
         <div className="w-full px-4 lg:px-0 lg:grid lg:grid-cols-[256px_1fr]">
           <div className="flex items-center justify-between py-4 lg:justify-end lg:pl-12">
             {/* Logo/Brand with accent bar - right aligned on desktop */}
@@ -74,8 +74,94 @@ export default function AdminLayout({
         </div>
       </header>
 
+      {/* Sidebar Navigation - Desktop Only */}
+      <aside className="hidden lg:flex flex-col bg-base-100 border-r-2 border-base-content/10 h-full">
+        <nav className="flex-1 p-6 space-y-2">
+          <div className="mb-6">
+            <p className="text-xs font-bold uppercase tracking-widest text-base-content/50 px-4 mb-4">
+              Administration
+            </p>
+            
+            {/* Classes */}
+            <a
+              href="/admin/classes"
+              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+            >
+              <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                <path strokeLinecap="square" strokeLinejoin="miter" d="M12 6.253v13m0-13C6.5 6.253 2 10.753 2 16.253S6.5 26.253 12 26.253s10-4.5 10-10 -4.5-10-10-10z" />
+              </svg>
+              Klasser
+            </a>
+
+            {/* Users */}
+            <a
+              href="/admin/users"
+              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+            >
+              <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                <path strokeLinecap="square" strokeLinejoin="miter" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+              </svg>
+              Brugere
+            </a>
+
+            {/* Moderation */}
+            <a
+              href={isClassAdmin && classId ? `/admin/moderation?class_id=${classId}` : '/admin/moderation'}
+              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+            >
+              <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                <path strokeLinecap="square" strokeLinejoin="miter" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+              </svg>
+              Flaggede Beskeder
+            </a>
+
+            {/* Settings */}
+            <a
+              href="/admin/settings"
+              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+            >
+              <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                <path strokeLinecap="square" strokeLinejoin="miter" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.64l-1.92-3.32c-.12-.22-.38-.3-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.5-.41h-3.84c-.26 0-.46.17-.49.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.21-.09-.47 0-.59.22L2.74 8.87c-.12.22-.07.49.12.64l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.64l1.92 3.32c.12.22.38.3.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.5.41h3.84c.26 0 .46-.17.49-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.21.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.49-.12-.64l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+              </svg>
+              Indstillinger
+            </a>
+          </div>
+        </nav>
+
+        {/* Sidebar Footer */}
+        <div className="border-t-2 border-base-content/10 p-6 space-y-4">
+          <div className="text-xs font-mono text-base-content/40 uppercase tracking-wider text-center">
+            © 2025
+          </div>
+          <div className="flex justify-center gap-1">
+            <div className="w-2 h-2 bg-primary"></div>
+            <div className="w-2 h-2 bg-secondary"></div>
+            <div className="w-2 h-2 bg-accent"></div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Mobile Menu - Hamburger/Dropdown */}
+      <div className="lg:hidden dropdown">
+        <button tabIndex={0} className="btn btn-ghost btn-sm m-1">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="square" strokeLinejoin="miter" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+          Meny
+        </button>
+        <ul
+          tabIndex={0}
+          className="dropdown-content z-1 menu p-2 shadow bg-base-100 rounded-none border-2 border-base-content/10 w-52"
+        >
+          <li><a href="/admin/classes">Klasser</a></li>
+          <li><a href="/admin/users">Brugere</a></li>
+          <li><a href={isClassAdmin && classId ? `/admin/moderation?class_id=${classId}` : '/admin/moderation'}>Flaggede Beskeder</a></li>
+          <li><a href="/admin/settings">Indstillinger</a></li>
+        </ul>
+      </div>
+
       {/* Main Content Area */}
-      <main className="flex-1 py-8 bg-base-300">
+      <main className="flex-1 py-8 bg-base-300 lg:col-span-1">
         <div className="w-full max-w-7xl mx-auto px-12">
           {/* Breadcrumb Navigation */}
           <div className="mb-6">
@@ -87,7 +173,7 @@ export default function AdminLayout({
       </main>
 
       {/* Footer with geometric pattern */}
-      <footer className="bg-base-100 border-t-2 border-base-content/10 relative z-50">
+      <footer className="bg-base-100 border-t-2 border-base-content/10 lg:col-span-2 relative z-50">
         <div className="w-full px-12 py-4 lg:grid lg:grid-cols-[256px_1fr] lg:px-0">
           <div className="flex justify-between items-center lg:flex-col lg:items-end">
             <div className="text-xs font-mono text-base-content/40 uppercase tracking-wider">

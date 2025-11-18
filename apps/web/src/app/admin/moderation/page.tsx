@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/lib/supabase';
 
 interface Author {
@@ -42,12 +43,41 @@ interface FlaggedMessage {
   };
 }
 
-function AdminModerationContent() {
+function AdminModerationContent({ classId }: { classId?: string }) {
   const router = useRouter();
+  const { profile, roleLabel, isClassAdmin } = useUserProfile(classId);
   const [flaggedMessages, setFlaggedMessages] = useState<FlaggedMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [expandedMessageId, setExpandedMessageId] = useState<number | null>(null);
+
+  // Check permissions
+  useEffect(() => {
+    const checkPermissions = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        router.push('/login');
+        return;
+      }
+
+      // Allow if admin or teacher (adult role) or class admin
+      const isAuthorized = 
+        profile?.role === 'admin' || 
+        profile?.role === 'adult';
+
+      if (!profile || !isAuthorized) {
+        router.push('/');
+        return;
+      }
+
+      setLoading(false);
+    };
+
+    if (profile) {
+      checkPermissions();
+    }
+  }, [profile, isClassAdmin, router]);
 
   useEffect(() => {
     fetchFlaggedMessages();
@@ -86,6 +116,10 @@ function AdminModerationContent() {
       const params = new URLSearchParams();
       if (severityFilter !== 'all') {
         params.append('severity', severityFilter);
+      }
+      // If user is a class admin, only show messages from their class
+      if (isClassAdmin && classId) {
+        params.append('class_id', classId);
       }
 
       const response = await fetch(`/api/moderation/flagged-messages?${params.toString()}`, {
@@ -386,9 +420,12 @@ function AdminModerationContent() {
 }
 
 export default function AdminModerationPage() {
+  const searchParams = useSearchParams();
+  const classId = searchParams.get('classId') || undefined;
+  
   return (
     <AdminLayout>
-      <AdminModerationContent />
+      <AdminModerationContent classId={classId} />
     </AdminLayout>
   );
 }

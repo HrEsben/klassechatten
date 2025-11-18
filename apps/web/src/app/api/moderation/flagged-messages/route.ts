@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase-server';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const classId = searchParams.get('class_id');
+    const classId = searchParams.get('class_id') || searchParams.get('classId');
     const severity = searchParams.get('severity');
     const userId = searchParams.get('user_id'); // For filtering by specific user
 
@@ -33,7 +33,34 @@ export async function GET(request: NextRequest) {
     }
 
     const isParent = profile.role === 'guardian';
-    const isAdminOrTeacher = profile.role === 'admin' || profile.role === 'adult';
+    const isAdmin = profile.role === 'admin';
+    const isTeacher = profile.role === 'adult';
+    
+    // Check if user is a class admin (if classId is provided)
+    let isClassAdmin = false;
+    if (classId && isTeacher) {
+      const { data: classMember, error: classMemberError } = await supabaseAdmin
+        .from('class_members')
+        .select('is_class_admin')
+        .eq('user_id', user.id)
+        .eq('class_id', classId)
+        .eq('status', 'active')
+        .single();
+
+      if (!classMemberError && classMember) {
+        isClassAdmin = classMember.is_class_admin === true;
+      }
+    }
+
+    // Verify permissions
+    if (!isParent && !isAdmin && !isTeacher) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    // If teacher/class admin without classId, deny access (class admins must specify their class)
+    if (!isAdmin && !isParent && isTeacher && !classId) {
+      return NextResponse.json({ error: 'Class ID required for teachers' }, { status: 400 });
+    }
 
     // Build base query
     let query = supabaseAdmin

@@ -20,6 +20,10 @@ export default function CreateChildPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [classes, setClasses] = useState<ClassInfo[]>([]);
+  const [createdChildId, setCreatedChildId] = useState<string | null>(null);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [generatingCode, setGeneratingCode] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
   
   // Form state
   const [selectedClass, setSelectedClass] = useState('');
@@ -135,6 +139,8 @@ export default function CreateChildPage() {
         throw new Error(data.error || 'Failed to create child account');
       }
 
+      // Store child ID for invite code generation
+      setCreatedChildId(data.child.child_id);
       setSuccess(`Konto oprettet for ${displayName}! De kan nu logge ind med brugernavn: ${username}`);
       
       // Reset form
@@ -145,15 +151,51 @@ export default function CreateChildPage() {
       setEmail('');
 
       // Reload classes to update available slots
-      setTimeout(() => {
-        loadParentClasses();
-        setSuccess('');
-      }, 3000);
+      loadParentClasses();
 
     } catch (err: any) {
       setError(err.message);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleGenerateInviteCode = async () => {
+    if (!createdChildId) return;
+    
+    setGeneratingCode(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/guardians/generate-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ childId: createdChildId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate invite code');
+      }
+
+      setInviteCode(data.inviteCode);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setGeneratingCode(false);
+    }
+  };
+
+  const handleCopyCode = async () => {
+    if (!inviteCode) return;
+
+    try {
+      await navigator.clipboard.writeText(inviteCode);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy code:', err);
     }
   };
 
@@ -219,6 +261,75 @@ export default function CreateChildPage() {
             {success && (
               <div className="alert alert-success alert-outline">
                 <span className="text-xs font-mono uppercase tracking-wider">{success}</span>
+              </div>
+            )}
+
+            {/* Guardian Invite Code Section */}
+            {createdChildId && (
+              <div className="bg-accent/10 border-2 border-accent p-6 space-y-4">
+                <h3 className="text-sm font-black uppercase tracking-tight text-base-content mb-2">
+                  Inviter Anden Forælder
+                </h3>
+                <p className="text-xs text-base-content/70 mb-4">
+                  Vil du give en anden forælder adgang til dette barns data? Generer en invitation som kun den anden forælder kender.
+                </p>
+
+                {!inviteCode ? (
+                  <button
+                    type="button"
+                    onClick={handleGenerateInviteCode}
+                    className="btn bg-accent text-accent-content hover:bg-accent/80"
+                    disabled={generatingCode}
+                  >
+                    {generatingCode ? (
+                      <>
+                        <span className="loading loading-spinner loading-sm"></span>
+                        Genererer kode...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                          <path strokeLinecap="square" strokeLinejoin="miter" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                        Generer Forældre-Kode
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="bg-base-100 border-2 border-accent p-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-widest text-base-content/50 mb-1">
+                          Forældre-Invitation
+                        </p>
+                        <p className="text-2xl font-black font-mono tracking-wider text-accent">
+                          {inviteCode}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCopyCode}
+                        className="btn btn-square btn-ghost"
+                        title="Kopier kode"
+                      >
+                        {copiedCode ? (
+                          <svg className="w-6 h-6 stroke-current text-success" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                            <path strokeLinecap="square" strokeLinejoin="miter" d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <svg className="w-6 h-6 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                            <path strokeLinecap="square" strokeLinejoin="miter" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                    <div className="bg-warning/10 border-2 border-warning/30 p-4">
+                      <p className="text-xs text-base-content/70">
+                        <strong className="text-warning font-bold">Vigtigt:</strong> Del kun denne kode med den anden forælder. Når de opretter en konto og indtaster denne kode, får de adgang til barnets data. Koden kan kun bruges én gang.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

@@ -286,16 +286,18 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
                           
                           // Store child info in sessionStorage as backup (with obfuscated key to avoid redaction)
                           try {
-                            sessionStorage.setItem('cp_' + btoa(child.child_id).slice(0, 8), JSON.stringify({
+                            sessionStorage.setItem('current_child_profile', JSON.stringify({
                               id: child.child_id,
                               name: child.child_name,
-                              username: child.child_username
+                              username: child.child_username,
+                              timestamp: Date.now()
                             }));
                           } catch (e) {
                             console.error('[UserMenu] Failed to store child info:', e);
                           }
                           
-                          router.push(`/child/${child.child_id}`);
+                          // Use query parameter as fallback to avoid URL path redaction
+                          router.push(`/child/${child.child_id}?cid=${encodeURIComponent(child.child_id)}`);
                           (document.activeElement as HTMLElement)?.blur();
                         }}
                         className="px-4 py-3 hover:bg-primary/10 text-left flex items-center justify-between border-b border-base-content/5 group"

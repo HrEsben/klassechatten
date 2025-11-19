@@ -1,7 +1,7 @@
 'use client';
 
 import { use, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
@@ -44,27 +44,46 @@ export default function ChildProfilePage({
   const { id: rawChildId } = use(params);
   const router = useRouter();
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const [hasRedirected, setHasRedirected] = useState(false);
   
   // Detect and recover from redacted child ID
   const getActualChildId = (): string => {
     // If ID is redacted by browser extension/monitoring tool
-    if (rawChildId.includes('%%drp:') || rawChildId.includes('%%')) {
-      console.warn('[ChildProfile] Redacted ID detected:', rawChildId);
+    if (rawChildId.includes('%%drp:') || rawChildId.includes('%%') || !rawChildId.match(/^[0-9a-f-]{36}$/i)) {
+      console.warn('[ChildProfile] Invalid/redacted ID detected:', rawChildId);
+      
+      // Prevent infinite redirect loop
+      if (hasRedirected) {
+        console.error('[ChildProfile] Already redirected, stopping to prevent loop');
+        return rawChildId;
+      }
+      
+      // Try query parameter first (most reliable)
+      const queryId = searchParams?.get('cid');
+      if (queryId && queryId.match(/^[0-9a-f-]{36}$/i)) {
+        console.log('[ChildProfile] Recovered ID from query parameter:', queryId);
+        setHasRedirected(true);
+        // Redirect to clean URL (only once)
+        setTimeout(() => router.replace(`/child/${queryId}`), 0);
+        return queryId;
+      }
       
       // Try to recover from sessionStorage
-      const storageKeys = Object.keys(sessionStorage).filter(k => k.startsWith('cp_'));
-      for (const key of storageKeys) {
-        try {
-          const stored = JSON.parse(sessionStorage.getItem(key) || '{}');
-          if (stored.id) {
-            console.log('[ChildProfile] Recovered ID from sessionStorage:', stored.id);
-            // Redirect to correct URL
-            router.replace(`/child/${stored.id}`);
-            return stored.id;
+      try {
+        const stored = sessionStorage.getItem('current_child_profile');
+        if (stored) {
+          const data = JSON.parse(stored);
+          // Check if data is recent (within 5 minutes)
+          if (data.id && data.timestamp && (Date.now() - data.timestamp) < 300000) {
+            console.log('[ChildProfile] Recovered ID from sessionStorage:', data.id);
+            setHasRedirected(true);
+            setTimeout(() => router.replace(`/child/${data.id}`), 0);
+            return data.id;
           }
-        } catch (e) {
-          // Ignore invalid entries
         }
+      } catch (e) {
+        console.error('[ChildProfile] Failed to recover from sessionStorage:', e);
       }
       
       console.error('[ChildProfile] Could not recover child ID');

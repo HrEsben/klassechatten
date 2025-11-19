@@ -48,6 +48,17 @@ export default function PerformanceDashboard() {
     URL.revokeObjectURL(url);
   };
 
+  const handleDebug = () => {
+    const stored = localStorage.getItem('klassechatten_performance_metrics');
+    console.log('=== Performance Debug ===');
+    console.log('localStorage key:', 'klassechatten_performance_metrics');
+    console.log('Stored data:', stored);
+    console.log('Parsed metrics:', stored ? JSON.parse(stored) : null);
+    console.log('Current stats:', performanceMonitor.getAllStats());
+    console.log('Exported metrics:', performanceMonitor.exportMetrics());
+    alert('Debug info logged to console. Press F12 to view.');
+  };
+
   const formatDuration = (ms: number) => {
     if (ms < 1000) return `${ms}ms`;
     return `${(ms / 1000).toFixed(2)}s`;
@@ -102,6 +113,9 @@ export default function PerformanceDashboard() {
               ) : (
                 <><Play className="w-4 h-4" strokeWidth={2} /> Start</>
               )} Auto-refresh
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={handleDebug}>
+              Debug
             </button>
             <button className="btn btn-ghost" onClick={handleExport}>
               <Download className="w-4 h-4" strokeWidth={2} /> Eksporter

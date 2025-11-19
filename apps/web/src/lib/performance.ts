@@ -102,7 +102,10 @@ class PerformanceMonitor {
    * Record a metric directly (without timer)
    */
   recordMetric(metric: PerformanceMetric): void {
-    if (!this.isClient) return;
+    if (!this.isClient) {
+      console.warn('[Performance] Not on client, cannot record metric');
+      return;
+    }
 
     this.metrics.push(metric);
 
@@ -113,13 +116,11 @@ class PerformanceMonitor {
 
     this.saveMetrics();
 
-    // Log in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `[Performance] ${metric.type}: ${metric.duration}ms`,
-        metric.metadata || ''
-      );
-    }
+    // Always log metrics for debugging
+    console.log(
+      `[Performance] ${metric.type}: ${metric.duration}ms (total: ${this.metrics.length})`,
+      metric.metadata || ''
+    );
   }
 
   /**
@@ -272,6 +273,7 @@ class PerformanceMonitor {
 
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.metrics));
+      console.log(`[Performance] Saved ${this.metrics.length} metrics to localStorage`);
     } catch (error) {
       console.error('[Performance] Failed to save metrics:', error);
     }

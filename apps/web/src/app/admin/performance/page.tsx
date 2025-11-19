@@ -49,13 +49,19 @@ export default function PerformanceDashboard() {
   };
 
   const handleDebug = () => {
-    const stored = localStorage.getItem('klassechatten_performance_metrics');
     console.log('=== Performance Debug ===');
+    console.log('All localStorage keys:', Object.keys(localStorage));
+    
+    const stored = localStorage.getItem('klassechatten_performance_metrics');
     console.log('localStorage key:', 'klassechatten_performance_metrics');
     console.log('Stored data:', stored);
     console.log('Parsed metrics:', stored ? JSON.parse(stored) : null);
     console.log('Current stats:', performanceMonitor.getAllStats());
     console.log('Exported metrics:', performanceMonitor.exportMetrics());
+    
+    console.log('typeof window:', typeof window);
+    console.log('typeof localStorage:', typeof localStorage);
+    
     alert('Debug info logged to console. Press F12 to view.');
   };
 

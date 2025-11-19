@@ -292,8 +292,17 @@ class PerformanceMonitor {
     if (!this.isClient) return;
 
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.metrics));
+      const data = JSON.stringify(this.metrics);
+      localStorage.setItem(STORAGE_KEY, data);
       console.log(`[Performance] Saved ${this.metrics.length} metrics to localStorage`);
+      
+      // Verify it was saved
+      const verification = localStorage.getItem(STORAGE_KEY);
+      if (!verification) {
+        console.error('[Performance] WARNING: Metrics were not saved to localStorage!');
+      } else {
+        console.log(`[Performance] Verification: ${verification.length} chars stored`);
+      }
     } catch (error) {
       console.error('[Performance] Failed to save metrics:', error);
     }

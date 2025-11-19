@@ -39,7 +39,10 @@ function HomePage() {
           <div className="flex items-center justify-between py-4 lg:justify-end lg:pl-12">
             {/* Logo/Brand with accent bar - right aligned on desktop */}
             <div className="flex flex-col lg:items-end">
-              <h1 className="text-xl lg:text-2xl font-black uppercase tracking-tight text-base-content">
+              <h1 
+                onClick={() => router.push('/')}
+                className="text-xl lg:text-2xl font-black uppercase tracking-tight text-base-content cursor-pointer hover:text-primary transition-colors"
+              >
                 KlasseChatten
               </h1>
               <div className="h-0.5 w-16 lg:w-20 bg-primary mt-1 lg:ml-auto"></div>

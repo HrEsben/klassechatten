@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import AdminLayout from '@/components/AdminLayout';
-import { Flag, Check, X } from 'lucide-react';
+import { Flag, Check, X, AlertCircle, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { da } from 'date-fns/locale';
 
@@ -413,9 +413,7 @@ export default function FlaggedMessagesPage() {
       <AdminLayout>
         <div className="w-full max-w-7xl mx-auto px-12 py-8">
           <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 text-center space-y-4">
-            <svg className="w-16 h-16 stroke-current text-error mx-auto" fill="none" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="square" strokeLinejoin="miter" d="M12 9v6m0 4v0M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <AlertCircle className="w-16 h-16 stroke-current text-error mx-auto" strokeWidth={2} />
             <h2 className="text-2xl font-black uppercase tracking-tight text-base-content">
               Adgang nægtet
             </h2>
@@ -615,18 +613,7 @@ export default function FlaggedMessagesPage() {
           <>
             {flaggedMessages.length === 0 ? (
               <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 text-center space-y-4">
-                <svg
-                  className="w-16 h-16 stroke-current text-success mx-auto"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="square"
-                    strokeLinejoin="miter"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+                <CheckCircle className="w-16 h-16 stroke-current text-success mx-auto" strokeWidth={2} />
                 <h2 className="text-2xl font-black uppercase tracking-tight text-base-content">
                   Ingen flaggede beskeder
                 </h2>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Check, AlertCircle } from 'lucide-react';
 
 interface ConnectionStatusProps {
   isConnected: boolean;
@@ -65,38 +66,12 @@ export function ConnectionStatus({
         </div>
       ) : isConnected && showConnected ? (
         <div className="badge badge-success gap-2 px-3 py-3">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
+          <Check className="h-4 w-4" strokeWidth={2} />
           <span className="text-sm">Tilsluttet</span>
         </div>
       ) : (
         <div className="badge badge-error gap-2 px-3 py-3">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          <AlertCircle className="h-4 w-4" strokeWidth={2} />
           <span className="text-sm">Forbindelse mistet</span>
         </div>
       )}

@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserClasses } from '@/hooks/useUserClasses';
 import Breadcrumbs from './Breadcrumbs';
+import UserMenu from './UserMenu';
+import { Home, LayoutList, Users, TriangleAlert, Settings, MessageSquare, CirclePlus, Menu } from 'lucide-react';
 
 export default function AdminLayout({ 
   children,
@@ -38,7 +40,7 @@ export default function AdminLayout({
             {/* Logo/Brand with accent bar - right aligned on desktop */}
             <div className="flex flex-col lg:items-end">
               <h1 
-                onClick={() => router.push('/admin')}
+                onClick={() => router.push(isGlobalAdmin ? '/admin' : '/')}
                 className="text-xl lg:text-2xl font-black uppercase tracking-tight text-base-content cursor-pointer hover:text-primary transition-colors"
               >
                 KlasseChatten
@@ -48,12 +50,11 @@ export default function AdminLayout({
 
             {/* Mobile menu button - shows user controls */}
             <div className="lg:hidden">
-              <button
-                onClick={handleSignOut}
-                className="btn btn-sm bg-base-content text-base-100 hover:bg-primary hover:text-primary-content"
-              >
-                Log Ud
-              </button>
+              <UserMenu 
+                userName={profile?.display_name || user?.user_metadata?.display_name || user?.email}
+                userRole={roleLabel + (isClassAdmin ? ' ⁺' : '')}
+                avatarUrl={profile?.avatar_url}
+              />
             </div>
           </div>
           
@@ -69,13 +70,12 @@ export default function AdminLayout({
               </span>
             </div>
             
-            {/* Logout Button */}
-            <button
-              onClick={handleSignOut}
-              className="btn bg-base-content text-base-100 hover:bg-primary hover:text-primary-content"
-            >
-              Log Ud
-            </button>
+            {/* User Menu with Notifications and Logout */}
+            <UserMenu 
+              userName={profile?.display_name || user?.user_metadata?.display_name || user?.email}
+              userRole={roleLabel + (isClassAdmin ? ' ⁺' : '')}
+              avatarUrl={profile?.avatar_url}
+            />
           </div>
         </div>
       </header>
@@ -93,45 +93,35 @@ export default function AdminLayout({
                 href="/admin"
                 className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
               >
-                <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                  <path strokeLinecap="square" strokeLinejoin="miter" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                </svg>
+                <Home className="w-5 h-5 stroke-current" strokeWidth={2} />
                 Dashboard
               </a>
               <a
                 href="/admin/classes"
                 className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
               >
-                <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                  <path strokeLinecap="square" strokeLinejoin="miter" d="M3 5h18M3 10h18M3 15h18M3 20h18" />
-                </svg>
+                <LayoutList className="w-5 h-5 stroke-current" strokeWidth={2} />
                 Alle Klasser
               </a>
               <a
                 href="/admin/users"
                 className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
               >
-                <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                  <path strokeLinecap="square" strokeLinejoin="miter" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 108 0 4 4 0 00-8 0z" />
-                </svg>
+                <Users className="w-5 h-5 stroke-current" strokeWidth={2} />
                 Alle Brugere
               </a>
               <a
                 href="/admin/flagged-messages"
                 className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
               >
-                <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                  <path strokeLinecap="square" strokeLinejoin="miter" d="M3 21l1.65-3.8a9 9 0 1111.15 0L18 21M12 12v-2M12 6h.01" />
-                </svg>
+                <TriangleAlert className="w-5 h-5 stroke-current" strokeWidth={2} />
                 Alle Flaggede Beskeder
               </a>
               <a
                 href="/admin/settings"
                 className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
               >
-                <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                  <path strokeLinecap="square" strokeLinejoin="miter" d="M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
-                </svg>
+                <Settings className="w-5 h-5 stroke-current" strokeWidth={2} />
                 Systemindstillinger
               </a>
             </div>
@@ -152,27 +142,21 @@ export default function AdminLayout({
                     href={`/?class=${cls.id}`}
                     className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
                   >
-                    <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                      <path strokeLinecap="square" strokeLinejoin="miter" d="M8 12h8M12 8v8M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <CirclePlus className="w-5 h-5 stroke-current" strokeWidth={2} />
                     Kanaler
                   </a>
                   <a
                     href={`/admin/flagged-messages?class_id=${cls.id}`}
                     className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
                   >
-                    <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                      <path strokeLinecap="square" strokeLinejoin="miter" d="M3 21l1.65-3.8a9 9 0 1111.15 0L18 21M12 12v-2M12 6h.01" />
-                    </svg>
+                    <TriangleAlert className="w-5 h-5 stroke-current" strokeWidth={2} />
                     Flaggede Beskeder
                   </a>
                   <a
                     href={`/class/${cls.id}/settings`}
                     className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
                   >
-                    <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                      <path strokeLinecap="square" strokeLinejoin="miter" d="M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
-                    </svg>
+                    <Settings className="w-5 h-5 stroke-current" strokeWidth={2} />
                     Indstillinger
                   </a>
                 </div>
@@ -190,9 +174,7 @@ export default function AdminLayout({
                 href="/"
                 className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
               >
-                <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                  <path strokeLinecap="square" strokeLinejoin="miter" d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
-                </svg>
+                <MessageSquare className="w-5 h-5 stroke-current" strokeWidth={2} />
                 Mine Beskeder
               </a>
             </div>
@@ -215,9 +197,7 @@ export default function AdminLayout({
       {/* Mobile Menu - Hamburger/Dropdown */}
       <div className="lg:hidden dropdown">
         <button tabIndex={0} className="btn btn-ghost btn-sm m-1">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="square" strokeLinejoin="miter" d="M4 6h16M4 12h16M4 18h16"></path>
-          </svg>
+          <Menu className="w-5 h-5" strokeWidth={2} />
           Meny
         </button>
         <ul

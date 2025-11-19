@@ -7,7 +7,7 @@ import { useUnreadCounts } from '@/hooks/useUnreadCounts';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useGuardianChildren } from '@/hooks/useGuardianChildren';
 import { supabase } from '@/lib/supabase';
-import { Flag, Settings, Info, Users, UserPlus, UserCheck, ArrowRight, ChevronRight } from 'lucide-react';
+import { Flag, Settings, Info, Users, UserPlus, UserCheck, ArrowRight, ChevronRight, Lock } from 'lucide-react';
 import ChatRoom from './ChatRoom';
 
 export default function ClassRoomBrowser() {
@@ -358,19 +358,12 @@ export default function ClassRoomBrowser() {
                         # {room.name}
                       </h3>
                       {room.is_locked ? (
-                        <svg className="w-5 h-5 text-base-content/40 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                          <path strokeLinecap="square" strokeLinejoin="miter" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
+                        <Lock className="w-5 h-5 text-base-content/40 shrink-0" strokeWidth={2} />
                       ) : (
-                        <svg 
+                        <ChevronRight 
                           className="w-5 h-5 text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-200 shrink-0" 
-                          fill="none" 
-                          stroke="currentColor" 
-                          viewBox="0 0 24 24"
                           strokeWidth={2.5}
-                        >
-                          <path strokeLinecap="square" strokeLinejoin="miter" d="M9 5l7 7-7 7" />
-                        </svg>
+                        />
                       )}
                     </div>
                   </div>

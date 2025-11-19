@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
-import { ArrowLeft, Users, UserPlus } from 'lucide-react';
+import { ArrowLeft, Users, UserPlus, TriangleAlert, ChevronRight, Check } from 'lucide-react';
 
 interface Child {
   child_id: string;
@@ -78,18 +78,14 @@ export default function MyChildrenPage() {
 
         {error && (
           <div className="alert alert-error alert-outline mb-6">
-            <svg className="w-6 h-6 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-              <path strokeLinecap="square" strokeLinejoin="miter" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-            </svg>
+            <TriangleAlert className="w-6 h-6 stroke-current" strokeWidth={2} />
             <span className="text-xs font-mono uppercase tracking-wider">{error}</span>
           </div>
         )}
 
         {children.length === 0 ? (
           <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 text-center">
-            <svg className="w-16 h-16 stroke-current text-secondary mx-auto mb-4" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-              <path strokeLinecap="square" strokeLinejoin="miter" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
+            <Users className="w-16 h-16 stroke-current text-secondary mx-auto mb-4" strokeWidth={2} />
             <h2 className="text-2xl font-black uppercase tracking-tight text-base-content mb-2">
               Ingen Børn
             </h2>
@@ -128,9 +124,7 @@ export default function MyChildrenPage() {
                         onClick={() => router.push(`/child/${child.child_id}`)}
                         className="btn btn-sm btn-ghost"
                       >
-                        <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                          <path strokeLinecap="square" strokeLinejoin="miter" d="M9 5l7 7-7 7"/>
-                        </svg>
+                        <ChevronRight className="w-5 h-5 stroke-current" strokeWidth={2} />
                       </button>
                     </div>
                   </div>
@@ -155,9 +149,7 @@ export default function MyChildrenPage() {
                     </div>
                   ) : (
                     <div className="bg-success/10 border-2 border-success/30 p-6 text-center">
-                      <svg className="w-12 h-12 stroke-current text-success mx-auto mb-3" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                        <path strokeLinecap="square" strokeLinejoin="miter" d="M5 13l4 4L19 7" />
-                      </svg>
+                      <Check className="w-12 h-12 stroke-current text-success mx-auto mb-3" strokeWidth={2} />
                       <p className="text-sm font-black uppercase tracking-tight text-base-content">
                         Begge Forældre Tilknyttet
                       </p>

@@ -47,10 +47,20 @@ class PerformanceMonitor {
   private metrics: PerformanceMetric[] = [];
   private timers: Map<string, number> = new Map();
   private isClient: boolean;
+  private metricsLoaded: boolean = false;
 
   constructor() {
     this.isClient = typeof globalThis !== 'undefined' && 'window' in globalThis;
     if (this.isClient) {
+      this.loadMetrics();
+    }
+  }
+
+  /**
+   * Ensure metrics are loaded (lazy loading for client-side)
+   */
+  private ensureMetricsLoaded(): void {
+    if (this.isClient && !this.metricsLoaded) {
       this.loadMetrics();
     }
   }
@@ -131,6 +141,7 @@ class PerformanceMonitor {
    * Get statistics for a specific metric type
    */
   getStats(type: PerformanceMetricType): PerformanceStats | null {
+    this.ensureMetricsLoaded();
     const typeMetrics = this.metrics
       .filter((m) => m.type === type && m.success)
       .map((m) => m.duration)
@@ -205,6 +216,7 @@ class PerformanceMonitor {
    * Export metrics for analysis
    */
   exportMetrics(): PerformanceMetric[] {
+    this.ensureMetricsLoaded();
     return [...this.metrics];
   }
 
@@ -257,15 +269,19 @@ class PerformanceMonitor {
    */
   private loadMetrics(): void {
     if (!this.isClient) return;
+    if (this.metricsLoaded) return; // Already loaded
 
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         this.metrics = JSON.parse(stored);
+        console.log(`[Performance] Loaded ${this.metrics.length} metrics from localStorage`);
       }
+      this.metricsLoaded = true;
     } catch (error) {
       console.error('[Performance] Failed to load metrics:', error);
       this.metrics = [];
+      this.metricsLoaded = true;
     }
   }
 

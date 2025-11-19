@@ -252,6 +252,28 @@ export default function FlaggedMessagesPage() {
             new Map(users.map((u: any) => [u.user_id, u])).values()
           ) as Array<{ user_id: string; display_name: string }>;
           setAllUsers(uniqueUsers);
+          
+          // Fetch class info for all unique class_ids in archived messages
+          const uniqueClassIds = [...new Set(data.flagged_messages.map((m: ModerationEventWithContext) => m.class_id))];
+          if (uniqueClassIds.length > 0) {
+            const { data: classesData, error: classesError } = await supabase
+              .from('classes')
+              .select('id, label, nickname, school_name')
+              .in('id', uniqueClassIds);
+            
+            if (!classesError && classesData) {
+              // Merge with existing classes (avoid duplicates)
+              setAllClasses(prev => {
+                const merged = [...prev];
+                classesData.forEach(newClass => {
+                  if (!merged.find(c => c.id === newClass.id)) {
+                    merged.push(newClass);
+                  }
+                });
+                return merged;
+              });
+            }
+          }
         }
       } catch (err) {
         console.error('Error fetching archived messages:', err);
@@ -366,7 +388,8 @@ export default function FlaggedMessagesPage() {
     fetchFlaggedMessages();
   }, [canAccess, classId, isClassAdmin, severity, user, profileLoading, hasAnyClassAdmin, isTeacher, view]);
 
-  if (loading) {
+  // Show loading while profile is loading OR while fetching messages
+  if (loading || profileLoading) {
     return (
       <AdminLayout>
         <div className="w-full max-w-7xl mx-auto px-12 py-8">
@@ -381,7 +404,8 @@ export default function FlaggedMessagesPage() {
     );
   }
 
-  if (error) {
+  // Only show error after profile has loaded
+  if (error && !profileLoading) {
     return (
       <AdminLayout>
         <div className="w-full max-w-7xl mx-auto px-12 py-8">
@@ -498,12 +522,12 @@ export default function FlaggedMessagesPage() {
                 <span className={`text-xs font-bold uppercase tracking-wider ${
                   view === 'archive' ? 'text-secondary' : 'text-base-content'
                 }`}>
-                  Arkiv
+                  Arkiverede beskeder
                 </span>
                 <span className={`badge badge-xs font-bold ${
                   view === 'archive' ? 'badge-secondary' : 'badge-ghost'
                 }`}>
-                  {confirmedCount}
+                  {archivedMessages.length}
                 </span>
               </div>
             </button>
@@ -576,7 +600,7 @@ export default function FlaggedMessagesPage() {
               <div className="text-sm text-base-content/60">
                 {view === 'active' 
                   ? `${flaggedMessages.length} besked${flaggedMessages.length !== 1 ? 'er' : ''}`
-                  : `${filteredArchiveMessages.length} arkiveret besked${filteredArchiveMessages.length !== 1 ? 'er' : ''}`
+                  : `${filteredArchiveMessages.length} arkiverede besked${filteredArchiveMessages.length !== 1 ? 'er' : ''}`
                 }
               </div>
             </div>

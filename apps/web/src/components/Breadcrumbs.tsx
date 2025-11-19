@@ -89,6 +89,8 @@ function getLabelForSegment(segment: string): string {
     'classes': 'Klasser',
     'moderation': 'Moderation',
     'settings': 'Indstillinger',
+    'flagged-messages': 'Flaggede beskeder',
+    'flagged': 'Flaggede beskeder',
   };
 
   // If it's a UUID (class ID), return generic label

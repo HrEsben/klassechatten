@@ -5,8 +5,8 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  // Enable Cache Components for Partial Pre-Rendering
-  cacheComponents: true,
+  // Disabled cacheComponents - was causing UUID redaction in params
+  // cacheComponents: true,
 };
 
 export default nextConfig;

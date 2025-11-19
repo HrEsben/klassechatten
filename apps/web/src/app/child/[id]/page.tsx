@@ -41,74 +41,10 @@ export default function ChildProfilePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id: rawChildId } = use(params);
-  
-  // DIAGNOSTIC: Log everything about the ID immediately
-  console.log('=== CHILD PROFILE DEBUG ===');
-  console.log('1. Raw params.id:', rawChildId);
-  console.log('2. Type of params.id:', typeof rawChildId);
-  console.log('3. Window location:', typeof window !== 'undefined' ? window.location.href : 'N/A');
-  console.log('4. Window location pathname:', typeof window !== 'undefined' ? window.location.pathname : 'N/A');
-  console.log('5. Params object:', params);
-  
+  const { id: childId } = use(params);
   const router = useRouter();
   const { user } = useAuth();
   const searchParams = useSearchParams();
-  const [hasRedirected, setHasRedirected] = useState(false);
-  
-  // Detect and recover from redacted child ID
-  const getActualChildId = (): string => {
-    // If ID is redacted by browser extension/monitoring tool
-    if (rawChildId.includes('%%drp:') || rawChildId.includes('%%') || !rawChildId.match(/^[0-9a-f-]{36}$/i)) {
-      console.warn('[ChildProfile] Invalid/redacted ID detected:', rawChildId);
-      
-      // Prevent infinite redirect loop
-      if (hasRedirected) {
-        console.error('[ChildProfile] Already redirected, stopping to prevent loop');
-        return rawChildId;
-      }
-      
-      // Try base64-encoded reference first (most reliable against redaction)
-      const encodedRef = searchParams?.get('ref');
-      if (encodedRef) {
-        try {
-          const decodedId = atob(encodedRef);
-          if (decodedId.match(/^[0-9a-f-]{36}$/i)) {
-            console.log('[ChildProfile] Recovered ID from encoded reference');
-            setHasRedirected(true);
-            setTimeout(() => router.replace(`/child/${decodedId}?ref=${encodedRef}`), 0);
-            return decodedId;
-          }
-        } catch (e) {
-          console.error('[ChildProfile] Failed to decode ref:', e);
-        }
-      }
-      
-      // Try sessionStorage with encoded key
-      if (encodedRef) {
-        try {
-          const stored = sessionStorage.getItem('child_nav_' + encodedRef);
-          if (stored) {
-            const data = JSON.parse(stored);
-            if (data.id && data.timestamp && (Date.now() - data.timestamp) < 300000) {
-              console.log('[ChildProfile] Recovered ID from sessionStorage (encoded key)');
-              setHasRedirected(true);
-              setTimeout(() => router.replace(`/child/${data.id}?ref=${encodedRef}`), 0);
-              return data.id;
-            }
-          }
-        } catch (e) {
-          console.error('[ChildProfile] Failed to recover from sessionStorage:', e);
-        }
-      }
-      
-      console.error('[ChildProfile] Could not recover child ID');
-    }
-    
-    return rawChildId;
-  };
-  
-  const childId = getActualChildId();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [child, setChild] = useState<ChildProfile | null>(null);
@@ -131,13 +67,6 @@ export default function ChildProfilePage({
       return;
     }
 
-    // DIAGNOSTIC: Log what we're about to query
-    console.log('=== LOAD CHILD PROFILE DEBUG ===');
-    console.log('1. user.id:', user.id);
-    console.log('2. childId variable:', childId);
-    console.log('3. childId type:', typeof childId);
-    console.log('4. About to query guardian_links with child_user_id:', childId);
-
     try {
       // Check if user is a guardian of this child
       const { data: guardianLink, error: linkError } = await supabase
@@ -146,10 +75,6 @@ export default function ChildProfilePage({
         .eq('guardian_user_id', user.id)
         .eq('child_user_id', childId)
         .single();
-      
-      // DIAGNOSTIC: Log query result
-      console.log('5. Query completed with error:', linkError);
-      console.log('6. Error details:', linkError ? JSON.stringify(linkError) : 'none');
 
       if (linkError || !guardianLink) {
         console.log('[ChildProfile] Guardian link check:', { 

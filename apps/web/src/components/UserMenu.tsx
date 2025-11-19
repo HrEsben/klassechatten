@@ -284,15 +284,6 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
                             return;
                           }
                           
-                          // DIAGNOSTIC: Log child data before navigation
-                          console.log('=== USERMENU NAVIGATION DEBUG ===');
-                          console.log('1. Child object:', child);
-                          console.log('2. child.child_id value:', child.child_id);
-                          console.log('3. child.child_id type:', typeof child.child_id);
-                          console.log('4. child.child_id length:', child.child_id?.length);
-                          console.log('5. About to navigate to:', `/child/${child.child_id}`);
-                          
-                          // Navigate to child profile
                           router.push(`/child/${child.child_id}`);
                           (document.activeElement as HTMLElement)?.blur();
                         }}

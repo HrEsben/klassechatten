@@ -288,6 +288,9 @@ export default function FlaggedMessagesPage() {
   // Apply filters to archived messages
   const filteredArchiveMessages = useMemo(() => {
     return archivedMessages.filter(msg => {
+      // Severity filter
+      if (severity !== 'all' && msg.severity !== severity) return false;
+      
       // Class filter
       if (filterClass !== 'all' && msg.class_id !== filterClass) return false;
       
@@ -307,7 +310,7 @@ export default function FlaggedMessagesPage() {
       
       return true;
     });
-  }, [archivedMessages, filterClass, filterSchool, filterUser, searchTerm, allClasses]);
+  }, [archivedMessages, filterClass, filterSchool, filterUser, searchTerm, allClasses, severity]);
 
   useEffect(() => {
     // Wait until profile loading finishes before deciding access
@@ -562,7 +565,7 @@ export default function FlaggedMessagesPage() {
                     .filter(c => filterSchool === 'all' || c.school_name === filterSchool)
                     .map(c => (
                       <option key={c.id} value={c.id}>
-                        {c.nickname || c.label}
+                        {c.nickname || c.label}{c.school_name ? ` (${c.school_name})` : ''}
                       </option>
                     ))
                   }

@@ -163,6 +163,7 @@ function Message({
                 ref={imageRef}
                 src={msg.image_url}
                 alt="Uploaded image"
+                crossOrigin="anonymous"
                 onClick={() => !isUploadingImage && !imageError && onImageClick(msg.image_url || '')}
                 className={`max-w-xs w-full h-auto object-cover transition-all block ${msg.body ? 'mb-3' : ''} ${
                   !isUploadingImage && !imageError ? 'cursor-pointer hover:brightness-90' : ''

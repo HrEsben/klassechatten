@@ -12,41 +12,20 @@ export async function GET() {
       );
     }
 
-    // Fetch all profiles
-    const { data: profiles, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('*')
-      .order('created_at', { ascending: false });
+    // Fetch profiles and auth data using SQL to avoid auth.admin.listUsers() NULL bug
+    // This query joins profiles with auth.users table directly
+    const { data: users, error: usersError } = await supabaseAdmin.rpc('get_all_users_with_auth');
 
-    if (profileError) {
-      console.error('Profile fetch error:', profileError);
-      return NextResponse.json({ error: profileError.message }, { status: 500 });
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+      return NextResponse.json({ error: usersError.message }, { status: 500 });
     }
 
-    // Fetch auth users to get email and last_sign_in_at
-    const { data: { users: authUsers }, error: authError } = await supabaseAdmin.auth.admin.listUsers();
-
-    if (authError) {
-      console.error('Auth users fetch error:', authError);
-      return NextResponse.json({ error: authError.message }, { status: 500 });
+    if (!users) {
+      return NextResponse.json({ users: [] });
     }
 
-    // Combine profile and auth data
-    const combinedUsers = profiles.map(profile => {
-      const authUser = authUsers.find(u => u.id === profile.user_id);
-      return {
-        user_id: profile.user_id,
-        email: authUser?.email || 'N/A',
-        role: profile.role,
-        display_name: profile.display_name,
-        avatar_url: profile.avatar_url,
-        avatar_color: profile.avatar_color,
-        created_at: profile.created_at,
-        last_sign_in_at: authUser?.last_sign_in_at,
-      };
-    });
-
-    return NextResponse.json({ users: combinedUsers });
+    return NextResponse.json({ users });
   } catch (error) {
     console.error('Error fetching admin users:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

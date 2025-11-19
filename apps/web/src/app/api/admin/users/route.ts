@@ -3,6 +3,15 @@ import { supabaseAdmin } from '@/lib/supabase-server';
 
 export async function GET() {
   try {
+    // Check if environment variables are set
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('Missing Supabase environment variables');
+      return NextResponse.json(
+        { error: 'Server configuration error: Missing Supabase credentials' },
+        { status: 500 }
+      );
+    }
+
     // Fetch all profiles
     const { data: profiles, error: profileError } = await supabaseAdmin
       .from('profiles')
@@ -10,6 +19,7 @@ export async function GET() {
       .order('created_at', { ascending: false });
 
     if (profileError) {
+      console.error('Profile fetch error:', profileError);
       return NextResponse.json({ error: profileError.message }, { status: 500 });
     }
 
@@ -17,6 +27,7 @@ export async function GET() {
     const { data: { users: authUsers }, error: authError } = await supabaseAdmin.auth.admin.listUsers();
 
     if (authError) {
+      console.error('Auth users fetch error:', authError);
       return NextResponse.json({ error: authError.message }, { status: 500 });
     }
 
@@ -38,8 +49,21 @@ export async function GET() {
     return NextResponse.json({ users: combinedUsers });
   } catch (error) {
     console.error('Error fetching admin users:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    console.error('Error details:', {
+      message: errorMessage,
+      stack: errorStack,
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    });
+    
     return NextResponse.json(
-      { error: 'Failed to fetch users' },
+      { 
+        error: 'Failed to fetch users',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined 
+      },
       { status: 500 }
     );
   }

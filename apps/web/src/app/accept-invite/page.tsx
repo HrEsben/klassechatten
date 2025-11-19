@@ -52,10 +52,10 @@ export default function AcceptInvitePage() {
       if (response.ok && data.success) {
         setSuccess(true);
         setChildName(data.childName);
-        // Redirect to dashboard after 2 seconds
+        // Redirect to dashboard after 3 seconds to ensure DB commit
         setTimeout(() => {
           router.push('/');
-        }, 2000);
+        }, 3000);
       } else {
         setError(data.error || 'Kunne ikke acceptere invitation');
       }
@@ -102,7 +102,7 @@ export default function AcceptInvitePage() {
               Du er nu tilknyttet <strong>{childName}</strong>
             </p>
             <p className="text-xs text-base-content/60">
-              Omdirigerer til dashboard...
+              Omdirigerer til dashboard om 3 sekunder...
             </p>
           </div>
         </div>

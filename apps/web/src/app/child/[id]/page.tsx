@@ -60,7 +60,7 @@ export default function ChildProfilePage({
     loadChildProfile();
   }, [childId, user]);
 
-  const loadChildProfile = async () => {
+  const loadChildProfile = async (retryCount = 0) => {
     if (!user) {
       router.push('/login');
       return;
@@ -76,6 +76,14 @@ export default function ChildProfilePage({
         .single();
 
       if (linkError || !guardianLink) {
+        // Retry up to 3 times with exponential backoff (for race condition after accepting invite)
+        if (retryCount < 3) {
+          const delay = Math.pow(2, retryCount) * 500; // 500ms, 1s, 2s
+          console.log(`[ChildProfile] Guardian link not found, retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return loadChildProfile(retryCount + 1);
+        }
+        
         setError('Du har ikke adgang til denne elevs profil');
         setLoading(false);
         return;

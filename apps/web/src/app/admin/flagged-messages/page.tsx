@@ -86,6 +86,7 @@ export default function FlaggedMessagesPage() {
   const [archivedMessages, setArchivedMessages] = useState<ModerationEventWithContext[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingArchive, setLoadingArchive] = useState(false);
+  const [loadingClasses, setLoadingClasses] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<'active' | 'archive'>('active');
   const [severity, setSeverity] = useState<'all' | 'high_severity' | 'moderate_severity'>('all');
@@ -165,6 +166,7 @@ export default function FlaggedMessagesPage() {
   useEffect(() => {
     async function fetchAllClasses() {
       // Fetch for everyone, not just admins, so we can show class names in archive
+      setLoadingClasses(true);
       try {
         const { data, error } = await supabase
           .from('classes')
@@ -180,6 +182,8 @@ export default function FlaggedMessagesPage() {
         }
       } catch (err) {
         console.error('Error fetching classes:', err);
+      } finally {
+        setLoadingClasses(false);
       }
     }
     
@@ -368,8 +372,8 @@ export default function FlaggedMessagesPage() {
     fetchFlaggedMessages();
   }, [canAccess, classId, isClassAdmin, severity, user, profileLoading, hasAnyClassAdmin, isTeacher, view]);
 
-  // Show loading while profile is loading OR while fetching messages
-  if (loading || profileLoading) {
+  // Show loading while profile is loading OR while fetching messages OR while loading classes
+  if (loading || profileLoading || loadingClasses) {
     return (
       <AdminLayout>
         <div className="w-full max-w-7xl mx-auto px-12 py-8">
@@ -384,8 +388,8 @@ export default function FlaggedMessagesPage() {
     );
   }
 
-  // Only show error after profile has loaded AND error exists AND not loading
-  if (error && !profileLoading && !loading) {
+  // Only show error after profile has loaded AND error exists AND not loading AND classes loaded
+  if (error && !profileLoading && !loading && !loadingClasses) {
     return (
       <AdminLayout>
         <div className="w-full max-w-7xl mx-auto px-12 py-8">

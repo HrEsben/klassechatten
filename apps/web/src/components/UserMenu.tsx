@@ -276,6 +276,13 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
                       <button
                         key={child.child_id}
                         onClick={() => {
+                          // Validate UUID before navigation
+                          if (!child.child_id || child.child_id.includes('%%') || child.child_id.includes('drp:')) {
+                            console.error('[UserMenu] Invalid child_id detected:', child.child_id);
+                            console.log('[UserMenu] Full child object:', child);
+                            alert('Fejl: Ugyldig barn-ID. Prøv at genindlæse siden.');
+                            return;
+                          }
                           router.push(`/child/${child.child_id}`);
                           (document.activeElement as HTMLElement)?.blur();
                         }}

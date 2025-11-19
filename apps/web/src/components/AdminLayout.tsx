@@ -180,18 +180,6 @@ export default function AdminLayout({
             </div>
           )}
         </nav>
-
-        {/* Sidebar Footer */}
-        <div className="border-t-2 border-base-content/10 p-6 space-y-4">
-          <div className="text-xs font-mono text-base-content/40 uppercase tracking-wider text-center">
-            © 2025
-          </div>
-          <div className="flex justify-center gap-1">
-            <div className="w-2 h-2 bg-primary"></div>
-            <div className="w-2 h-2 bg-secondary"></div>
-            <div className="w-2 h-2 bg-accent"></div>
-          </div>
-        </div>
       </aside>
 
       {/* Mobile Menu - Hamburger/Dropdown */}

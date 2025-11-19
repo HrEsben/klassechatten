@@ -161,11 +161,10 @@ export default function FlaggedMessagesPage() {
     }
   };
 
-  // Fetch all classes for admin filter
+  // Fetch all classes for filter and display
   useEffect(() => {
     async function fetchAllClasses() {
-      if (!isAdmin) return;
-      
+      // Fetch for everyone, not just admins, so we can show class names in archive
       try {
         const { data, error } = await supabase
           .from('classes')
@@ -185,7 +184,7 @@ export default function FlaggedMessagesPage() {
     }
     
     fetchAllClasses();
-  }, [isAdmin]);
+  }, []);
 
   // Fetch confirmed count
   useEffect(() => {
@@ -252,28 +251,6 @@ export default function FlaggedMessagesPage() {
             new Map(users.map((u: any) => [u.user_id, u])).values()
           ) as Array<{ user_id: string; display_name: string }>;
           setAllUsers(uniqueUsers);
-          
-          // Fetch class info for all unique class_ids in archived messages
-          const uniqueClassIds = [...new Set(data.flagged_messages.map((m: ModerationEventWithContext) => m.class_id))];
-          if (uniqueClassIds.length > 0) {
-            const { data: classesData, error: classesError } = await supabase
-              .from('classes')
-              .select('id, label, nickname, school_name')
-              .in('id', uniqueClassIds);
-            
-            if (!classesError && classesData) {
-              // Merge with existing classes (avoid duplicates)
-              setAllClasses(prev => {
-                const merged = [...prev];
-                classesData.forEach(newClass => {
-                  if (!merged.find(c => c.id === newClass.id)) {
-                    merged.push(newClass);
-                  }
-                });
-                return merged;
-              });
-            }
-          }
         }
       } catch (err) {
         console.error('Error fetching archived messages:', err);
@@ -407,8 +384,8 @@ export default function FlaggedMessagesPage() {
     );
   }
 
-  // Only show error after profile has loaded
-  if (error && !profileLoading) {
+  // Only show error after profile has loaded AND error exists AND not loading
+  if (error && !profileLoading && !loading) {
     return (
       <AdminLayout>
         <div className="w-full max-w-7xl mx-auto px-12 py-8">
@@ -601,7 +578,7 @@ export default function FlaggedMessagesPage() {
               <div className="text-sm text-base-content/60">
                 {view === 'active' 
                   ? `${flaggedMessages.length} besked${flaggedMessages.length !== 1 ? 'er' : ''}`
-                  : `${filteredArchiveMessages.length} arkiverede besked${filteredArchiveMessages.length !== 1 ? 'er' : ''}`
+                  : `${confirmedCount} arkiverede besked${confirmedCount !== 1 ? 'er' : ''}`
                 }
               </div>
             </div>

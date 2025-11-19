@@ -527,7 +527,7 @@ export default function FlaggedMessagesPage() {
                 <span className={`badge badge-xs font-bold ${
                   view === 'archive' ? 'badge-secondary' : 'badge-ghost'
                 }`}>
-                  {archivedMessages.length}
+                  {confirmedCount}
                 </span>
               </div>
             </button>

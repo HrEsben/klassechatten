@@ -3,6 +3,7 @@ import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserClasses } from '@/hooks/useUserClasses';
+import { Flag, LayoutList, Users, Settings, MessageSquare, UserCheck, BookOpen } from 'lucide-react';
 
 export default function AdminHomePage() {
   const { profile } = useUserProfile();
@@ -36,9 +37,7 @@ export default function AdminHomePage() {
               <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
               <div className="px-8 py-6 pl-10">
                 <div className="flex items-start justify-between mb-3">
-                  <svg className="w-8 h-8 stroke-current text-primary" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                    <path strokeLinecap="square" strokeLinejoin="miter" d="M3 21l1.65-3.8a9 9 0 1111.15 0L18 21M12 12v-2M12 6h.01" />
-                  </svg>
+                  <Flag className="w-8 h-8 stroke-current text-primary" strokeWidth={2} />
                 </div>
                 <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
                   Alle Flaggede Beskeder
@@ -56,9 +55,7 @@ export default function AdminHomePage() {
               <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
               <div className="px-8 py-6 pl-10">
                 <div className="flex items-start justify-between mb-3">
-                  <svg className="w-8 h-8 stroke-current text-secondary" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                    <path strokeLinecap="square" strokeLinejoin="miter" d="M3 5h18M3 10h18M3 15h18M3 20h18" />
-                  </svg>
+                  <LayoutList className="w-8 h-8 stroke-current text-secondary" strokeWidth={2} />
                 </div>
                 <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
                   Alle Klasser
@@ -76,9 +73,7 @@ export default function AdminHomePage() {
               <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
               <div className="px-8 py-6 pl-10">
                 <div className="flex items-start justify-between mb-3">
-                  <svg className="w-8 h-8 stroke-current text-accent" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                    <path strokeLinecap="square" strokeLinejoin="miter" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 108 0 4 4 0 00-8 0z" />
-                  </svg>
+                  <Users className="w-8 h-8 stroke-current text-accent" strokeWidth={2} />
                 </div>
                 <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
                   Alle Brugere
@@ -96,9 +91,7 @@ export default function AdminHomePage() {
               <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
               <div className="px-8 py-6 pl-10">
                 <div className="flex items-start justify-between mb-3">
-                  <svg className="w-8 h-8 stroke-current text-info" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                    <path strokeLinecap="square" strokeLinejoin="miter" d="M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
-                  </svg>
+                  <Settings className="w-8 h-8 stroke-current text-info" strokeWidth={2} />
                 </div>
                 <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
                   Systemindstillinger
@@ -133,9 +126,7 @@ export default function AdminHomePage() {
                     <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
                     <div className="px-8 py-6 pl-10">
                       <div className="flex items-start justify-between mb-3">
-                        <svg className="w-8 h-8 stroke-current text-primary" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                          <path strokeLinecap="square" strokeLinejoin="miter" d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
-                        </svg>
+                        <MessageSquare className="w-8 h-8 stroke-current text-primary" strokeWidth={2} />
                       </div>
                       <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
                         Klassekanaler
@@ -153,9 +144,7 @@ export default function AdminHomePage() {
                     <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
                     <div className="px-8 py-6 pl-10">
                       <div className="flex items-start justify-between mb-3">
-                        <svg className="w-8 h-8 stroke-current text-warning" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                          <path strokeLinecap="square" strokeLinejoin="miter" d="M3 21l1.65-3.8a9 9 0 1111.15 0L18 21M12 12v-2M12 6h.01" />
-                        </svg>
+                        <Flag className="w-8 h-8 stroke-current text-warning" strokeWidth={2} />
                       </div>
                       <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
                         Flaggede Beskeder
@@ -173,9 +162,7 @@ export default function AdminHomePage() {
                     <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
                     <div className="px-8 py-6 pl-10">
                       <div className="flex items-start justify-between mb-3">
-                        <svg className="w-8 h-8 stroke-current text-secondary" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                          <path strokeLinecap="square" strokeLinejoin="miter" d="M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
-                        </svg>
+                        <Settings className="w-8 h-8 stroke-current text-secondary" strokeWidth={2} />
                       </div>
                       <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
                         Indstillinger
@@ -194,9 +181,7 @@ export default function AdminHomePage() {
         {/* No Admin Classes */}
         {!isGlobalAdmin && adminClasses.length === 0 && (
           <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 text-center space-y-4">
-            <svg className="w-16 h-16 stroke-current text-secondary mx-auto" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-              <path strokeLinecap="square" strokeLinejoin="miter" d="M3 5h18M3 10h18M3 15h18M3 20h18" />
-            </svg>
+            <LayoutList className="w-16 h-16 stroke-current text-secondary mx-auto" strokeWidth={2} />
             <h2 className="text-2xl font-black uppercase tracking-tight text-base-content">
               Ingen klasser fundet
             </h2>

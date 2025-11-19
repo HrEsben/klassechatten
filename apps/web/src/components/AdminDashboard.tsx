@@ -40,7 +40,7 @@ export default function AdminDashboard() {
         </svg>
       ),
       color: 'warning',
-      path: '/admin/moderation',
+      path: '/admin/flagged-messages',
     },
     {
       id: 'settings',

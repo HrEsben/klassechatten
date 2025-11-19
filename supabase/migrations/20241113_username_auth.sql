@@ -69,22 +69,30 @@ BEGIN
 
   -- Create auth user for child
   INSERT INTO auth.users (
+    instance_id,
+    id,
     email,
     encrypted_password,
     email_confirmed_at,
     raw_app_meta_data,
     raw_user_meta_data,
     aud,
-    role
+    role,
+    created_at,
+    updated_at
   )
   VALUES (
+    '00000000-0000-0000-0000-000000000000',
+    gen_random_uuid(),
     v_email,
     crypt(p_child_password, gen_salt('bf')),
     now(), -- Auto-confirm since parent is creating
     jsonb_build_object('provider', 'email', 'providers', ARRAY['email']),
     jsonb_build_object('username', p_child_username),
     'authenticated',
-    'authenticated'
+    'authenticated',
+    now(),
+    now()
   )
   RETURNING id INTO v_child_id;
 
@@ -150,6 +158,8 @@ GRANT EXECUTE ON FUNCTION get_available_placeholders TO authenticated;
 
 -- Update RLS policy for profiles to handle username lookups
 DROP POLICY IF EXISTS "Users can view class members including placeholders" ON public.profiles;
+DROP POLICY IF EXISTS "Users can view their own profile and class members" ON public.profiles;
+DROP POLICY IF EXISTS "Anyone can check username availability" ON public.profiles;
 
 CREATE POLICY "Users can view their own profile and class members"
 ON public.profiles FOR SELECT

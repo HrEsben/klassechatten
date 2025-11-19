@@ -7,11 +7,19 @@ import { da } from 'date-fns/locale';
 import { supabase } from '@/lib/supabase';
 import { useUserClasses } from '@/hooks/useUserClasses';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { Users, UserPlus, UserCheck, LogOut, MessageSquare, AtSign, Smile, AlertTriangle, Info as InfoIcon, ChevronRight, Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 interface UserMenuProps {
   userName: string | null | undefined;
   userRole: string;
   avatarUrl?: string | null;
+}
+
+interface Child {
+  child_id: string;
+  child_name: string;
+  child_username: string;
 }
 
 export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProps) {
@@ -21,10 +29,35 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
   const { classes } = useUserClasses();
   const classParam = searchParams.get('class');
   const { profile } = useUserProfile(classParam || undefined);
+  const [children, setChildren] = useState<Child[]>([]);
+  const [loadingChildren, setLoadingChildren] = useState(false);
+  const [showAddMenu, setShowAddMenu] = useState(false);
   
   const isGlobalAdmin = profile?.role === 'admin';
   const selectedClass = classes.find(c => c.id === classParam);
   const isClassAdmin = selectedClass?.is_class_admin;
+
+  // Load children for guardians
+  useEffect(() => {
+    if (profile?.role === 'guardian') {
+      loadChildren();
+    }
+  }, [profile?.role]);
+
+  const loadChildren = async () => {
+    setLoadingChildren(true);
+    try {
+      const response = await fetch('/api/guardians/my-children');
+      const data = await response.json();
+      if (response.ok) {
+        setChildren(data.children);
+      }
+    } catch (err) {
+      console.error('Error loading children:', err);
+    } finally {
+      setLoadingChildren(false);
+    }
+  };
 
   const handleNotificationClick = async (notification: any) => {
     // Mark as read
@@ -116,21 +149,21 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
       </div>
 
       {/* Dropdown Menu */}
-      <ul
+      <div
         tabIndex={-1}
-        className="menu menu-sm dropdown-content bg-base-100 border-2 border-base-content/10 z-50 w-80 sm:w-md shadow-lg mt-3 p-0"
-        style={{ maxHeight: '32rem' }}
+        className="dropdown-content bg-base-100 border-2 border-base-content/10 z-50 shadow-lg mt-3 p-0"
+        style={{ width: '600px' }}
       >
-        {/* User Info Header - Clickable */}
-        <li>
-          <button
-            onClick={() => {
-              router.push('/profile');
-              (document.activeElement as HTMLElement)?.blur();
-            }}
-            className="border-b-2 border-base-content/10 px-4 py-3 hover:bg-base-200 transition-colors"
-          >
-            <div className="flex flex-col gap-1 items-start">
+        {/* User Info Header - Full Width */}
+        <button
+          onClick={() => {
+            router.push('/profile');
+            (document.activeElement as HTMLElement)?.blur();
+          }}
+          className="w-full border-b-2 border-base-content/10 px-6 py-4 hover:bg-base-200 transition-colors text-left"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-1">
               <span className="text-sm font-black uppercase tracking-tight text-base-content">
                 {userName || 'Bruger'}
               </span>
@@ -138,94 +171,200 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
                 {userRole}
               </span>
             </div>
-          </button>
-        </li>
-
-        {/* Notifications Section */}
-        {notifications.length > 0 && (
-          <>
-            <li className="menu-title border-b-2 border-base-content/10 px-4 py-2 flex flex-row items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-tight text-base-content">
-                Notifikationer
-              </span>
-              {unreadCount > 0 && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    markAllAsRead();
-                  }}
-                  className="text-xs font-bold uppercase tracking-widest text-primary hover:text-primary-focus"
-                >
-                  Markér alle
-                </button>
-              )}
-            </li>
-            
-            {/* Notifications List - Scrollable */}
-            <div className="overflow-y-auto" style={{ maxHeight: '16rem' }}>
-              {notifications.slice(0, 5).map((notification) => (
-                <li key={notification.id}>
-                  <button
-                    onClick={() => handleNotificationClick(notification)}
-                    className={`relative px-4 py-3 text-left hover:bg-base-200 border-b border-base-content/5 ${
-                      !notification.read ? 'bg-primary/5' : ''
-                    }`}
-                  >
-                    {/* Unread indicator */}
-                    {!notification.read && (
-                      <div className="absolute left-0 top-0 w-1 h-full bg-primary"></div>
-                    )}
-
-                    <div className="flex gap-3 pl-2">
-                      {/* Icon */}
-                      <div className={`shrink-0 ${
-                        notification.type === 'new_message' ? 'text-primary' :
-                        notification.type === 'mention' ? 'text-secondary' :
-                        notification.type === 'reaction' ? 'text-accent' :
-                        notification.type === 'moderation' ? 'text-warning' :
-                        'text-info'
-                      }`}>
-                        {getNotificationIcon(notification.type)}
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-base-content mb-1 truncate">
-                          {notification.title}
-                        </p>
-                        <p className="text-xs text-base-content/60 mb-2 line-clamp-2">
-                          {notification.body}
-                        </p>
-                        <p className="text-xs font-mono uppercase tracking-wider text-base-content/40">
-                          {formatDistanceToNow(new Date(notification.created_at), {
-                            addSuffix: true,
-                            locale: da,
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                </li>
-              ))}
+            <div className="text-xs font-bold uppercase tracking-widest text-base-content/40">
+              Profil →
             </div>
-            
-            <li className="border-t-2 border-base-content/10"></li>
-          </>
-        )}
+          </div>
+        </button>
 
-        {/* Logout Option */}
-        <li>
-          <button
-            onClick={handleSignOut}
-            className="px-4 py-3 hover:bg-error/10 hover:text-error font-medium"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="square" strokeLinejoin="miter" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Log Ud
-          </button>
-        </li>
-      </ul>
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-2 divide-x-2 divide-base-content/10">
+          
+          {/* Left Column - Notifications */}
+          <div className="flex flex-col" style={{ maxHeight: '28rem' }}>
+            {notifications.length > 0 ? (
+              <>
+                <div className="border-b-2 border-base-content/10 px-4 py-3 flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-tight text-base-content">
+                    Notifikationer
+                  </span>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        markAllAsRead();
+                      }}
+                      className="text-xs font-bold uppercase tracking-widest text-primary hover:text-primary-focus"
+                    >
+                      Markér alle
+                    </button>
+                  )}
+                </div>
+                
+                {/* Notifications List - Scrollable */}
+                <div className="overflow-y-auto flex-1">
+                  {notifications.slice(0, 5).map((notification) => (
+                    <button
+                      key={notification.id}
+                      onClick={() => handleNotificationClick(notification)}
+                      className={`relative w-full px-4 py-3 text-left hover:bg-base-200 border-b border-base-content/5 ${
+                        !notification.read ? 'bg-primary/5' : ''
+                      }`}
+                    >
+                      {/* Unread indicator */}
+                      {!notification.read && (
+                        <div className="absolute left-0 top-0 w-1 h-full bg-primary"></div>
+                      )}
+
+                      <div className="flex gap-3 pl-2">
+                        {/* Icon */}
+                        <div className={`shrink-0 ${
+                          notification.type === 'new_message' ? 'text-primary' :
+                          notification.type === 'mention' ? 'text-secondary' :
+                          notification.type === 'reaction' ? 'text-accent' :
+                          notification.type === 'moderation' ? 'text-warning' :
+                          'text-info'
+                        }`}>
+                          {getNotificationIcon(notification.type)}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-base-content mb-1 truncate">
+                            {notification.title}
+                          </p>
+                          <p className="text-xs text-base-content/60 mb-2 line-clamp-2">
+                            {notification.body}
+                          </p>
+                          <p className="text-xs font-mono uppercase tracking-wider text-base-content/40">
+                            {formatDistanceToNow(new Date(notification.created_at), {
+                              addSuffix: true,
+                              locale: da,
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="px-4 py-8 text-center">
+                <p className="text-xs text-base-content/60">Ingen notifikationer</p>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column - Guardian Navigation + Logout */}
+          <div className="flex flex-col" style={{ maxHeight: '28rem' }}>
+            {profile?.role === 'guardian' && (
+              <>
+                {/* Children List Section */}
+                <div className="border-b-2 border-base-content/10 px-4 py-3">
+                  <span className="text-xs font-black uppercase tracking-tight text-base-content">
+                    Mine Børn
+                  </span>
+                </div>
+                
+                <div className="flex flex-col flex-1 overflow-y-auto">
+                  {loadingChildren ? (
+                    <div className="px-4 py-8 text-center">
+                      <span className="loading loading-ball loading-sm text-primary"></span>
+                    </div>
+                  ) : children.length > 0 ? (
+                    children.map((child) => (
+                      <button
+                        key={child.child_id}
+                        onClick={() => {
+                          router.push(`/child/${child.child_id}`);
+                          (document.activeElement as HTMLElement)?.blur();
+                        }}
+                        className="px-4 py-3 hover:bg-primary/10 text-left flex items-center justify-between border-b border-base-content/5 group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="avatar placeholder">
+                            <div className="w-8 h-8 bg-primary/20 text-primary">
+                              <span className="text-sm font-black">
+                                {child.child_name?.[0]?.toUpperCase() || child.child_username?.[0]?.toUpperCase() || '?'}
+                              </span>
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-base-content">
+                              {child.child_name || child.child_username || 'Barn'}
+                            </div>
+                            <div className="text-xs text-base-content/60">
+                              @{child.child_username || 'ingen_brugernavn'}
+                            </div>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary transition-colors" strokeWidth={2} />
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-8 text-center">
+                      <p className="text-xs text-base-content/60">Ingen børn endnu</p>
+                    </div>
+                  )}
+
+                  {/* Add Child Section */}
+                  <div className="mt-auto border-t-2 border-base-content/10">
+                    <button
+                      onClick={() => setShowAddMenu(!showAddMenu)}
+                      className="w-full px-4 py-3 hover:bg-accent/10 text-left flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Plus className="w-5 h-5 text-accent" strokeWidth={2} />
+                        <span className="text-sm font-medium text-accent">Tilføj Barn</span>
+                      </div>
+                      <ChevronRight 
+                        className={`w-4 h-4 text-accent transition-transform ${showAddMenu ? 'rotate-90' : ''}`} 
+                        strokeWidth={2} 
+                      />
+                    </button>
+                    
+                    {showAddMenu && (
+                      <div className="bg-base-200/50">
+                        <button
+                          onClick={() => {
+                            router.push('/create-child');
+                            (document.activeElement as HTMLElement)?.blur();
+                          }}
+                          className="w-full px-4 py-2 pl-12 hover:bg-primary/10 text-left flex items-center gap-3 border-b border-base-content/5"
+                        >
+                          <UserPlus className="w-4 h-4" strokeWidth={2} />
+                          <span className="text-sm">Opret Barn-konto</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            router.push('/claim-child');
+                            (document.activeElement as HTMLElement)?.blur();
+                          }}
+                          className="w-full px-4 py-2 pl-12 hover:bg-accent/10 text-left flex items-center gap-3"
+                        >
+                          <UserCheck className="w-4 h-4" strokeWidth={2} />
+                          <span className="text-sm">Brug Forældre-kode</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+            
+            {/* Logout - Always at bottom */}
+            <button
+              onClick={handleSignOut}
+              className="mt-auto px-4 py-3 hover:bg-error/10 hover:text-error font-medium text-left flex items-center gap-3 border-t-2 border-base-content/10"
+            >
+              <LogOut className="w-5 h-5" strokeWidth={2} />
+              <span className="text-sm">Log Ud</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
     </div>
   );
 }

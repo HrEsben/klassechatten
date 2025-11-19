@@ -5,8 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useUserClasses } from '@/hooks/useUserClasses';
 import { useUnreadCounts } from '@/hooks/useUnreadCounts';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useGuardianChildren } from '@/hooks/useGuardianChildren';
 import { supabase } from '@/lib/supabase';
-import { Flag, Settings } from 'lucide-react';
+import { Flag, Settings, Info, Users, UserPlus, UserCheck, ArrowRight, ChevronRight } from 'lucide-react';
 import ChatRoom from './ChatRoom';
 
 export default function ClassRoomBrowser() {
@@ -19,6 +20,9 @@ export default function ClassRoomBrowser() {
   
   // Get user profile to check admin status
   const { profile } = useUserProfile(selectedClassId || undefined);
+  
+  // Check if guardian has children
+  const { hasChildren, loading: loadingChildren } = useGuardianChildren();
 
   // Initialize from URL params
   useEffect(() => {
@@ -149,16 +153,12 @@ export default function ClassRoomBrowser() {
             
             <div className="px-8 py-6 pl-10">
               <div className="flex items-start justify-between mb-3">
-                <svg className="w-8 h-8 stroke-current text-primary" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                  <path strokeLinecap="square" strokeLinejoin="miter" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                </svg>
+                <UserPlus className="w-8 h-8 text-primary" strokeWidth={2} />
               </div>
               
-              <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
-                Opret Barn Konto
-              </h3>
-              
-              <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
+                  <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
+                    Opret Barn-konto
+                  </h3>              <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
                 Første forælder: Opret konto til dit barn
               </p>
             </div>
@@ -173,9 +173,7 @@ export default function ClassRoomBrowser() {
             
             <div className="px-8 py-6 pl-10">
               <div className="flex items-start justify-between mb-3">
-                <svg className="w-8 h-8 stroke-current text-accent" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                  <path strokeLinecap="square" strokeLinejoin="miter" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
+                <UserCheck className="w-8 h-8 text-accent" strokeWidth={2} />
               </div>
               
               <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
@@ -197,9 +195,7 @@ export default function ClassRoomBrowser() {
             
             <div className="px-8 py-6 pl-10">
               <div className="flex items-start justify-between mb-3">
-                <svg className="w-8 h-8 stroke-current text-warning" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                  <path strokeLinecap="square" strokeLinejoin="miter" d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/>
-                </svg>
+                <ArrowRight className="w-8 h-8 text-warning" strokeWidth={2} />
               </div>
               
               <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
@@ -231,6 +227,7 @@ export default function ClassRoomBrowser() {
   return (
     <div className="w-full h-full overflow-y-auto overflow-x-hidden">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8">
+      
       {/* Current Class Header */}
       {selectedClass && (
         <div className="mb-12">
@@ -287,6 +284,39 @@ export default function ClassRoomBrowser() {
             {selectedClass.rooms.length} {selectedClass.rooms.length === 1 ? 'Kanal' : 'Kanaler'}
             {selectedClass.school_name && ` • ${selectedClass.school_name}`}
           </p>
+        </div>
+      )}
+
+      {/* Guardian No Children Banner */}
+      {profile?.role === 'guardian' && !loadingChildren && !hasChildren && (
+        <div className="mb-8 bg-info/10 border-2 border-info/20 overflow-hidden">
+          <div className="p-6">
+            <div className="flex items-start gap-4">
+              <Info className="w-8 h-8 stroke-current text-info shrink-0" strokeWidth={2} />
+              <div className="flex-1">
+                <h3 className="text-lg font-black uppercase tracking-tight text-base-content mb-2">
+                  Hvem er dit barn?
+                </h3>
+                <p className="text-sm text-base-content/70 mb-4">
+                  Vi kan se du endnu ikke er tilknyttet et barn i klassen. Opret en konto til dit barn eller tilknyt dit barn med en forælder-kode.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={() => router.push('/create-child')}
+                    className="btn btn-sm bg-info text-info-content hover:bg-info/80"
+                  >
+                    Opret barn-konto
+                  </button>
+                  <button
+                    onClick={() => router.push('/claim-child')}
+                    className="btn btn-sm btn-ghost border-2 border-info/30 hover:border-info"
+                  >
+                    Brug forældre-kode
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

@@ -62,7 +62,7 @@ supabase db push
 3. Sees three options: "Opret Klasse", "Brug Invitation", "Forældre-Kode"
 4. Clicks "Forældre-Kode" card
 5. Enters 8-character code received from Guardian #1
-6. Clicks "Tilknyt Barn"
+6. Clicks "Tilknyt Elev"
 7. System creates `guardian_link` entry
 8. System adds Guardian #2 to child's classes automatically
 9. Guardian #2 now has access to child's data

@@ -161,8 +161,8 @@ curl http://localhost:3000/api/guardians/my-children \
 
 #### 3.1 Navigate to Create Child
 1. Log in as Guardian #1
-2. Click sidebar link "Opret Barn" OR
-3. Navigate to empty dashboard → Click "Opret Barn Konto" card
+2. Click sidebar link "Opret Elev" OR
+3. Navigate to empty dashboard → Click "Opret Elev-konto" card
 
 **Expected:** `/create-child` page loads
 
@@ -173,7 +173,7 @@ curl http://localhost:3000/api/guardians/my-children \
 2. Enter age: "10"
 3. Select school from dropdown
 4. Select class from dropdown
-5. Click "Opret Barn" button
+5. Click "Opret Elev" button
 
 **Expected:**
 - ✅ Loading spinner shows
@@ -252,7 +252,7 @@ curl http://localhost:3000/api/guardians/my-children \
 
 #### 5.1 Navigate to Claim Child
 1. Log in as Guardian #2 (existing user)
-2. Click sidebar link "Tilknyt Barn" OR
+2. Click sidebar link "Tilknyt Elev" OR
 3. Navigate directly to `/claim-child`
 
 **Expected:** `/claim-child` page loads
@@ -261,7 +261,7 @@ curl http://localhost:3000/api/guardians/my-children \
 
 #### 5.2 Claim Child Form
 1. Enter code from Guardian #1
-2. Click "Tilknyt Barn" button
+2. Click "Tilknyt Elev" button
 
 **Expected:**
 - ✅ Loading state
@@ -274,7 +274,7 @@ curl http://localhost:3000/api/guardians/my-children \
 
 #### 6.1 Navigate to My Children
 1. Log in as Guardian #1
-2. Click sidebar link "Mine Børn"
+2. Click sidebar link "Mine Elever"
 
 **Expected:** `/my-children` page with list of children
 
@@ -334,9 +334,9 @@ curl http://localhost:3000/api/guardians/my-children \
 **Expected:**
 - ✅ "Forældre" section visible
 - ✅ Three links:
-  - "Mine Børn"
-  - "Opret Barn"
-  - "Tilknyt Barn" (accent color)
+  - "Mine Elever"
+  - "Opret Elev"
+  - "Tilknyt Elev" (accent color)
 
 ---
 
@@ -368,7 +368,7 @@ curl http://localhost:3000/api/guardians/my-children \
 
 **Expected:**
 - ✅ Three action cards visible:
-  - "Opret Barn Konto"
+  - "Opret Elev-konto"
   - "Brug Forældre-Kode"
   - "Tilmeld Klasse"
 
@@ -512,7 +512,7 @@ curl http://localhost:3000/api/guardians/my-children \
 ### Integration 3: Full Guardian #2 Flow (Existing)
 ```
 1. Log in as Guardian #2 (existing)
-2. Click "Tilknyt Barn" in sidebar
+2. Click "Tilknyt Elev" in sidebar
 3. Navigate to /claim-child
 4. Enter code from Guardian #1
 5. Success → Dashboard

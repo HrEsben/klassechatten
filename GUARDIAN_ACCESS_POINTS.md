@@ -26,21 +26,21 @@ This document shows ALL the ways users can access the guardian invite system.
 │                                                                 │
 │  2️⃣  DASHBOARD EMPTY STATE (ClassRoomBrowser.tsx)              │
 │     When user has no classes, shows 3 action cards:            │
-│     ├─ "Opret Barn Konto" → /create-child                      │
+│     ├─ "Opret Elev-konto" → /create-child                      │
 │     ├─ "Brug Forældre-Kode" → /claim-child                     │
 │     └─ "Tilmeld Klasse" → /onboarding                          │
 │                                                                 │
 │  3️⃣  SIDEBAR NAVIGATION (AdminLayout.tsx - Desktop)            │
 │     Section: "Forældre" (only if role = guardian)              │
-│     ├─ "Mine Børn" → /my-children                              │
-│     ├─ "Opret Barn" → /create-child                            │
-│     └─ "Tilknyt Barn" → /claim-child                           │
+│     ├─ "Mine Elever" → /my-children                              │
+│     ├─ "Opret Elev" → /create-child                            │
+│     └─ "Tilknyt Elev" → /claim-child                           │
 │                                                                 │
 │  4️⃣  MOBILE MENU (AdminLayout.tsx dropdown)                    │
 │     Section: "Forældre" (only if role = guardian)              │
-│     ├─ "Mine Børn" → /my-children                              │
-│     ├─ "Opret Barn" → /create-child                            │
-│     └─ "Tilknyt Barn" → /claim-child                           │
+│     ├─ "Mine Elever" → /my-children                              │
+│     ├─ "Opret Elev" → /create-child                            │
+│     └─ "Tilknyt Elev" → /claim-child                           │
 │                                                                 │
 │  5️⃣  DIRECT URL ACCESS (Always Available)                      │
 │     ├─ /create-child (create new child)                        │
@@ -64,22 +64,22 @@ This document shows ALL the ways users can access the guardian invite system.
 ### Existing Guardian (Has Classes)
 | Feature | Access Point | Visibility |
 |---------|-------------|-----------|
-| Create Child | Sidebar nav → "Opret Barn" | ✅ Always visible |
-| Claim Child | Sidebar nav → "Tilknyt Barn" | ✅ Always visible |
-| Manage Children | Sidebar nav → "Mine Børn" | ✅ Always visible |
-| Create Child | Mobile menu → "Opret Barn" | ✅ Always visible |
-| Claim Child | Mobile menu → "Tilknyt Barn" | ✅ Always visible |
-| Manage Children | Mobile menu → "Mine Børn" | ✅ Always visible |
+| Create Child | Sidebar nav → "Opret Elev" | ✅ Always visible |
+| Claim Child | Sidebar nav → "Tilknyt Elev" | ✅ Always visible |
+| Manage Children | Sidebar nav → "Mine Elever" | ✅ Always visible |
+| Create Child | Mobile menu → "Opret Elev" | ✅ Always visible |
+| Claim Child | Mobile menu → "Tilknyt Elev" | ✅ Always visible |
+| Manage Children | Mobile menu → "Mine Elever" | ✅ Always visible |
 
 ### Existing Guardian (Lost Classes, Empty Dashboard)
 | Feature | Access Point | Visibility |
 |---------|-------------|-----------|
-| Create Child | Dashboard card → "Opret Barn Konto" | ✅ Auto-shown |
+| Create Child | Dashboard card → "Opret Elev-konto" | ✅ Auto-shown |
 | Claim Child | Dashboard card → "Brug Forældre-Kode" | ✅ Auto-shown |
 | Join Class | Dashboard card → "Tilmeld Klasse" | ✅ Auto-shown |
-| Create Child | Sidebar nav → "Opret Barn" | ✅ Always visible |
-| Claim Child | Sidebar nav → "Tilknyt Barn" | ✅ Always visible |
-| Manage Children | Sidebar nav → "Mine Børn" | ✅ Always visible |
+| Create Child | Sidebar nav → "Opret Elev" | ✅ Always visible |
+| Claim Child | Sidebar nav → "Tilknyt Elev" | ✅ Always visible |
+| Manage Children | Sidebar nav → "Mine Elever" | ✅ Always visible |
 
 ---
 
@@ -89,7 +89,7 @@ This document shows ALL the ways users can access the guardian invite system.
 ```
 Start: Log in as guardian
   ↓
-Empty Dashboard → Card "Opret Barn Konto"
+Empty Dashboard → Card "Opret Elev-konto"
   ↓
 /create-child → Fill form
   ↓
@@ -129,7 +129,7 @@ Start: Log in as guardian (has other children)
   ↓
 Dashboard shows classes
   ↓
-Sidebar → Click "Tilknyt Barn"
+Sidebar → Click "Tilknyt Elev"
   ↓
 /claim-child → Enter code: ABC12XYZ
   ↓
@@ -146,7 +146,7 @@ End: See Emma's classes + existing classes
 ```
 Start: Log in as guardian (has 1 child)
   ↓
-Sidebar → Click "Opret Barn"
+Sidebar → Click "Opret Elev"
   ↓
 /create-child → Fill form for 2nd child
   ↓
@@ -163,7 +163,7 @@ End: Dashboard shows 2 children's classes
 ```
 Start: Log in as guardian
   ↓
-Sidebar → Click "Mine Børn"
+Sidebar → Click "Mine Elever"
   ↓
 /my-children → List of all children
   ↓
@@ -213,9 +213,9 @@ End: Share code with 2nd parent
 ├────────────────────────┤
 │ 👨‍👩‍👧‍👦 Forældre           │ ← Guardian role only
 ├────────────────────────┤
-│ 👶 Mine Børn           │
-│ ➕ Opret Barn          │
-│ 🔗 Tilknyt Barn        │ ← Accent color
+│ 👶 Mine Elever           │
+│ ➕ Opret Elev          │
+│ 🔗 Tilknyt Elev        │ ← Accent color
 └────────────────────────┘
 ```
 
@@ -230,9 +230,9 @@ End: Share code with 2nd parent
 ├────────────────────────┤
 │ 👨‍👩‍👧‍👦 Forældre           │
 ├────────────────────────┤
-│ Mine Børn              │
-│ Opret Barn             │
-│ Tilknyt Barn           │
+│ Mine Elever              │
+│ Opret Elev             │
+│ Tilknyt Elev           │
 └────────────────────────┘
 ```
 
@@ -388,7 +388,7 @@ Show banner on dashboard:
 ┌─────────────────────────────────────┐
 │ ℹ️ Du har ingen børn tilknyttet     │
 │                                     │
-│ [Opret Barn] [Brug Kode]           │
+│ [Opret Elev] [Brug Kode]           │
 └─────────────────────────────────────┘
 ```
 

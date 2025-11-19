@@ -25,6 +25,11 @@ export default function CreateChildPage() {
   const [generatingCode, setGeneratingCode] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   
+  // Email invitation state
+  const [coParentEmail, setCoParentEmail] = useState('');
+  const [sendingInvite, setSendingInvite] = useState(false);
+  const [inviteSent, setInviteSent] = useState(false);
+  
   // Form state
   const [selectedClass, setSelectedClass] = useState('');
   const [username, setUsername] = useState('');
@@ -141,17 +146,12 @@ export default function CreateChildPage() {
 
       // Store child ID for invite code generation
       setCreatedChildId(data.child.child_id);
-      setSuccess(`Konto oprettet for ${displayName}! De kan nu logge ind med brugernavn: ${username}`);
+      setSuccess(`Konto oprettet for ${displayName}!`);
       
-      // Reset form
-      setUsername('');
-      setDisplayName('');
-      setPassword('');
-      setConfirmPassword('');
-      setEmail('');
-
-      // Reload classes to update available slots
-      loadParentClasses();
+      // Redirect to child's profile page after a brief success message
+      setTimeout(() => {
+        router.push(`/child/${data.child.child_id}`);
+      }, 1500);
 
     } catch (err: any) {
       setError(err.message);
@@ -199,6 +199,39 @@ export default function CreateChildPage() {
     }
   };
 
+  const handleSendEmailInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createdChildId || !coParentEmail) return;
+
+    setSendingInvite(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/guardians/send-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          childId: createdChildId,
+          invitedEmail: coParentEmail,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setInviteSent(true);
+        setSuccess(`Invitation sendt til ${coParentEmail}`);
+      } else {
+        setError(data.error || 'Kunne ikke sende invitation');
+      }
+    } catch (err) {
+      console.error('[CreateChild] Error sending invite:', err);
+      setError('Der opstod en fejl ved afsendelse af invitation');
+    } finally {
+      setSendingInvite(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-base-300 flex items-center justify-center">
@@ -222,25 +255,12 @@ export default function CreateChildPage() {
             ← Tilbage til Dashboard
           </button>
           <h1 className="text-3xl font-black uppercase tracking-tight text-base-content mb-2">
-            Opret Barn Konto
+            Opret Elev-konto
           </h1>
           <div className="h-1 w-24 bg-primary mb-4"></div>
           <p className="text-sm text-base-content/60">
-            Opret en konto til dit barn så de kan logge ind og chatte med deres klasse
+            Som forælder/værge opretter du en konto til barnet. Det er valgfrit, om barnet skal have sin egen e-mailadresse tilknyttet.
           </p>
-        </div>
-
-        {/* Info Card */}
-        <div className="bg-info/10 border-2 border-info p-6 mb-6">
-          <h3 className="text-sm font-black uppercase tracking-tight text-base-content mb-2">
-            Vigtigt
-          </h3>
-          <ul className="text-xs text-base-content/70 space-y-1 list-disc list-inside">
-            <li>Børn kan ikke oprette deres egne konti af sikkerhedsmæssige årsager</li>
-            <li>Du som forælder skal oprette kontoen</li>
-            <li>Barnet logger ind med brugernavn (ikke email)</li>
-            <li>Email er valgfri for børn</li>
-          </ul>
         </div>
 
         {/* Form */}
@@ -330,28 +350,97 @@ export default function CreateChildPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Email Invitation - Better alternative */}
+                <div className="mt-6 pt-6 border-t-2 border-base-content/10">
+                  <h4 className="text-sm font-black uppercase tracking-tight text-base-content mb-2">
+                    Send Invitation via Email
+                  </h4>
+                  <p className="text-xs text-base-content/70 mb-4">
+                    Nemmere: Send en invitation direkte til den anden forældres email. De modtager et link og bliver automatisk tilknyttet.
+                  </p>
+
+                  {!inviteSent ? (
+                    <form onSubmit={handleSendEmailInvite} className="space-y-3">
+                      <label className="input">
+                        <span className="label">Anden forældres email</span>
+                        <input
+                          type="email"
+                          placeholder="forælder@eksempel.dk"
+                          value={coParentEmail}
+                          onChange={(e) => setCoParentEmail(e.target.value)}
+                          required
+                        />
+                      </label>
+                      <button
+                        type="submit"
+                        className="btn bg-primary text-primary-content hover:bg-primary/80 w-full"
+                        disabled={sendingInvite || !coParentEmail}
+                      >
+                        {sendingInvite ? (
+                          <>
+                            <span className="loading loading-spinner loading-sm"></span>
+                            Sender invitation...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                              <path strokeLinecap="square" strokeLinejoin="miter" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            Send Email Invitation
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  ) : (
+                    <div className="bg-success/10 border-2 border-success/30 p-4">
+                      <div className="flex items-start gap-3">
+                        <svg className="w-6 h-6 stroke-current text-success shrink-0" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                          <path strokeLinecap="square" strokeLinejoin="miter" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <div>
+                          <p className="text-sm font-bold text-success mb-1">Invitation sendt!</p>
+                          <p className="text-xs text-base-content/70">
+                            {coParentEmail} har modtaget en invitation. De skal klikke på linket i emailen for at acceptere.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
             <fieldset className="fieldset">
-              <legend className="fieldset-legend">Vælg Klasse</legend>
+              <legend className="fieldset-legend">{classes.length > 1 ? 'Vælg klasse' : 'Klasse'}</legend>
               
-              <label className="input">
-                <span className="label">Klasse</span>
-                <select
-                  value={selectedClass}
-                  onChange={(e) => setSelectedClass(e.target.value)}
-                  className="select"
-                  required
-                  disabled={classes.length === 0}
-                >
-                  {classes.map(cls => (
-                    <option key={cls.id} value={cls.id}>
-                      {cls.label} {cls.nickname && `(${cls.nickname})`} - {cls.available_slots} ledige pladser
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {classes.length > 1 ? (
+                <label className="input">
+                  <span className="label">Klasse</span>
+                  <select
+                    value={selectedClass}
+                    onChange={(e) => setSelectedClass(e.target.value)}
+                    className="border-0 bg-transparent outline-none w-full"
+                    required
+                  >
+                    {classes.map(cls => (
+                      <option key={cls.id} value={cls.id}>
+                        {cls.label} {cls.nickname && `(${cls.nickname})`} - {cls.available_slots} ledige pladser
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : classes.length === 1 ? (
+                <div className="px-4 py-3">
+                  <p className="text-base-content font-medium">
+                    {classes[0].label} {classes[0].nickname && `(${classes[0].nickname})`}
+                  </p>
+                  <p className="text-xs text-base-content/60 mt-1">
+                    {classes[0].available_slots} ledige pladser
+                  </p>
+                </div>
+              ) : null}
+              
               {classes.find(c => c.id === selectedClass)?.available_slots === 0 && (
                 <p className="label text-xs text-warning">
                   Ingen ledige pladser i denne klasse
@@ -360,7 +449,7 @@ export default function CreateChildPage() {
             </fieldset>
 
             <fieldset className="fieldset">
-              <legend className="fieldset-legend">Barn Information</legend>
+              <legend className="fieldset-legend">Barn information</legend>
               
               <label className="input">
                 <span className="label">Fulde Navn</span>
@@ -386,6 +475,8 @@ export default function CreateChildPage() {
                   maxLength={20}
                   pattern="[a-z0-9_]+"
                   className="font-mono"
+                  autoComplete="off"
+                  name="child-username"
                 />
               </label>
               <p className="label text-xs">
@@ -422,7 +513,7 @@ export default function CreateChildPage() {
               </label>
 
               <label className="input">
-                <span className="label">Bekræft Adgangskode</span>
+                <span className="label">Bekræft</span>
                 <input
                   type="password"
                   placeholder="Gentag adgangskode"

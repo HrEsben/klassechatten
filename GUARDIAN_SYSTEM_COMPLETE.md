@@ -184,7 +184,7 @@ Complete system for Guardian #1 to create child accounts and generate invite cod
 
 **Changes:**
 - ✅ Replaced text with 3 action cards
-- ✅ "Opret Barn Konto" → /create-child
+- ✅ "Opret Elev-konto" → /create-child
 - ✅ "Brug Forældre-Kode" → /claim-child
 - ✅ "Tilmeld Klasse" → /onboarding (join existing)
 
@@ -195,9 +195,9 @@ Complete system for Guardian #1 to create child accounts and generate invite cod
 
 **Desktop Sidebar (guardian role only):**
 - ✅ Section: "Forældre"
-- ✅ Link: "Mine Børn" → /my-children
-- ✅ Link: "Opret Barn" → /create-child
-- ✅ Link: "Tilknyt Barn" → /claim-child (accent color)
+- ✅ Link: "Mine Elever" → /my-children
+- ✅ Link: "Opret Elev" → /create-child
+- ✅ Link: "Tilknyt Elev" → /claim-child (accent color)
 
 **Mobile Dropdown:**
 - ✅ Same 3 links in mobile menu
@@ -250,7 +250,7 @@ Complete system for Guardian #1 to create child accounts and generate invite cod
 ### Flow 3: Guardian #2 Claims Child (Existing User)
 ```
 1. Log in as guardian (already has other children)
-2. Click "Tilknyt Barn" in sidebar OR
+2. Click "Tilknyt Elev" in sidebar OR
 3. Navigate to /claim-child directly
 4. Enter code: ABC12XYZ
 5. Submit → Success! Linked to Emma Jensen
@@ -262,7 +262,7 @@ Complete system for Guardian #1 to create child accounts and generate invite cod
 ### Flow 4: Guardian Manages Children
 ```
 1. Log in as guardian
-2. Click "Mine Børn" in sidebar
+2. Click "Mine Elever" in sidebar
 3. See all children with code status
 4. Generate code for child without one
 5. Regenerate expired code

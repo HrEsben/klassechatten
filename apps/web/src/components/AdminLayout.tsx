@@ -197,6 +197,44 @@ export default function AdminLayout({
               </a>
             </div>
           )}
+
+          {/* Guardian Actions */}
+          {profile?.role === 'guardian' && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-base-content/50 px-4 mb-4">
+                Forældre
+              </p>
+              <a
+                href="/my-children"
+                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+              >
+                <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 108 0 4 4 0 00-8 0z" />
+                </svg>
+                Mine Børn
+              </a>
+              <a
+                href="/create-child"
+                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+              >
+                <svg className="w-5 h-5 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M12 5v14M5 12h14" />
+                  <circle cx="12" cy="12" r="10" strokeLinecap="square" strokeLinejoin="miter" />
+                </svg>
+                Opret Barn
+              </a>
+              <a
+                href="/claim-child"
+                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-accent/10 hover:border-l-2 hover:border-accent border-l-2 border-transparent transition-all"
+              >
+                <svg className="w-5 h-5 stroke-current text-accent" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M12.5 7a4 4 0 108 0 4 4 0 00-8 0z" />
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M16 11h6M19 8v6" />
+                </svg>
+                Tilknyt Barn
+              </a>
+            </div>
+          )}
         </nav>
 
         {/* Sidebar Footer */}
@@ -250,6 +288,16 @@ export default function AdminLayout({
             </>
           ) : (
             <li><a href="/">Mine Beskeder</a></li>
+          )}
+          
+          {/* Guardian menu items */}
+          {profile?.role === 'guardian' && (
+            <>
+              <li className="menu-title"><span>Forældre</span></li>
+              <li><a href="/my-children">Mine Børn</a></li>
+              <li><a href="/create-child">Opret Barn</a></li>
+              <li><a href="/claim-child">Tilknyt Barn</a></li>
+            </>
           )}
         </ul>
       </div>

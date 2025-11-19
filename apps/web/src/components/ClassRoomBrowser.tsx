@@ -130,12 +130,87 @@ export default function ClassRoomBrowser() {
   if (classes.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-base-100/80 text-center px-6">
-        <div className="mb-6">
+        <div className="mb-8">
           <div className="w-16 h-0.5 bg-primary/40 mx-auto mb-4"></div>
           <h2 className="text-2xl font-light tracking-wide text-base-content mb-4">Ingen klasser fundet</h2>
-          <p className="text-base-content/60 font-light max-w-md">
-            Du er ikke medlem af nogen klasser endnu. Spørg din lærer om en invitationskode.
+          <p className="text-base-content/60 font-light max-w-md mb-6">
+            Du er ikke medlem af nogen klasser endnu.
           </p>
+        </div>
+
+        {/* Action Cards Grid */}
+        <div className="grid gap-4 md:grid-cols-2 max-w-2xl w-full">
+          {/* Create Child Card */}
+          <button
+            onClick={() => router.push('/create-child')}
+            className="relative group text-left bg-base-100 border-2 border-base-content/10 hover:border-primary/50 transition-all duration-200 overflow-hidden"
+          >
+            <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
+            
+            <div className="px-8 py-6 pl-10">
+              <div className="flex items-start justify-between mb-3">
+                <svg className="w-8 h-8 stroke-current text-primary" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+              </div>
+              
+              <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
+                Opret Barn Konto
+              </h3>
+              
+              <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
+                Første forælder: Opret konto til dit barn
+              </p>
+            </div>
+          </button>
+
+          {/* Claim Child Card */}
+          <button
+            onClick={() => router.push('/claim-child')}
+            className="relative group text-left bg-base-100 border-2 border-base-content/10 hover:border-accent transition-all duration-200 overflow-hidden"
+          >
+            <div className="absolute left-0 top-0 w-1 h-full bg-accent/30 group-hover:bg-accent group-hover:w-2 transition-all duration-200"></div>
+            
+            <div className="px-8 py-6 pl-10">
+              <div className="flex items-start justify-between mb-3">
+                <svg className="w-8 h-8 stroke-current text-accent" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              </div>
+              
+              <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
+                Brug Forældre-Kode
+              </h3>
+              
+              <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
+                Anden forælder: Tilknyt dig et barn
+              </p>
+            </div>
+          </button>
+
+          {/* Join Class Card */}
+          <button
+            onClick={() => router.push('/onboarding')}
+            className="relative group text-left bg-base-100 border-2 border-base-content/10 hover:border-warning transition-all duration-200 overflow-hidden md:col-span-2"
+          >
+            <div className="absolute left-0 top-0 w-1 h-full bg-warning/30 group-hover:bg-warning group-hover:w-2 transition-all duration-200"></div>
+            
+            <div className="px-8 py-6 pl-10">
+              <div className="flex items-start justify-between mb-3">
+                <svg className="w-8 h-8 stroke-current text-warning" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                  <path strokeLinecap="square" strokeLinejoin="miter" d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/>
+                </svg>
+              </div>
+              
+              <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
+                Tilmeld Klasse
+              </h3>
+              
+              <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
+                Lærer/Voksen: Brug invitationskode eller opret klasse
+              </p>
+            </div>
+          </button>
         </div>
       </div>
     );

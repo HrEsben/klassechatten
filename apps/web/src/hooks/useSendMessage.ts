@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import imageCompression from 'browser-image-compression';
+import { performanceMonitor } from '@/lib/performance';
 
 interface SendMessageResult {
   status: 'allow' | 'flag' | 'flagged' | 'block' | 'blocked' | 'requires_confirmation';
@@ -45,6 +46,12 @@ export function useSendMessage() {
   ): Promise<{ url: string | null; thumbnail: string | null }> => {
     setUploading(true);
     
+    // Start performance timers
+    const compressionId = `image_compression_${Date.now()}`;
+    const uploadId = `image_upload_${Date.now()}`;
+    performanceMonitor.startTimer(compressionId);
+    performanceMonitor.startTimer(uploadId);
+    
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
@@ -70,6 +77,17 @@ export function useSendMessage() {
         maxWidthOrHeight: 320,
         useWebWorker: true,
         initialQuality: 0.7,
+      });
+
+      // End compression timer
+      performanceMonitor.endTimer(compressionId, 'image_compression', {
+        success: true,
+        metadata: {
+          originalSize: file.size,
+          compressedSize: compressedFile.size,
+          thumbnailSize: thumbnailFile.size,
+          compressionRatio: (file.size / compressedFile.size).toFixed(2)
+        }
       });
 
       if (onProgress) onProgress(60);
@@ -116,12 +134,24 @@ export function useSendMessage() {
 
       if (onProgress) onProgress(100);
 
+      // End upload timer
+      performanceMonitor.endTimer(uploadId, 'image_upload', {
+        success: true,
+        metadata: {
+          fileSize: file.size,
+          hasThumbnail: !!thumbnailUrl
+        }
+      });
+
       return { 
         url: mainUrl, 
         thumbnail: thumbnailUrl 
       };
     } catch (error) {
       console.error('Error uploading image:', error);
+      // End timers with failure
+      performanceMonitor.endTimer(compressionId, 'image_compression', { success: false });
+      performanceMonitor.endTimer(uploadId, 'image_upload', { success: false });
       return { url: null, thumbnail: null };
     } finally {
       setUploading(false);
@@ -137,6 +167,10 @@ export function useSendMessage() {
     onOptimisticUpdate?: (tempId: string, success: boolean) => void
   ): Promise<SendMessageResult> => {
     setSending(true);
+    
+    // Start performance timer
+    const perfId = `message_send_${Date.now()}`;
+    performanceMonitor.startTimer(perfId);
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -181,12 +215,24 @@ export function useSendMessage() {
       if (!response.ok) {
         console.error('Edge Function error:', result);
         setSending(false);
+        // End performance timer (failure)
+        performanceMonitor.endTimer(perfId, 'message_send', { success: false });
         // Call callback with failure
         if (onOptimisticUpdate && tempId) {
           onOptimisticUpdate(tempId, false);
         }
         throw new Error(result.error || result.reason || 'Failed to send message');
       }
+
+      // End performance timer (success)
+      performanceMonitor.endTimer(perfId, 'message_send', { 
+        success: true,
+        metadata: { 
+          hasImage: !!imageUrl, 
+          hasReply: !!replyTo,
+          bodyLength: body?.length || 0 
+        }
+      });
 
       // Call callback with success
       if (onOptimisticUpdate && tempId) {
@@ -198,6 +244,8 @@ export function useSendMessage() {
     } catch (error) {
       console.error('Error sending message:', error);
       setSending(false);
+      // End performance timer (failure)
+      performanceMonitor.endTimer(perfId, 'message_send', { success: false });
       // Call callback with failure
       if (onOptimisticUpdate && tempId) {
         onOptimisticUpdate(tempId, false);

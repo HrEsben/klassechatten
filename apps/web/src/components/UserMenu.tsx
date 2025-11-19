@@ -284,20 +284,16 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
                             return;
                           }
                           
-                          // Store child info in sessionStorage as backup (with obfuscated key to avoid redaction)
-                          try {
-                            sessionStorage.setItem('current_child_profile', JSON.stringify({
-                              id: child.child_id,
-                              name: child.child_name,
-                              username: child.child_username,
-                              timestamp: Date.now()
-                            }));
-                          } catch (e) {
-                            console.error('[UserMenu] Failed to store child info:', e);
-                          }
+                          // DIAGNOSTIC: Log child data before navigation
+                          console.log('=== USERMENU NAVIGATION DEBUG ===');
+                          console.log('1. Child object:', child);
+                          console.log('2. child.child_id value:', child.child_id);
+                          console.log('3. child.child_id type:', typeof child.child_id);
+                          console.log('4. child.child_id length:', child.child_id?.length);
+                          console.log('5. About to navigate to:', `/child/${child.child_id}`);
                           
-                          // Use query parameter as fallback to avoid URL path redaction
-                          router.push(`/child/${child.child_id}?cid=${encodeURIComponent(child.child_id)}`);
+                          // Navigate to child profile
+                          router.push(`/child/${child.child_id}`);
                           (document.activeElement as HTMLElement)?.blur();
                         }}
                         className="px-4 py-3 hover:bg-primary/10 text-left flex items-center justify-between border-b border-base-content/5 group"

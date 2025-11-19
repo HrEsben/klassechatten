@@ -42,6 +42,15 @@ export default function ChildProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id: rawChildId } = use(params);
+  
+  // DIAGNOSTIC: Log everything about the ID immediately
+  console.log('=== CHILD PROFILE DEBUG ===');
+  console.log('1. Raw params.id:', rawChildId);
+  console.log('2. Type of params.id:', typeof rawChildId);
+  console.log('3. Window location:', typeof window !== 'undefined' ? window.location.href : 'N/A');
+  console.log('4. Window location pathname:', typeof window !== 'undefined' ? window.location.pathname : 'N/A');
+  console.log('5. Params object:', params);
+  
   const router = useRouter();
   const { user } = useAuth();
   const searchParams = useSearchParams();
@@ -59,31 +68,38 @@ export default function ChildProfilePage({
         return rawChildId;
       }
       
-      // Try query parameter first (most reliable)
-      const queryId = searchParams?.get('cid');
-      if (queryId && queryId.match(/^[0-9a-f-]{36}$/i)) {
-        console.log('[ChildProfile] Recovered ID from query parameter:', queryId);
-        setHasRedirected(true);
-        // Redirect to clean URL (only once)
-        setTimeout(() => router.replace(`/child/${queryId}`), 0);
-        return queryId;
+      // Try base64-encoded reference first (most reliable against redaction)
+      const encodedRef = searchParams?.get('ref');
+      if (encodedRef) {
+        try {
+          const decodedId = atob(encodedRef);
+          if (decodedId.match(/^[0-9a-f-]{36}$/i)) {
+            console.log('[ChildProfile] Recovered ID from encoded reference');
+            setHasRedirected(true);
+            setTimeout(() => router.replace(`/child/${decodedId}?ref=${encodedRef}`), 0);
+            return decodedId;
+          }
+        } catch (e) {
+          console.error('[ChildProfile] Failed to decode ref:', e);
+        }
       }
       
-      // Try to recover from sessionStorage
-      try {
-        const stored = sessionStorage.getItem('current_child_profile');
-        if (stored) {
-          const data = JSON.parse(stored);
-          // Check if data is recent (within 5 minutes)
-          if (data.id && data.timestamp && (Date.now() - data.timestamp) < 300000) {
-            console.log('[ChildProfile] Recovered ID from sessionStorage:', data.id);
-            setHasRedirected(true);
-            setTimeout(() => router.replace(`/child/${data.id}`), 0);
-            return data.id;
+      // Try sessionStorage with encoded key
+      if (encodedRef) {
+        try {
+          const stored = sessionStorage.getItem('child_nav_' + encodedRef);
+          if (stored) {
+            const data = JSON.parse(stored);
+            if (data.id && data.timestamp && (Date.now() - data.timestamp) < 300000) {
+              console.log('[ChildProfile] Recovered ID from sessionStorage (encoded key)');
+              setHasRedirected(true);
+              setTimeout(() => router.replace(`/child/${data.id}?ref=${encodedRef}`), 0);
+              return data.id;
+            }
           }
+        } catch (e) {
+          console.error('[ChildProfile] Failed to recover from sessionStorage:', e);
         }
-      } catch (e) {
-        console.error('[ChildProfile] Failed to recover from sessionStorage:', e);
       }
       
       console.error('[ChildProfile] Could not recover child ID');
@@ -115,6 +131,13 @@ export default function ChildProfilePage({
       return;
     }
 
+    // DIAGNOSTIC: Log what we're about to query
+    console.log('=== LOAD CHILD PROFILE DEBUG ===');
+    console.log('1. user.id:', user.id);
+    console.log('2. childId variable:', childId);
+    console.log('3. childId type:', typeof childId);
+    console.log('4. About to query guardian_links with child_user_id:', childId);
+
     try {
       // Check if user is a guardian of this child
       const { data: guardianLink, error: linkError } = await supabase
@@ -123,6 +146,10 @@ export default function ChildProfilePage({
         .eq('guardian_user_id', user.id)
         .eq('child_user_id', childId)
         .single();
+      
+      // DIAGNOSTIC: Log query result
+      console.log('5. Query completed with error:', linkError);
+      console.log('6. Error details:', linkError ? JSON.stringify(linkError) : 'none');
 
       if (linkError || !guardianLink) {
         console.log('[ChildProfile] Guardian link check:', { 

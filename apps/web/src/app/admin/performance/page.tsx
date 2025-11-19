@@ -192,8 +192,8 @@ export default function PerformanceDashboard() {
   };
 
   const metricLabels: Record<PerformanceMetricType, string> = {
-    message_send: 'Besked sendt',
-    message_realtime: 'Real-time besked',
+    message_send: 'Besked sendt (udgående)',
+    message_realtime: 'Besked modtaget (indgående)',
     image_upload: 'Billed upload',
     image_compression: 'Billed komprimering',
     realtime_reconnect: 'Real-time genopretning',

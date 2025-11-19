@@ -76,6 +76,14 @@ export default function ChildProfilePage({
         .single();
 
       if (linkError || !guardianLink) {
+        console.log('[ChildProfile] Guardian link check:', { 
+          guardianUserId: user.id, 
+          childUserId: childId, 
+          error: linkError?.message,
+          code: linkError?.code,
+          retryCount 
+        });
+        
         // Retry up to 3 times with exponential backoff (for race condition after accepting invite)
         if (retryCount < 3) {
           const delay = Math.pow(2, retryCount) * 500; // 500ms, 1s, 2s
@@ -84,9 +92,21 @@ export default function ChildProfilePage({
           return loadChildProfile(retryCount + 1);
         }
         
-        setError('Du har ikke adgang til denne elevs profil');
-        setLoading(false);
-        return;
+        // After all retries, check if it's a child trying to view their own profile
+        const { data: childProfile } = await supabase
+          .from('profiles')
+          .select('user_id, role')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (childProfile && user.id === childId) {
+          console.log('[ChildProfile] User is viewing their own child profile');
+          // Allow child to view their own profile - fall through to load profile
+        } else {
+          setError('Du har ikke adgang til denne elevs profil');
+          setLoading(false);
+          return;
+        }
       }
 
       // Get child profile

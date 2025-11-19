@@ -24,6 +24,8 @@ export default function PerformanceDashboard() {
     page_load: null,
     room_switch: null,
   });
+  const [flaggedStats, setFlaggedStats] = useState<PerformanceStats | null>(null);
+  const [nonFlaggedStats, setNonFlaggedStats] = useState<PerformanceStats | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -66,14 +68,25 @@ export default function PerformanceDashboard() {
         return;
       }
 
-      // Group metrics by type
+      // Group metrics by type and separate flagged/non-flagged messages
       const metricsByType: Record<string, number[]> = {};
+      const flaggedMessages: number[] = [];
+      const nonFlaggedMessages: number[] = [];
       
       (data as MetricRow[]).forEach(metric => {
         if (!metricsByType[metric.type]) {
           metricsByType[metric.type] = [];
         }
         metricsByType[metric.type].push(metric.duration);
+        
+        // Separate message_send into flagged/non-flagged
+        if (metric.type === 'message_send' && metric.metadata) {
+          if (metric.metadata.wasFlagged) {
+            flaggedMessages.push(metric.duration);
+          } else {
+            nonFlaggedMessages.push(metric.duration);
+          }
+        }
       });
 
       // Calculate stats for each type
@@ -88,6 +101,8 @@ export default function PerformanceDashboard() {
       };
 
       setStats(newStats);
+      setFlaggedStats(calculateStats(flaggedMessages));
+      setNonFlaggedStats(calculateStats(nonFlaggedMessages));
       setLastUpdated(new Date());
     } catch (error) {
       console.error('[Performance Dashboard] Error:', error);
@@ -291,6 +306,97 @@ export default function PerformanceDashboard() {
               </div>
             )
           )}
+          </div>
+        )}
+
+        {/* Flagged vs Non-Flagged Message Stats */}
+        {!loading && (flaggedStats || nonFlaggedStats) && (
+          <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-6">
+            <h2 className="text-xl font-black uppercase tracking-tight text-base-content mb-4">
+              Besked sendt - AI Moderation opdeling
+            </h2>
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Non-Flagged Messages */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <h3 className="text-lg font-bold uppercase tracking-tight text-success">
+                    Rene beskeder
+                  </h3>
+                  {nonFlaggedStats && (
+                    <span className="badge badge-success font-bold">
+                      {nonFlaggedStats.count}
+                    </span>
+                  )}
+                </div>
+                {nonFlaggedStats ? (
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-base-content/60">Gennemsnit:</span>
+                      <span className="font-mono font-bold text-success">
+                        {formatDuration(nonFlaggedStats.avg)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-base-content/60">Median (p50):</span>
+                      <span className="font-mono font-bold">
+                        {formatDuration(nonFlaggedStats.p50)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-base-content/60">95% percentil:</span>
+                      <span className="font-mono font-bold">
+                        {formatDuration(nonFlaggedStats.p95)}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-base-content/50">Ingen data endnu</p>
+                )}
+              </div>
+
+              {/* Flagged Messages */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <h3 className="text-lg font-bold uppercase tracking-tight text-warning">
+                    Flaggede beskeder
+                  </h3>
+                  {flaggedStats && (
+                    <span className="badge badge-warning font-bold">
+                      {flaggedStats.count}
+                    </span>
+                  )}
+                </div>
+                {flaggedStats ? (
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-base-content/60">Gennemsnit:</span>
+                      <span className="font-mono font-bold text-warning">
+                        {formatDuration(flaggedStats.avg)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-base-content/60">Median (p50):</span>
+                      <span className="font-mono font-bold">
+                        {formatDuration(flaggedStats.p50)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-base-content/60">95% percentil:</span>
+                      <span className="font-mono font-bold">
+                        {formatDuration(flaggedStats.p95)}
+                      </span>
+                    </div>
+                    <div className="mt-3 p-3 bg-warning/10 border-2 border-warning/20">
+                      <p className="text-xs text-base-content/70">
+                        <strong>Forskel:</strong> Flaggede beskeder er {Math.round((flaggedStats.avg / (nonFlaggedStats?.avg || 1)) * 100 - 100)}% langsommere pga. AI moderation
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-base-content/50">Ingen flaggede beskeder endnu</p>
+                )}
+              </div>
+            </div>
           </div>
         )}
 

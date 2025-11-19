@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { PerformanceTracker } from '@/components/PerformanceTracker';
 import { Suspense } from 'react';
 
 export const metadata: Metadata = {
@@ -35,6 +36,7 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <PerformanceTracker />
         <Suspense fallback={null}>
           <AuthProvider>{children}</AuthProvider>
         </Suspense>

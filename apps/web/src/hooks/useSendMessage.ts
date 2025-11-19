@@ -225,12 +225,16 @@ export function useSendMessage() {
       }
 
       // End performance timer (success)
+      // Track flagged messages separately
+      const wasFlagged = result.status === 'flag' || result.status === 'flagged';
       performanceMonitor.endTimer(perfId, 'message_send', { 
         success: true,
         metadata: { 
           hasImage: !!imageUrl, 
           hasReply: !!replyTo,
-          bodyLength: body?.length || 0 
+          bodyLength: body?.length || 0,
+          wasFlagged: wasFlagged,
+          status: result.status
         }
       });
 

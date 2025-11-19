@@ -59,6 +59,7 @@ class PerformanceMonitor {
    * Start timing an operation
    */
   startTimer(id: string): void {
+    console.log(`[Performance] startTimer called: ${id}, isClient: ${this.isClient}`);
     this.timers.set(id, Date.now());
   }
 
@@ -73,6 +74,7 @@ class PerformanceMonitor {
       success?: boolean;
     }
   ): number | null {
+    console.log(`[Performance] endTimer called: ${id}, type: ${type}, isClient: ${this.isClient}`);
     const startTime = this.timers.get(id);
     if (!startTime) {
       console.warn(`[Performance] No start timer found for: ${id}`);
@@ -81,6 +83,8 @@ class PerformanceMonitor {
 
     const duration = Date.now() - startTime;
     this.timers.delete(id);
+    
+    console.log(`[Performance] About to recordMetric: ${type}, duration: ${duration}ms`);
 
     this.recordMetric({
       type,

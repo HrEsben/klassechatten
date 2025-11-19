@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend with API key or empty string for build time
+const resend = new Resend(process.env.RESEND_API_KEY || '');
 
 export interface SendGuardianInviteParams {
   toEmail: string;
@@ -15,6 +16,11 @@ export async function sendGuardianInvite({
   inviterName,
   inviteToken,
 }: SendGuardianInviteParams) {
+  // Check if API key is configured at runtime
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is not configured');
+  }
+
   const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/accept-invite?token=${inviteToken}`;
 
   try {

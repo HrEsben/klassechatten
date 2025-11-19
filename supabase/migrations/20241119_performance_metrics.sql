@@ -67,20 +67,73 @@ CREATE POLICY "Admins can delete metrics"
     )
   );
 
--- Function to clean up old metrics (keep last 30 days)
-CREATE OR REPLACE FUNCTION cleanup_old_performance_metrics()
+-- Aggregated daily performance metrics (for historical trends)
+CREATE TABLE IF NOT EXISTS performance_metrics_daily (
+  id BIGSERIAL PRIMARY KEY,
+  date DATE NOT NULL,
+  type TEXT NOT NULL,
+  count INTEGER NOT NULL,
+  avg_duration INTEGER NOT NULL,
+  p50_duration INTEGER NOT NULL,
+  p95_duration INTEGER NOT NULL,
+  p99_duration INTEGER NOT NULL,
+  success_rate NUMERIC(5,2) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(date, type)
+);
+
+-- Index for fast queries by date and type
+CREATE INDEX IF NOT EXISTS idx_performance_metrics_daily_date_type 
+  ON performance_metrics_daily(date DESC, type);
+
+-- Function to aggregate old metrics into daily summaries
+CREATE OR REPLACE FUNCTION aggregate_old_performance_metrics()
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
+  -- Aggregate metrics older than 7 days into daily summaries
+  INSERT INTO performance_metrics_daily (date, type, count, avg_duration, p50_duration, p95_duration, p99_duration, success_rate)
+  SELECT 
+    DATE(created_at) as date,
+    type,
+    COUNT(*) as count,
+    ROUND(AVG(duration))::INTEGER as avg_duration,
+    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY duration)::INTEGER as p50_duration,
+    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY duration)::INTEGER as p95_duration,
+    PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY duration)::INTEGER as p99_duration,
+    ROUND(AVG(CASE WHEN success THEN 100 ELSE 0 END), 2) as success_rate
+  FROM performance_metrics
+  WHERE created_at < NOW() - INTERVAL '7 days'
+    AND created_at >= NOW() - INTERVAL '90 days'
+  GROUP BY DATE(created_at), type
+  ON CONFLICT (date, type) DO UPDATE SET
+    count = EXCLUDED.count,
+    avg_duration = EXCLUDED.avg_duration,
+    p50_duration = EXCLUDED.p50_duration,
+    p95_duration = EXCLUDED.p95_duration,
+    p99_duration = EXCLUDED.p99_duration,
+    success_rate = EXCLUDED.success_rate;
+  
+  -- Delete raw metrics older than 7 days (now aggregated)
   DELETE FROM performance_metrics
-  WHERE created_at < NOW() - INTERVAL '30 days';
+  WHERE created_at < NOW() - INTERVAL '7 days';
+  
+  -- Delete daily summaries older than 90 days
+  DELETE FROM performance_metrics_daily
+  WHERE date < CURRENT_DATE - INTERVAL '90 days';
 END;
 $$;
 
 -- Grant execute to authenticated users (will be called by cron or manually)
-GRANT EXECUTE ON FUNCTION cleanup_old_performance_metrics() TO authenticated;
+GRANT EXECUTE ON FUNCTION aggregate_old_performance_metrics() TO authenticated;
+
+-- Enable pg_cron extension if available (optional - requires superuser)
+-- This will automatically run cleanup daily at 3 AM
+-- To enable: Run this in Supabase SQL Editor as superuser
+-- CREATE EXTENSION IF NOT EXISTS pg_cron;
+-- SELECT cron.schedule('aggregate-performance-metrics', '0 3 * * *', 'SELECT aggregate_old_performance_metrics();');
 
 COMMENT ON TABLE performance_metrics IS 'Stores application performance metrics from all users';
 COMMENT ON COLUMN performance_metrics.type IS 'Type of operation being measured';

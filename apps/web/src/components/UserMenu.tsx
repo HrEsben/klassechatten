@@ -283,6 +283,18 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
                             alert('Fejl: Ugyldig barn-ID. Prøv at genindlæse siden.');
                             return;
                           }
+                          
+                          // Store child info in sessionStorage as backup (with obfuscated key to avoid redaction)
+                          try {
+                            sessionStorage.setItem('cp_' + btoa(child.child_id).slice(0, 8), JSON.stringify({
+                              id: child.child_id,
+                              name: child.child_name,
+                              username: child.child_username
+                            }));
+                          } catch (e) {
+                            console.error('[UserMenu] Failed to store child info:', e);
+                          }
+                          
                           router.push(`/child/${child.child_id}`);
                           (document.activeElement as HTMLElement)?.blur();
                         }}

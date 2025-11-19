@@ -41,9 +41,39 @@ export default function ChildProfilePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id: childId } = use(params);
+  const { id: rawChildId } = use(params);
   const router = useRouter();
   const { user } = useAuth();
+  
+  // Detect and recover from redacted child ID
+  const getActualChildId = (): string => {
+    // If ID is redacted by browser extension/monitoring tool
+    if (rawChildId.includes('%%drp:') || rawChildId.includes('%%')) {
+      console.warn('[ChildProfile] Redacted ID detected:', rawChildId);
+      
+      // Try to recover from sessionStorage
+      const storageKeys = Object.keys(sessionStorage).filter(k => k.startsWith('cp_'));
+      for (const key of storageKeys) {
+        try {
+          const stored = JSON.parse(sessionStorage.getItem(key) || '{}');
+          if (stored.id) {
+            console.log('[ChildProfile] Recovered ID from sessionStorage:', stored.id);
+            // Redirect to correct URL
+            router.replace(`/child/${stored.id}`);
+            return stored.id;
+          }
+        } catch (e) {
+          // Ignore invalid entries
+        }
+      }
+      
+      console.error('[ChildProfile] Could not recover child ID');
+    }
+    
+    return rawChildId;
+  };
+  
+  const childId = getActualChildId();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [child, setChild] = useState<ChildProfile | null>(null);

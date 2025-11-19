@@ -5,7 +5,10 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  // Disabled cacheComponents - was causing UUID redaction in params
+  // DISABLED: cacheComponents causes UUID redaction bug in dynamic route params
+  // This is a known issue in Next.js 16 where dynamic [id] params get redacted as %%drp:id:XXX%%
+  // Re-enable when Next.js fixes this or provides a way to exclude routes from redaction
+  // See: https://github.com/vercel/next.js/issues/XXXXX (file bug report)
   // cacheComponents: true,
 };
 

@@ -86,9 +86,9 @@ export default function ClassFlaggedMessagesPage({
   const [contextMessages, setContextMessages] = useState<any[]>([]);
   const [loadingContext, setLoadingContext] = useState(false);
 
-  // Check access - wait for profile to load before determining access
+  // Check access - wait for both user AND profile to load before determining access
   const canAccess = profile?.role === 'admin' || isClassAdmin;
-  const accessDenied = !profileLoading && !canAccess;
+  const accessDenied = user && !profileLoading && !canAccess;
 
   // Action handlers
   const handleMarkAsViolation = async (eventId: string) => {
@@ -397,8 +397,8 @@ export default function ClassFlaggedMessagesPage({
     fetchFlaggedMessages();
   }, [canAccess, user, classId, severity]);
 
-  // Show loading while checking access
-  if (profileLoading) {
+  // Show loading while checking access or waiting for user to load
+  if (!user || profileLoading) {
     return (
       <div className="flex flex-col h-screen bg-base-300">
         <header className="bg-base-100 border-b-2 border-base-content/10">

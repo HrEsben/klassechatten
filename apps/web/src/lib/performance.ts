@@ -129,12 +129,49 @@ class PerformanceMonitor {
     }
 
     this.saveMetrics();
+    
+    // Send to Supabase (fire and forget)
+    this.sendMetricToSupabase(metric).catch(err => {
+      console.warn('[Performance] Failed to send metric to Supabase:', err);
+    });
 
     // Always log metrics for debugging
     console.log(
       `[Performance] ${metric.type}: ${metric.duration}ms (total: ${this.metrics.length})`,
       metric.metadata || ''
     );
+  }
+
+  /**
+   * Send a single metric to Supabase
+   */
+  private async sendMetricToSupabase(metric: PerformanceMetric): Promise<void> {
+    if (!this.isClient) return;
+    
+    try {
+      // Dynamically import supabase to avoid SSR issues
+      const { supabase } = await import('@/lib/supabase');
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return; // Only send metrics for authenticated users
+      
+      const { error } = await supabase
+        .from('performance_metrics')
+        .insert({
+          user_id: session.user.id,
+          type: metric.type,
+          duration: metric.duration,
+          success: metric.success,
+          metadata: metric.metadata || {}
+        });
+        
+      if (error) {
+        console.warn('[Performance] Supabase insert error:', error);
+      }
+    } catch (error) {
+      // Silently fail - metrics are nice to have but shouldn't break the app
+      console.warn('[Performance] Failed to send to Supabase:', error);
+    }
   }
 
   /**

@@ -388,7 +388,15 @@ export default function PerformanceDashboard() {
                     </div>
                     <div className="mt-3 p-3 bg-warning/10 border-2 border-warning/20">
                       <p className="text-xs text-base-content/70">
-                        <strong>Forskel:</strong> Flaggede beskeder er {Math.round((flaggedStats.avg / (nonFlaggedStats?.avg || 1)) * 100 - 100)}% langsommere pga. AI moderation
+                        {(() => {
+                          const percentDiff = Math.round((flaggedStats.avg / (nonFlaggedStats?.avg || 1)) * 100 - 100);
+                          const isSlower = percentDiff > 0;
+                          return (
+                            <>
+                              <strong>Forskel:</strong> Flaggede beskeder er {Math.abs(percentDiff)}% {isSlower ? 'langsommere' : 'hurtigere'}{isSlower ? ' pga. AI moderation' : ''}
+                            </>
+                          );
+                        })()}
                       </p>
                     </div>
                   </div>
@@ -409,14 +417,6 @@ export default function PerformanceDashboard() {
             <p className="flex items-start gap-2">
               <BarChart3 className="w-4 h-4 mt-0.5 shrink-0" strokeWidth={2} />
               <span><strong>Hvad tracker vi:</strong> Brugeroplevede latens - tiden fra handling til synligt resultat</span>
-            </p>
-            <p className="flex items-start gap-2">
-              <Target className="w-4 h-4 mt-0.5 shrink-0" strokeWidth={2} />
-              <span><strong>Komplementerer:</strong> Vercel (Web Vitals) og Supabase (DB queries)</span>
-            </p>
-            <p className="flex items-start gap-2">
-              <Database className="w-4 h-4 mt-0.5 shrink-0" strokeWidth={2} />
-              <span><strong>Dataopbevaring:</strong> Metrics gemmes i Supabase database fra alle brugere</span>
             </p>
             <p className="flex items-start gap-2">
               <Timer className="w-4 h-4 mt-0.5 shrink-0" strokeWidth={2} />

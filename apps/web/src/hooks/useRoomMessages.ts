@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useConsolidatedRealtime } from './useConsolidatedRealtime';
+import { performanceMonitor } from '@/lib/performance';
 
 interface Message {
   id: number | string; // Allow string for optimistic messages
@@ -206,6 +207,11 @@ export function useRoomMessages({
     console.log('🔴 [useRoomMessages] New message details:', { id: newMessage.id, body: newMessage.body?.substring(0, 20), user_id: newMessage.user_id, room_id: newMessage.room_id });
     console.log('🔴 [useRoomMessages] Current messages count:', messages.length);
     
+    // Track realtime message receive performance
+    const receiveStartTime = Date.now();
+    const messageCreatedAt = new Date(newMessage.created_at).getTime();
+    const realtimeLatency = receiveStartTime - messageCreatedAt;
+    
     // Only add if not deleted
     if (!newMessage.deleted_at) {
       // Fetch profile data for the new message
@@ -273,6 +279,19 @@ export function useRoomMessages({
         
         console.log('Messages after adding and sorting:', updated.map(m => ({ id: m.id, isOptimistic: m.isOptimistic, body: m.body?.substring(0, 20), created_at: m.created_at })));
         return updated;
+      });
+      
+      // Record performance metric for realtime message receive
+      performanceMonitor.recordMetric({
+        type: 'message_realtime',
+        duration: realtimeLatency,
+        timestamp: receiveStartTime,
+        success: true,
+        metadata: {
+          hasImage: !!newMessage.image_url,
+          bodyLength: newMessage.body?.length || 0,
+          messageId: newMessage.id,
+        }
       });
     }
   }, []);

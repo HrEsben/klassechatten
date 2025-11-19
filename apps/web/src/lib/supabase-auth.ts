@@ -4,17 +4,10 @@ import { createClient } from '@supabase/supabase-js';
 export async function getUserFromRequest() {
   const cookieStore = await cookies();
   
-  // Debug: Log all cookies
-  const allCookies = cookieStore.getAll();
-  console.log('All cookies:', allCookies.map(c => c.name));
-  
   // Try to get the session data from cookie
   const sessionCookie = cookieStore.get('sb')?.value;
   
-  console.log('Session cookie found:', !!sessionCookie);
-  
   if (!sessionCookie) {
-    console.log('No session cookie found');
     return null;
   }
 
@@ -22,10 +15,7 @@ export async function getUserFromRequest() {
     // Parse the session data
     const sessionData = JSON.parse(sessionCookie);
     
-    console.log('Session data keys:', Object.keys(sessionData));
-    
     if (!sessionData.access_token || !sessionData.refresh_token) {
-      console.log('Missing tokens in session data');
       return null;
     }
 
@@ -40,11 +30,10 @@ export async function getUserFromRequest() {
     });
 
     if (error || !user) {
-      console.error('Auth error:', error);
+      console.error('[Auth] Error:', error?.message);
       return null;
     }
 
-    console.log('User authenticated successfully:', user.email);
     return user;
   } catch (error) {
     console.error('Error parsing session cookie:', error);

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { performanceMonitor, PerformanceStats, PerformanceMetricType } from '@/lib/performance';
 import AdminLayout from '@/components/AdminLayout';
+import { Pause, Play, Download, Trash2, BarChart3, Target, Database, Timer, AlertTriangle } from 'lucide-react';
 
 export default function PerformanceDashboard() {
   const [stats, setStats] = useState<Record<PerformanceMetricType, PerformanceStats | null>>({
@@ -96,13 +97,17 @@ export default function PerformanceDashboard() {
               className="btn btn-ghost"
               onClick={() => setAutoRefresh(!autoRefresh)}
             >
-              {autoRefresh ? '⏸️ Pause' : '▶️ Start'} Auto-refresh
+              {autoRefresh ? (
+                <><Pause className="w-4 h-4" strokeWidth={2} /> Pause</>
+              ) : (
+                <><Play className="w-4 h-4" strokeWidth={2} /> Start</>
+              )} Auto-refresh
             </button>
             <button className="btn btn-ghost" onClick={handleExport}>
-              💾 Eksporter
+              <Download className="w-4 h-4" strokeWidth={2} /> Eksporter
             </button>
             <button className="btn btn-error btn-ghost" onClick={handleClearMetrics}>
-              🗑️ Ryd
+              <Trash2 className="w-4 h-4" strokeWidth={2} /> Ryd
             </button>
           </div>
         </div>
@@ -167,21 +172,25 @@ export default function PerformanceDashboard() {
             Om Performance Monitoring
           </h2>
           <div className="space-y-2 text-sm text-base-content/80">
-            <p>
-              📊 <strong>Hvad tracker vi:</strong> Brugeroplevede latens - tiden fra handling til
-              synligt resultat
+            <p className="flex items-start gap-2">
+              <BarChart3 className="w-4 h-4 mt-0.5 shrink-0" strokeWidth={2} />
+              <span><strong>Hvad tracker vi:</strong> Brugeroplevede latens - tiden fra handling til synligt resultat</span>
             </p>
-            <p>
-              🎯 <strong>Komplementerer:</strong> Vercel (Web Vitals) og Supabase (DB queries)
+            <p className="flex items-start gap-2">
+              <Target className="w-4 h-4 mt-0.5 shrink-0" strokeWidth={2} />
+              <span><strong>Komplementerer:</strong> Vercel (Web Vitals) og Supabase (DB queries)</span>
             </p>
-            <p>
-              💾 <strong>Dataopbevaring:</strong> Sidste 1000 metrics gemmes i localStorage
+            <p className="flex items-start gap-2">
+              <Database className="w-4 h-4 mt-0.5 shrink-0" strokeWidth={2} />
+              <span><strong>Dataopbevaring:</strong> Sidste 1000 metrics gemmes i localStorage</span>
             </p>
-            <p>
-              ⏱️ <strong>Auto-refresh:</strong> Dashboard opdateres hvert 5. sekund når aktiveret
+            <p className="flex items-start gap-2">
+              <Timer className="w-4 h-4 mt-0.5 shrink-0" strokeWidth={2} />
+              <span><strong>Auto-refresh:</strong> Dashboard opdateres hvert 5. sekund når aktiveret</span>
             </p>
-            <p>
-              🚨 <strong>Advarsler:</strong> Langsomme operationer logges i konsollen
+            <p className="flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" strokeWidth={2} />
+              <span><strong>Advarsler:</strong> Langsomme operationer logges i konsollen</span>
             </p>
           </div>
         </div>

@@ -7,7 +7,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserClasses } from '@/hooks/useUserClasses';
 import Breadcrumbs from './Breadcrumbs';
 import UserMenu from './UserMenu';
-import { Home, LayoutList, Users, TriangleAlert, Settings, MessageSquare, CirclePlus, Menu } from 'lucide-react';
+import { Home, LayoutList, Users, TriangleAlert, Settings, MessageSquare, CirclePlus, Menu, Activity } from 'lucide-react';
 
 export default function AdminLayout({ 
   children,
@@ -118,6 +118,13 @@ export default function AdminLayout({
                 Alle Flaggede Beskeder
               </a>
               <a
+                href="/admin/performance"
+                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+              >
+                <Activity className="w-5 h-5 stroke-current" strokeWidth={2} />
+                Performance
+              </a>
+              <a
                 href="/admin/settings"
                 className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
               >
@@ -199,6 +206,7 @@ export default function AdminLayout({
               <li><a href="/admin/classes">Alle Klasser</a></li>
               <li><a href="/admin/users">Alle Brugere</a></li>
               <li><a href="/admin/flagged-messages">Alle Flaggede Beskeder</a></li>
+              <li><a href="/admin/performance">Performance</a></li>
               <li><a href="/admin/settings">Systemindstillinger</a></li>
               <li className="menu-title"><span>Hurtige Genveje</span></li>
               <li><a href="/">Mine Beskeder</a></li>

@@ -98,6 +98,10 @@ export default function FlaggedMessagesPage() {
   const [filterUser, setFilterUser] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 20;
+  
   // Data for filters
   const [allClasses, setAllClasses] = useState<ClassInfo[]>([]);
   const [allSchools, setAllSchools] = useState<string[]>([]);
@@ -170,14 +174,26 @@ export default function FlaggedMessagesPage() {
       try {
         const { data, error } = await supabase
           .from('classes')
-          .select('id, label, nickname, school_name')
+          .select(`
+            id, 
+            label, 
+            nickname,
+            school:schools(name)
+          `)
           .order('label');
         
         if (!error && data) {
-          setAllClasses(data);
+          // Transform data to include school_name at top level
+          const classesWithSchool = data.map(c => ({
+            id: c.id,
+            label: c.label,
+            nickname: c.nickname,
+            school_name: (c.school as any)?.name || null
+          }));
+          setAllClasses(classesWithSchool);
           
           // Extract unique schools
-          const schools = [...new Set(data.map(c => c.school_name).filter(Boolean))] as string[];
+          const schools = [...new Set(classesWithSchool.map(c => c.school_name).filter(Boolean))] as string[];
           setAllSchools(schools);
         }
       } catch (err) {
@@ -292,6 +308,21 @@ export default function FlaggedMessagesPage() {
       return true;
     });
   }, [archivedMessages, filterClass, filterSchool, filterUser, searchTerm, allClasses, severity]);
+  
+  // Paginate filtered messages
+  const paginatedMessages = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredArchiveMessages.slice(startIndex, endIndex);
+  }, [filteredArchiveMessages, currentPage, itemsPerPage]);
+  
+  // Calculate total pages
+  const totalPages = Math.ceil(filteredArchiveMessages.length / itemsPerPage);
+  
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterClass, filterSchool, filterUser, searchTerm, severity]);
 
   useEffect(() => {
     // Wait until profile loading finishes before deciding access
@@ -665,10 +696,13 @@ export default function FlaggedMessagesPage() {
         {/* Archive View */}
         {view === 'archive' && (
           <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
-            <div className="p-6 border-b-2 border-base-content/10">
+            <div className="p-6 border-b-2 border-base-content/10 flex items-center justify-between">
               <h2 className="text-xl font-black uppercase tracking-tight text-base-content">
                 Arkiverede Beskeder
               </h2>
+              <div className="text-sm text-base-content/60">
+                Viser {paginatedMessages.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-{Math.min(currentPage * itemsPerPage, filteredArchiveMessages.length)} af {filteredArchiveMessages.length}
+              </div>
             </div>
             
             <div className="overflow-x-auto">
@@ -697,7 +731,7 @@ export default function FlaggedMessagesPage() {
                       </td>
                     </tr>
                   ) : (
-                    filteredArchiveMessages.map((item) => {
+                    paginatedMessages.map((item) => {
                       const msgClass = allClasses.find(c => c.id === item.class_id);
                       return (
                         <tr key={item.event_id} className="hover:bg-base-200">
@@ -705,8 +739,15 @@ export default function FlaggedMessagesPage() {
                             {format(new Date(item.message.created_at), 'dd/MM/yyyy HH:mm', { locale: da })}
                           </td>
                           <td className="text-xs font-bold">{item.message.author?.display_name || 'Ukendt'}</td>
-                          <td className="text-xs font-mono">
-                            {msgClass ? (msgClass.nickname || msgClass.label) : 'N/A'}
+                          <td className="text-xs">
+                            {msgClass ? (
+                              <div>
+                                <div className="font-mono">{msgClass.nickname || msgClass.label}</div>
+                                {msgClass.school_name && (
+                                  <div className="text-base-content/50 text-[10px]">{msgClass.school_name}</div>
+                                )}
+                              </div>
+                            ) : 'N/A'}
                           </td>
                           <td className="text-xs font-mono">#{item.room?.name || 'N/A'}</td>
                           <td className="text-xs max-w-md truncate">{item.message.body}</td>
@@ -724,6 +765,58 @@ export default function FlaggedMessagesPage() {
                 </tbody>
               </table>
             </div>
+            
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="p-6 border-t-2 border-base-content/10 flex justify-center">
+                <div className="join">
+                  <button 
+                    className="join-item btn btn-sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    «
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                    // Show first page, last page, current page, and pages around current
+                    const showPage = page === 1 || 
+                                   page === totalPages || 
+                                   (page >= currentPage - 2 && page <= currentPage + 2);
+                    
+                    // Show ellipsis
+                    if (!showPage) {
+                      if (page === currentPage - 3 || page === currentPage + 3) {
+                        return (
+                          <button key={page} className="join-item btn btn-sm btn-disabled">
+                            ...
+                          </button>
+                        );
+                      }
+                      return null;
+                    }
+                    
+                    return (
+                      <button
+                        key={page}
+                        className={`join-item btn btn-sm ${
+                          currentPage === page ? 'btn-active' : ''
+                        }`}
+                        onClick={() => setCurrentPage(page)}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                  <button 
+                    className="join-item btn btn-sm"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    »
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

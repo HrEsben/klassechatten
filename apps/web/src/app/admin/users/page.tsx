@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAdminUsers } from '@/hooks/useAdminUsers';
 import { formatDistanceToNow } from 'date-fns';
 import { da } from 'date-fns/locale';
-import { LoadingSpinner, ErrorState } from '@/components/shared';
+import { LoadingSpinner, ErrorState, UserCard } from '@/components/shared';
 
 function AdminUsersContent() {
   const router = useRouter();
@@ -98,73 +98,45 @@ function AdminUsersContent() {
         </div>
       </div>
 
-      {/* Users Table */}
+      {/* Users List */}
       <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
-        {/* Table Header */}
+        {/* Header */}
         <div className="p-6 border-b-2 border-base-content/10">
           <h2 className="text-xl font-black uppercase tracking-tight text-base-content">
             Alle Brugere
           </h2>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="table table-zebra">
-            <thead>
-              <tr className="border-b-2 border-base-content/10">
-                <th className="text-xs font-black uppercase tracking-widest">Bruger</th>
-                <th className="text-xs font-black uppercase tracking-widest">Email</th>
-                <th className="text-xs font-black uppercase tracking-widest">Rolle</th>
-                <th className="text-xs font-black uppercase tracking-widest">Oprettet</th>
-                <th className="text-xs font-black uppercase tracking-widest">Sidst aktiv</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user.user_id} className="hover:bg-base-200">
-                  <td>
-                    <div className="flex items-center gap-3">
-                      <div className="avatar placeholder">
-                        <div 
-                          className="w-10 h-10 rounded-none text-base-100 font-bold"
-                          style={{ backgroundColor: user.avatar_color || '#6247f5' }}
-                        >
-                          <span className="text-sm">
-                            {user.display_name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="font-bold text-sm">{user.display_name}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span className="font-mono text-xs text-base-content/70">
-                      {user.email}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`badge ${getRoleBadgeColor(user.role)} badge-sm font-bold uppercase`}>
-                      {getRoleLabel(user.role)}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="text-xs text-base-content/60">
-                      {formatDistanceToNow(new Date(user.created_at), { addSuffix: true, locale: da })}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="text-xs text-base-content/60">
-                      {user.last_sign_in_at 
-                        ? formatDistanceToNow(new Date(user.last_sign_in_at), { addSuffix: true, locale: da })
-                        : 'Aldrig'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* User List */}
+        <div className="divide-y-2 divide-base-content/10">
+          {users.map((user) => (
+            <div key={user.user_id} className="p-4 hover:bg-base-200 transition-colors">
+              <div className="flex items-start justify-between gap-4">
+                <UserCard
+                  user={{
+                    display_name: user.display_name,
+                    email: user.email,
+                    avatar_url: user.avatar_url,
+                    avatar_color: user.avatar_color,
+                  }}
+                  showRole
+                  roleLabel={getRoleLabel(user.role)}
+                  roleBadgeColor={getRoleBadgeColor(user.role)}
+                  className="flex-1"
+                />
+                <div className="flex flex-col gap-1 text-right">
+                  <span className="text-xs text-base-content/60">
+                    Oprettet {formatDistanceToNow(new Date(user.created_at), { addSuffix: true, locale: da })}
+                  </span>
+                  <span className="text-xs text-base-content/60">
+                    Sidst aktiv: {user.last_sign_in_at 
+                      ? formatDistanceToNow(new Date(user.last_sign_in_at), { addSuffix: true, locale: da })
+                      : 'Aldrig'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

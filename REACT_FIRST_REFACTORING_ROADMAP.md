@@ -33,15 +33,18 @@ Convert the KlasseChatten web app to follow a consistent React-first architectur
 - BUT: No shared layout - header re-renders on navigation
 
 ### Pages to Optimize:
-1. `/page.tsx` - Main chat interface ✅ Already client-side
+1. `/page.tsx` - Main chat interface ✅ COMPLETE
 2. `/profile/page.tsx` - User profile
 3. `/my-children/page.tsx` - Guardian children list
 4. `/child/[id]/page.tsx` - Individual child view
 
 ### Refactoring Tasks:
-- [ ] Create `/app/layout.tsx` wrapper (root layout already exists, needs optimization)
-- [ ] Extract header into persistent component (currently in `/page.tsx`)
-- [ ] Ensure header doesn't re-render on route changes
+- [x] Create AppLayout wrapper component
+- [x] Extract header into persistent AppHeader component (215 lines)
+- [x] Extract footer into persistent AppFooter component (48 lines)
+- [x] Refactor main page to use AppLayout (reduced from 299 to 67 lines)
+- [x] Ensure header doesn't re-render on route changes
+- [ ] Apply AppLayout to profile, my-children, child pages
 - [ ] Convert any remaining `router.push()` navigations to `<Link>`
 - [ ] Add loading states for route transitions
 

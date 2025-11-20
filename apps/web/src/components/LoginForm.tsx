@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { FormInput } from './shared';
 
 export default function LoginForm() {
   const [emailOrUsername, setEmailOrUsername] = useState('');
@@ -135,56 +136,39 @@ export default function LoginForm() {
             <div className="px-6 sm:px-10 py-6 sm:py-8">
               <form onSubmit={handleSubmit} className="space-y-6">
                 {isSignUp && (
-                  <div className="space-y-2">
-                    <label htmlFor="displayName" className="block text-xs font-bold uppercase tracking-widest text-base-content/70">
-                      Visningsnavn
-                    </label>
-                    <input
-                      id="displayName"
-                      type="text"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      required={isSignUp}
-                      placeholder="Indtast dit navn"
-                      minLength={2}
-                      className="input w-full px-6 bg-base-200 focus:bg-base-100 border-0 focus:ring-2 focus:ring-primary focus:outline-none h-14 text-base font-medium transition-all"
-                    />
-                  </div>
+                  <FormInput
+                    label="Visningsnavn"
+                    id="displayName"
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    required={isSignUp}
+                    placeholder="Indtast dit navn"
+                    minLength={2}
+                  />
                 )}
 
-                <div className="space-y-2">
-                  <label htmlFor="email" className="block text-xs font-bold uppercase tracking-widest text-base-content/70">
-                    {isSignUp ? 'Email Adresse' : 'Email eller Brugernavn'}
-                  </label>
-                  <input
-                    id="email"
-                    type={isSignUp ? "email" : "text"}
-                    value={emailOrUsername}
-                    onChange={(e) => setEmailOrUsername(e.target.value)}
-                    required
-                    placeholder={isSignUp ? "din@email.dk" : "email eller brugernavn"}
-                    className="input w-full px-6 bg-base-200 focus:bg-base-100 border-0 focus:ring-2 focus:ring-primary focus:outline-none h-14 text-base font-medium transition-all"
-                  />
-                </div>
+                <FormInput
+                  label={isSignUp ? 'Email Adresse' : 'Email eller Brugernavn'}
+                  id="email"
+                  type={isSignUp ? "email" : "text"}
+                  value={emailOrUsername}
+                  onChange={(e) => setEmailOrUsername(e.target.value)}
+                  required
+                  placeholder={isSignUp ? "din@email.dk" : "email eller brugernavn"}
+                />
 
-                <div className="space-y-2">
-                  <label htmlFor="password" className="block text-xs font-bold uppercase tracking-widest text-base-content/70">
-                    Adgangskode
-                  </label>
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="Indtast adgangskode"
-                    minLength={6}
-                    className="input w-full px-6 bg-base-200 focus:bg-base-100 border-0 focus:ring-2 focus:ring-primary focus:outline-none h-14 text-base font-medium transition-all"
-                  />
-                  <p className="text-xs text-base-content/50 font-mono tracking-wide">
-                    MIN. 6 TEGN
-                  </p>
-                </div>
+                <FormInput
+                  label="Adgangskode"
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Indtast adgangskode"
+                  minLength={6}
+                  helperText="MIN. 6 TEGN"
+                />
 
                 {error && (
                   <div className="bg-error/10 border-l-4 border-error px-6 py-4">

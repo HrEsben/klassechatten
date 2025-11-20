@@ -158,11 +158,56 @@ EXPO_PUBLIC_OPENAI_API_KEY=sk-proj-...
 
 ## 💡 Development Guidelines
 
+### Architecture Philosophy: React-First Approach
+
+**ALWAYS prefer React client-side components over server-side rendering when nothing speaks against it.**
+
+#### When to use React client components (default):
+- ✅ Interactive UI (forms, buttons, modals, dropdowns)
+- ✅ Real-time data (chat, notifications, live updates)
+- ✅ Client-side state management (filters, tabs, pagination)
+- ✅ Animations and transitions
+- ✅ User input and validation
+- ✅ Dynamic data fetching with hooks
+
+#### Benefits of React-first:
+- **Instant interactions** - No page reloads, instant state updates
+- **Better UX** - Feels like a native app, not a website
+- **State preservation** - Navigation doesn't reset component state
+- **Performance** - Only affected components re-render
+- **Shared layouts** - Use Next.js layout.tsx to prevent re-renders
+
+#### Examples:
+- ✅ `FlaggedMessagesList` - Pure React component, instant filtering/pagination
+- ✅ `AdminLayout` in `/app/admin/layout.tsx` - Shared across pages, no re-render on navigation
+- ✅ Message components with reactions, read receipts - All client-side state
+
+#### When server components make sense:
+- Initial data fetching for SEO
+- Static content that never changes
+- When you need direct database access without API routes
+
+**Implementation pattern:**
+```tsx
+// ❌ BAD - Each page wraps content in layout
+export default function Page() {
+  return <Layout><Content /></Layout>
+}
+
+// ✅ GOOD - Layout.tsx wraps all pages once
+// /app/section/layout.tsx
+export default function Layout({ children }) {
+  return <SharedLayout>{children}</SharedLayout>
+}
+```
+
 ### Code Organization
 - **Shared logic** → `/packages/lib`
 - **Shared types** → `/packages/types`
 - **API validation** → `/packages/validation`
 - **UI components** → Per app (`apps/web/src/components`, `apps/mobile/components`)
+- **Shared layouts** → Use Next.js `layout.tsx` files to prevent re-renders
+- **Client components** → Default choice unless server-side is explicitly needed
 
 ### Database Access
 - **Client-side**: Use `supabase.from()` - RLS enforced

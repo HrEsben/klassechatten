@@ -101,21 +101,21 @@ export default function AdminLayout({
                 className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
               >
                 <LayoutList className="w-5 h-5 stroke-current" strokeWidth={2} />
-                Alle Klasser
+                Klasser
               </a>
               <a
                 href="/admin/users"
                 className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
               >
                 <Users className="w-5 h-5 stroke-current" strokeWidth={2} />
-                Alle Brugere
+                Brugere
               </a>
               <a
                 href="/admin/flagged-messages"
                 className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
               >
                 <TriangleAlert className="w-5 h-5 stroke-current" strokeWidth={2} />
-                Alle Flaggede Beskeder
+                Moderation
               </a>
               <a
                 href="/admin/performance"
@@ -225,10 +225,12 @@ export default function AdminLayout({
       {/* Main Content Area */}
       <main className="flex-1 py-8 bg-base-300 lg:col-span-1">
         <div className="w-full max-w-7xl mx-auto px-12">
-          {/* Breadcrumb Navigation */}
-          <div className="mb-6">
-            <Breadcrumbs classData={classData} />
-          </div>
+          {/* Breadcrumb Navigation - Only show if classData exists */}
+          {classData && (
+            <div className="mb-6">
+              <Breadcrumbs classData={classData} />
+            </div>
+          )}
           
           {children}
         </div>

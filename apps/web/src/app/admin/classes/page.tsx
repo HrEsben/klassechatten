@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { da } from 'date-fns/locale';
 import { useState } from 'react';
 import { School } from 'lucide-react';
-import { LoadingSpinner, ErrorState, EmptyState } from '@/components/shared';
+import { LoadingSpinner, ErrorState, EmptyState, Modal } from '@/components/shared';
 
 function AdminClassesContent() {
   const router = useRouter();
@@ -14,14 +14,11 @@ function AdminClassesContent() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const handleDelete = async (classId: string, className: string) => {
-    if (deleteConfirm !== classId) {
-      setDeleteConfirm(classId);
-      return;
-    }
-
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    
     setDeleting(true);
-    const result = await deleteClass(classId);
+    const result = await deleteClass(deleteConfirm);
     setDeleting(false);
     setDeleteConfirm(null);
 
@@ -161,33 +158,16 @@ function AdminClassesContent() {
                     </span>
                   </td>
                   <td>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(cls.id, cls.label);
-                        }}
-                        disabled={deleting}
-                        className={`btn btn-xs ${
-                          deleteConfirm === cls.id
-                            ? 'btn-error'
-                            : 'btn-ghost'
-                        }`}
-                      >
-                        {deleteConfirm === cls.id ? 'Bekræft?' : 'Slet'}
-                      </button>
-                      {deleteConfirm === cls.id && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteConfirm(null);
-                          }}
-                          className="btn btn-xs btn-ghost"
-                        >
-                          Annuller
-                        </button>
-                      )}
-                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteConfirm(cls.id);
+                      }}
+                      disabled={deleting}
+                      className="btn btn-xs btn-ghost text-error"
+                    >
+                      Slet
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -203,6 +183,42 @@ function AdminClassesContent() {
           />
         )}
       </div>
+
+      {/* Delete Class Confirmation Modal */}
+      <Modal
+        id="delete-class-modal"
+        open={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        title="Slet klasse"
+        size="sm"
+        actions={
+          <>
+            <button
+              className="btn btn-ghost"
+              onClick={() => setDeleteConfirm(null)}
+              disabled={deleting}
+            >
+              Annuller
+            </button>
+            <button
+              className="btn bg-error text-error-content hover:bg-error/80"
+              onClick={confirmDelete}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <span className="loading loading-spinner loading-xs"></span>
+              ) : (
+                'Ja, slet klasse'
+              )}
+            </button>
+          </>
+        }
+      >
+        <p className="text-base-content/80">
+          Er du sikker på, at du vil slette denne klasse? Alle medlemmer, rum og beskeder vil blive fjernet. 
+          Denne handling kan ikke fortrydes.
+        </p>
+      </Modal>
     </div>
   );
 }

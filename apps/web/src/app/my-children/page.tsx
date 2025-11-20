@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import Link from 'next/link';
-import { ArrowLeft, Users, UserPlus, TriangleAlert, ChevronRight, Check } from 'lucide-react';
+import { Users, UserPlus, TriangleAlert, ChevronRight, Check } from 'lucide-react';
 import { LoadingSpinner, EmptyState } from '@/components/shared';
+import AppLayout from '@/components/AppLayout';
 
 interface Child {
   child_id: string;
@@ -53,22 +53,9 @@ export default function MyChildrenPage() {
   }
 
   return (
-    <div className="min-h-screen bg-base-300 p-4">
-      <div className="w-full max-w-7xl mx-auto px-12 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Link href="/" className="btn btn-ghost btn-sm mb-4">
-            <ArrowLeft className="w-5 h-5" strokeWidth={2} />
-            Tilbage
-          </Link>
-          <h1 className="text-3xl font-black uppercase tracking-tight text-base-content mb-2">
-            Mine Børn
-          </h1>
-          <div className="h-1 w-24 bg-primary mb-4"></div>
-          <p className="text-sm text-base-content/60">
-            Administrer dine børns konti og inviter anden forælder
-          </p>
-        </div>
+    <AppLayout>
+      <div className="h-full overflow-y-auto">
+        <div className="w-full max-w-7xl mx-auto px-12 py-8">
 
         {error && (
           <div className="alert alert-error alert-outline mb-6">
@@ -165,7 +152,8 @@ export default function MyChildrenPage() {
             </button>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }

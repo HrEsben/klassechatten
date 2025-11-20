@@ -9,6 +9,7 @@ import { useUserClasses } from '@/hooks/useUserClasses';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Users, UserPlus, UserCheck, LogOut, MessageSquare, AtSign, Smile, AlertTriangle, Info as InfoIcon, ChevronRight, Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { UserCard } from '@/components/shared';
 
 interface UserMenuProps {
   userName: string | null | undefined;
@@ -289,23 +290,14 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
                         }}
                         className="px-4 py-3 hover:bg-primary/10 text-left flex items-center justify-between border-b border-base-content/5 group"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="avatar placeholder">
-                            <div className="w-8 h-8 bg-primary/20 text-primary">
-                              <span className="text-sm font-black">
-                                {child.child_name?.[0]?.toUpperCase() || child.child_username?.[0]?.toUpperCase() || '?'}
-                              </span>
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-base-content">
-                              {child.child_name || child.child_username || 'Barn'}
-                            </div>
-                            <div className="text-xs text-base-content/60">
-                              @{child.child_username || 'ingen_brugernavn'}
-                            </div>
-                          </div>
-                        </div>
+                        <UserCard
+                          user={{
+                            display_name: child.child_name || child.child_username || 'Barn',
+                            username: child.child_username,
+                            avatar_color: '#ff3fa4',
+                          }}
+                          variant="compact"
+                        />
                         <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary transition-colors" strokeWidth={2} />
                       </button>
                     ))

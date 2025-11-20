@@ -56,7 +56,7 @@ export async function GET(
         // Get profile
         const { data: profile } = await supabaseAdmin
           .from('profiles')
-          .select('display_name, avatar_url, avatar_color, role, is_placeholder')
+          .select('display_name, avatar_url, avatar_color, role, is_placeholder, username')
           .eq('user_id', member.user_id)
           .single();
 
@@ -66,6 +66,7 @@ export async function GET(
         return {
           user_id: member.user_id,
           email: authUser?.email || 'N/A',
+          username: profile?.username || null,
           display_name: profile?.display_name || 'N/A',
           avatar_url: profile?.avatar_url,
           avatar_color: profile?.avatar_color,

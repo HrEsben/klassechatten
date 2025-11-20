@@ -402,7 +402,7 @@ function ClassDetailContent({ classId }: { classId: string }) {
                               {member.display_name}
                             </div>
                             <div className="text-xs text-base-content/60">
-                              {member.email}
+                              {member.role_in_class === 'child' ? (member.username || member.email) : member.email}
                             </div>
                           </div>
                         </div>
@@ -459,7 +459,7 @@ function ClassDetailContent({ classId }: { classId: string }) {
                                   {guardian.display_name}
                                 </div>
                                 <div className="text-xs text-base-content/60">
-                                  {guardian.email}
+                                  {guardian.role_in_class === 'child' ? (guardian.username || guardian.email) : guardian.email}
                                 </div>
                               </div>
                             </div>

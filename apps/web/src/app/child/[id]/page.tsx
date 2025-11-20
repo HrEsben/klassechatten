@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { ArrowLeft, Mail, Users, Calendar, Shield, Send } from 'lucide-react';
-import { LoadingSpinner, ErrorState } from '@/components/shared';
+import { LoadingSpinner, ErrorState, Modal } from '@/components/shared';
 
 interface ChildProfile {
   id: string;
@@ -48,6 +48,7 @@ export default function ChildProfilePage({
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [cancelInviteId, setCancelInviteId] = useState<string | null>(null);
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [guardians, setGuardians] = useState<Guardian[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingInvitation[]>([]);
@@ -235,10 +236,6 @@ export default function ChildProfilePage({
   };
 
   const handleCancelInvite = async (invitationId: string) => {
-    if (!confirm('Er du sikker på, at du vil annullere denne invitation?')) {
-      return;
-    }
-
     setCancellingInvite(invitationId);
     setError('');
 
@@ -440,7 +437,7 @@ export default function ChildProfilePage({
                     </p>
                   </div>
                   <button
-                    onClick={() => handleCancelInvite(invite.id)}
+                    onClick={() => setCancelInviteId(invite.id)}
                     disabled={cancellingInvite === invite.id}
                     className="btn btn-xs btn-ghost text-error"
                   >
@@ -517,6 +514,40 @@ export default function ChildProfilePage({
           </div>
         </div>
       </div>
+
+      {/* Cancel Invitation Confirmation Modal */}
+      <Modal
+        id="cancel-invite-modal"
+        open={!!cancelInviteId}
+        onClose={() => setCancelInviteId(null)}
+        title="Annuller invitation"
+        size="sm"
+        actions={
+          <>
+            <button
+              className="btn btn-ghost"
+              onClick={() => setCancelInviteId(null)}
+            >
+              Nej, behold
+            </button>
+            <button
+              className="btn bg-error text-error-content hover:bg-error/80"
+              onClick={() => {
+                if (cancelInviteId) {
+                  handleCancelInvite(cancelInviteId);
+                  setCancelInviteId(null);
+                }
+              }}
+            >
+              Ja, annuller
+            </button>
+          </>
+        }
+      >
+        <p className="text-base-content/80">
+          Er du sikker på, at du vil annullere denne invitation?
+        </p>
+      </Modal>
     </div>
   );
 }

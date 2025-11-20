@@ -175,21 +175,48 @@ a {
     padding: 1.5rem;
   }
 
-  /* Buttons have consistent sizing and sharp edges */
+  /* Buttons have consistent sizing and sharp edges - mobile-friendly touch targets */
   .btn {
-    min-height: 40px;
-    height: 40px;
+    min-height: 48px; /* 48px for accessible touch targets (Material Design standard) */
+    height: auto; /* Allow height to flex with content */
     padding-left: 1.5rem;
     padding-right: 1.5rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
     border-radius: 0 !important;
   }
+
+  /* Small buttons - 44px minimum (Apple HIG standard) */
+  .btn-sm {
+    min-height: 44px;
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+  }
   
-  /* Input fields have proper padding */
+  /* Input fields have proper padding and touch-friendly height */
   .input,
   input.input {
+    min-height: 48px; /* Touch-friendly height */
     padding-left: 1.5rem;
     padding-right: 1.5rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
     border-radius: 0 !important;
+    font-size: 1rem; /* Prevent zoom on iOS */
+  }
+
+  /* Select dropdowns */
+  .select,
+  select.select {
+    min-height: 48px;
+    font-size: 1rem;
+  }
+
+  /* Textarea */
+  .textarea,
+  textarea.textarea {
+    min-height: 120px;
+    font-size: 1rem;
   }
 
   /* Alerts have proper padding and sharp edges */

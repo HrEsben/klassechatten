@@ -7,6 +7,22 @@ import { Suspense } from 'react';
 export const metadata: Metadata = {
   title: 'KlasseChatten',
   description: 'KlasseChatten - School communication platform',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+    viewportFit: 'cover', // For iOS notch/safe area
+  },
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#1a1a1a' },
+  ],
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'KlasseChatten',
+  },
 };
 
 export default function RootLayout({

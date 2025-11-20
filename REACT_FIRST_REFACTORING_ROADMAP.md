@@ -164,11 +164,12 @@ Created 4 additional shared components to eliminate more duplication:
 - ✅ admin/classes/[id]: Replaced 2 member list patterns (~90 lines) with UserCard component
 - ✅ admin/users: Replaced user table (~40 lines) with UserCard list layout
 - ✅ UserMenu: Replaced children list (~15 lines) with UserCard compact variant
-- ✅ Removed ~400 lines of duplicate logic total (16 replacements across 8 files)
+- ✅ child/[id]: Replaced window.confirm with Modal for invitation cancellation
+- ✅ Removed ~405 lines of duplicate logic total (17 replacements across 9 files)
 
 **Ready for Future Replacements:**
 - [ ] Form input patterns (accept-invite, class settings, profile, my-children) - **10+ inputs remaining**
-- [ ] Modal patterns (confirmation dialogs, form modals) - **5+ locations identified**
+- [ ] Modal patterns (window.confirm in 3+ files: admin/performance, ChatRoom) - **4+ locations remaining**
 - [ ] Additional UserCard opportunities (profile page, child pages) - **5+ locations**
 
 **Design Improvements Needed:**
@@ -178,11 +179,12 @@ Created 4 additional shared components to eliminate more duplication:
 
 **Impact:**
 - 700+ lines of new reusable component code
-- ~400 lines of duplicate logic removed (16 replacements across 8 files)
-- Foundation for replacing 25+ additional inline patterns
+- ~405 lines of duplicate logic removed (17 replacements across 9 files)
+- Foundation for replacing 20+ additional inline patterns
 - Consistent Berlin Edgy design across all card/form/modal patterns
 - All 42 routes compile successfully
 - Major admin pages now use shared components (dashboard, classes, users)
+- Modal component now in production use (child profile confirmation dialog)
 
 ### Impact:
 - Consistent loading, empty, and error states throughout entire app

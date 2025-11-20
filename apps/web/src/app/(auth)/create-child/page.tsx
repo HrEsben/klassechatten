@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { LoadingSpinner } from '@/components/shared';
 
 interface ClassInfo {
   id: string;
@@ -233,14 +234,7 @@ export default function CreateChildPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-base-300 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <span className="loading loading-ball loading-lg text-primary"></span>
-          <p className="text-base-content/60 font-medium">Indlæser...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen />;
   }
 
   return (

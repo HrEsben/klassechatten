@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { LoadingSpinner } from '@/components/shared';
 
 type OnboardingStep = 'choice' | 'create' | 'join' | 'claim-child' | 'success';
 
@@ -165,14 +166,7 @@ export default function OnboardingPage() {
 
   // Show loading while checking auth
   if (authLoading) {
-    return (
-      <div className="min-h-screen bg-base-300 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <span className="loading loading-ball loading-lg text-primary"></span>
-          <p className="text-base-content/60 font-medium">Indlæser...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen />;
   }
 
   // Redirect to login if not authenticated

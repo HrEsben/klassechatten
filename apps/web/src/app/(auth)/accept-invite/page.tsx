@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { CheckCircle, XCircle, Clock, Mail } from 'lucide-react';
+import { LoadingSpinner } from '@/components/shared';
 
 export default function AcceptInvitePage() {
   const router = useRouter();
@@ -79,8 +80,7 @@ export default function AcceptInvitePage() {
     return (
       <React.Fragment>
         <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-6 sm:p-12 max-w-md w-full text-center">
-          <span className="loading loading-ball loading-lg text-primary"></span>
-          <p className="mt-6 text-base-content/60">Behandler invitation...</p>
+          <LoadingSpinner text="Behandler invitation..." />
         </div>
       </React.Fragment>
     );

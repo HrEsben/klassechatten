@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { LoadingSpinner } from '@/components/shared';
 
 export default function ClaimChildPage() {
   const router = useRouter();
@@ -46,14 +47,7 @@ export default function ClaimChildPage() {
 
   // Show loading state while checking auth
   if (!user) {
-    return (
-      <>
-        <div className="flex flex-col items-center gap-4">
-          <span className="loading loading-ball loading-lg text-primary"></span>
-          <p className="text-base-content/60 font-medium">Indlæser...</p>
-        </div>
-      </>
-    );
+    return <LoadingSpinner fullScreen />;
   }
 
   return (

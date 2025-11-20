@@ -8,8 +8,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import AdminLayout from '@/components/AdminLayout';
-import { Flag, Check, X, AlertCircle, CheckCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { Flag, Check, X, AlertCircle, CheckCircle, AlertTriangle, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { format, formatDistanceToNow } from 'date-fns';
 import { da } from 'date-fns/locale';
 
 interface ModerationEventWithContext {
@@ -106,6 +106,11 @@ export default function FlaggedMessagesPage() {
   const [allClasses, setAllClasses] = useState<ClassInfo[]>([]);
   const [allSchools, setAllSchools] = useState<string[]>([]);
   const [allUsers, setAllUsers] = useState<Array<{ user_id: string; display_name: string }>>([]);
+  
+  // Context display
+  const [expandedContext, setExpandedContext] = useState<string | null>(null);
+  const [contextMessages, setContextMessages] = useState<any[]>([]);
+  const [loadingContext, setLoadingContext] = useState(false);
 
   // Permission check: must be admin or class admin for the class
   const isAdmin = profile?.role === 'admin';
@@ -164,6 +169,131 @@ export default function FlaggedMessagesPage() {
     } catch (err) {
       console.error('Error removing flag:', err);
     }
+  };
+
+  // Handle showing/hiding message context
+  const handleShowContext = async (messageId: number, roomId: string) => {
+    if (expandedContext === messageId.toString()) {
+      // Collapse context
+      setExpandedContext(null);
+      setContextMessages([]);
+      return;
+    }
+
+    setLoadingContext(true);
+    setExpandedContext(messageId.toString());
+    
+    try {
+      // Fetch the flagged message itself
+      const { data: flaggedMessage } = await supabase
+        .from('messages')
+        .select(`
+          id,
+          body,
+          user_id,
+          created_at,
+          profiles (
+            user_id,
+            display_name,
+            avatar_url,
+            avatar_color
+          )
+        `)
+        .eq('id', messageId)
+        .single();
+
+      // Fetch messages before and after
+      const { data: beforeMessages } = await supabase
+        .from('messages')
+        .select(`
+          id,
+          body,
+          user_id,
+          created_at,
+          profiles (
+            user_id,
+            display_name,
+            avatar_url,
+            avatar_color
+          )
+        `)
+        .eq('room_id', roomId)
+        .lt('id', messageId)
+        .order('id', { ascending: false })
+        .limit(20);
+
+      const { data: afterMessages } = await supabase
+        .from('messages')
+        .select(`
+          id,
+          body,
+          user_id,
+          created_at,
+          profiles (
+            user_id,
+            display_name,
+            avatar_url,
+            avatar_color
+          )
+        `)
+        .eq('room_id', roomId)
+        .gt('id', messageId)
+        .order('id', { ascending: true })
+        .limit(10);
+
+      // Put flagged message first, then messages before (oldest to newest), then messages after
+      const allMessages = [
+        ...(flaggedMessage ? [flaggedMessage] : []),
+        ...(beforeMessages || []),
+        ...(afterMessages || [])
+      ];
+
+      setContextMessages(allMessages);
+    } catch (err) {
+      console.error('Error loading context:', err);
+    } finally {
+      setLoadingContext(false);
+    }
+  };
+
+  // Helper function to get user-friendly label translations
+  const getLabelTranslation = (label: string): string => {
+    const translations: Record<string, string> = {
+      'harassment': 'Chikane',
+      'harassment/threatening': 'Truende adfærd',
+      'hate': 'Hadefulde ytringer',
+      'hate/threatening': 'Hadefulde trusler',
+      'self-harm': 'Selvskade',
+      'self-harm/intent': 'Selvskade intention',
+      'self-harm/instructions': 'Selvskade instruktioner',
+      'sexual': 'Seksuelt indhold',
+      'sexual/minors': 'Seksuelt indhold (mindreårige)',
+      'violence': 'Vold',
+      'violence/graphic': 'Grafisk vold',
+      'illicit': 'Ulovligt indhold',
+      'illicit/violent': 'Ulovlig vold',
+    };
+    return translations[label] || label;
+  };
+
+  // Helper function to get user-friendly severity description
+  const getSeverityDescription = (severity: string, labels: string[]): string => {
+    if (severity === 'high_severity') {
+      return 'Denne besked indeholder alvorligt problematisk indhold der overtræder reglerne.';
+    }
+    if (severity === 'moderate_severity') {
+      if (labels.some(l => l.includes('harassment'))) {
+        return 'Denne besked kan opfattes som chikane eller mobning.';
+      }
+      if (labels.some(l => l.includes('hate'))) {
+        return 'Denne besked kan indeholde hadefulde ytringer.';
+      }
+      if (labels.some(l => l.includes('violence'))) {
+        return 'Denne besked kan indeholde voldsomt indhold.';
+      }
+      return 'Denne besked kan være upassende eller stødende.';
+    }
+    return 'Denne besked er blevet markeret til gennemsyn.';
   };
 
   // Fetch all classes for filter and display
@@ -625,7 +755,7 @@ export default function FlaggedMessagesPage() {
           <>
             {flaggedMessages.length === 0 ? (
               <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 text-center space-y-4">
-                <CheckCircle className="w-16 h-16 stroke-current text-success mx-auto" strokeWidth={2} />
+                <MessageSquare className="w-16 h-16 stroke-current text-secondary mx-auto" strokeWidth={2} />
                 <h2 className="text-2xl font-black uppercase tracking-tight text-base-content">
                   Ingen flaggede beskeder
                 </h2>
@@ -635,60 +765,227 @@ export default function FlaggedMessagesPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {flaggedMessages.map((msg) => (
-              <div key={msg.event_id} className="bg-base-100 border-2 border-base-content/10 shadow-lg overflow-hidden">
-                <div className="p-6">
-                  <div className="flex items-start gap-4 mb-4">
-                    {/* Severity badge */}
+                {flaggedMessages.map((item) => {
+                  const severityColor = item.severity === 'high_severity' ? 'error' : 'warning';
+                  
+                  return (
                     <div
-                      className={`badge font-bold uppercase shrink-0 ${
-                        msg.severity === 'high_severity' ? 'badge-error badge-lg' : 'badge-warning badge-md'
-                      }`}
+                      key={item.event_id}
+                      className="bg-base-100 border-2 border-base-content/10 hover:border-primary/30 transition-all duration-200 overflow-hidden"
                     >
-                      {msg.severity === 'high_severity' ? 'Høj' : 'Moderat'}
-                    </div>
+                      {/* Compact Header */}
+                      <div className="p-4 border-b-2 border-base-content/10">
+                        <div className="flex items-center gap-3">
+                          {/* Avatar */}
+                          <div className="avatar">
+                            <div className="w-8 h-8 rounded-full">
+                              {item.message?.author?.avatar_url ? (
+                                <img
+                                  src={item.message.author.avatar_url}
+                                  alt={item.message.author.display_name}
+                                />
+                              ) : (
+                                <div
+                                  className="w-full h-full flex items-center justify-center font-bold text-xs text-white"
+                                  style={{
+                                    backgroundColor: item.message?.author?.avatar_color || '#10B981',
+                                  }}
+                                >
+                                  {item.message?.author?.display_name?.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                          </div>
 
-                    {/* Message info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm font-bold uppercase tracking-widest text-base-content/60">
-                          {msg.message?.author?.display_name || 'Ukendt bruger'}
-                        </span>
-                        <span className="text-xs text-base-content/40">•</span>
-                        <span className="text-xs text-base-content/40">
-                          {new Date(msg.message?.created_at || '').toLocaleString('da-DK')}
-                        </span>
+                          {/* Author & Metadata */}
+                          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+                            <span className="text-sm font-bold text-base-content">
+                              {item.message?.author?.display_name || 'Ukendt bruger'}
+                            </span>
+                            <span className="text-xs text-base-content/40">
+                              {formatDistanceToNow(new Date(item.message?.created_at || ''), {
+                                addSuffix: true,
+                                locale: da,
+                              })}
+                            </span>
+                            {item.room?.name && (
+                              <span className="badge badge-sm badge-ghost font-mono text-xs">
+                                #{item.room.name}
+                              </span>
+                            )}
+                            <span className={`badge badge-${severityColor} badge-xs font-bold uppercase ml-auto`}>
+                              {item.severity === 'high_severity' ? 'Høj' : 
+                               item.severity === 'moderate_severity' ? 'Moderat' : 'Info'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="badge badge-sm badge-ghost mb-3">
-                        {msg.rule.replace(/_/g, ' ')}
-                      </div>
-                      <p className="text-base text-base-content wrap-break-word">
-                        {msg.message?.body || '(Ingen besked)'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Action footer */}
-                <div className="px-6 py-3 bg-base-200/30 border-t-2 border-base-content/10 flex justify-end gap-2">
-                  <button 
-                    className="btn btn-sm btn-ghost"
-                    onClick={() => handleRemoveFlag(msg.event_id)}
-                  >
-                    <Check size={16} />
-                    Godkend
-                  </button>
-                  <button 
-                    className="btn btn-sm btn-ghost text-error"
-                    onClick={() => handleMarkAsViolation(msg.event_id)}
-                  >
-                    <X size={16} />
-                    Markér krænkelse
-                  </button>
-                </div>
+                      {/* Compact Message Content */}
+                      <div className="p-4">
+                        <p className="text-sm text-base-content whitespace-pre-wrap wrap-break-word">
+                          {item.message?.body || '(Ingen besked)'}
+                        </p>
+                      </div>
+
+                      {/* Compact Moderation Info */}
+                      <div className="px-4 pb-4">
+                        <div className={`bg-base-200 p-3 border-l-2 ${
+                          severityColor === 'error' ? 'border-error' :
+                          severityColor === 'warning' ? 'border-warning' :
+                          'border-info'
+                        }`}>
+                          <div className="flex items-start gap-2">
+                            <AlertTriangle className={`w-4 h-4 ${
+                              severityColor === 'error' ? 'text-error' :
+                              severityColor === 'warning' ? 'text-warning' :
+                              'text-info'
+                            } shrink-0 mt-0.5`} strokeWidth={2} />
+                            <div className="flex-1">
+                              <p className="text-xs font-medium text-base-content mb-1">
+                                {getSeverityDescription(item.severity, item.labels)}
+                              </p>
+                              {item.labels.length > 0 && (
+                                <div className="flex gap-1 flex-wrap">
+                                  {item.labels.map((label, idx) => (
+                                    <span key={idx} className={`badge badge-xs badge-${severityColor}`}>
+                                      {getLabelTranslation(label)}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="px-4 pb-4 flex gap-2 flex-wrap">
+                        <button
+                          onClick={() => handleMarkAsViolation(item.event_id)}
+                          className="btn btn-sm btn-ghost gap-2 text-success hover:bg-success/10"
+                        >
+                          <Check size={16} strokeWidth={2} />
+                          Noteret
+                        </button>
+                        <button
+                          onClick={() => handleRemoveFlag(item.event_id)}
+                          className="btn btn-sm btn-ghost gap-2"
+                        >
+                          <X size={16} strokeWidth={2} />
+                          Fjern flag
+                        </button>
+                        <button
+                          onClick={() => handleShowContext(item.message_id, item.room_id || '')}
+                          className="btn btn-sm btn-ghost gap-2"
+                        >
+                          {expandedContext === item.message_id.toString() ? (
+                            <ChevronUp size={16} strokeWidth={2} />
+                          ) : (
+                            <ChevronDown size={16} strokeWidth={2} />
+                          )}
+                          Se kontekst
+                        </button>
+                      </div>
+
+                      {/* Context Messages */}
+                      {expandedContext === item.message_id.toString() && (
+                        <div className="border-t-2 border-base-content/10 bg-base-200">
+                          {loadingContext ? (
+                            <div className="p-6 flex justify-center">
+                              <span className="loading loading-spinner loading-sm"></span>
+                            </div>
+                          ) : (
+                            <div className="p-4 space-y-2 max-h-96 overflow-y-auto">
+                              <p className="text-xs font-bold uppercase tracking-wider text-base-content/50 mb-3">
+                                Besked kontekst
+                              </p>
+                              {contextMessages.map((msg: any, index: number) => {
+                                const isFlagged = msg.id === item.message_id;
+                                const flaggedMsg = contextMessages.find((m: any) => m.id === item.message_id);
+                                const flaggedTime = flaggedMsg ? new Date(flaggedMsg.created_at) : null;
+                                const msgTime = new Date(msg.created_at);
+                                
+                                // Calculate time difference relative to flagged message
+                                let timeLabel = '';
+                                if (!isFlagged && flaggedTime) {
+                                  const diffMs = msgTime.getTime() - flaggedTime.getTime();
+                                  const diffMins = Math.round(diffMs / 60000);
+                                  const absDiffMins = Math.abs(diffMins);
+                                  
+                                  if (diffMins === 0) {
+                                    timeLabel = 'Samme tid';
+                                  } else {
+                                    const suffix = diffMins > 0 ? 'efter' : 'før';
+                                    
+                                    if (absDiffMins < 60) {
+                                      // Less than 1 hour: show minutes
+                                      timeLabel = `${absDiffMins} ${absDiffMins === 1 ? 'minut' : 'minutter'} ${suffix}`;
+                                    } else if (absDiffMins < 1440) {
+                                      // Less than 24 hours: show hours
+                                      const hours = Math.round(absDiffMins / 60);
+                                      timeLabel = `${hours} ${hours === 1 ? 'time' : 'timer'} ${suffix}`;
+                                    } else {
+                                      // 24 hours or more: show days
+                                      const days = Math.round(absDiffMins / 1440);
+                                      timeLabel = `${days} ${days === 1 ? 'dag' : 'dage'} ${suffix}`;
+                                    }
+                                  }
+                                }
+                                
+                                return (
+                                  <div
+                                    key={msg.id}
+                                    className={`p-3 rounded relative ${
+                                      isFlagged
+                                        ? 'bg-warning/20 border-2 border-warning shadow-lg'
+                                        : 'bg-base-100'
+                                    }`}
+                                  >
+                                    {isFlagged && (
+                                      <div className="absolute top-0 left-0 w-1 h-full bg-warning"></div>
+                                    )}
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <div className="avatar">
+                                        <div className="w-6 h-6 rounded-full">
+                                          {msg.profiles?.avatar_url ? (
+                                            <img src={msg.profiles.avatar_url} alt={msg.profiles.display_name} />
+                                          ) : (
+                                            <div
+                                              className="w-full h-full flex items-center justify-center font-bold text-xs text-white"
+                                              style={{ backgroundColor: msg.profiles?.avatar_color || '#10B981' }}
+                                            >
+                                              {msg.profiles?.display_name?.charAt(0).toUpperCase()}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <span className={`text-xs font-bold ${isFlagged ? 'text-warning-content' : 'text-base-content'}`}>
+                                        {msg.profiles?.display_name}
+                                      </span>
+                                      <span className="text-xs text-base-content/40">
+                                        {timeLabel || format(new Date(msg.created_at), 'PPp', { locale: da })}
+                                      </span>
+                                      {isFlagged && (
+                                        <span className="badge badge-warning badge-xs ml-auto font-bold uppercase">
+                                          Markeret
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className={`text-xs ml-8 ${isFlagged ? 'font-medium text-base-content' : 'text-base-content'}`}>
+                                      {msg.body}
+                                    </p>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
             )}
           </>
         )}

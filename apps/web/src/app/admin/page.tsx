@@ -174,7 +174,7 @@ export default function AdminHomePage() {
         // Fallback to manual queries if RPC doesn't exist
         const [classes, users, rooms, messages, messages24h, flags, perf] = await Promise.all([
           supabase.from('classes').select('id', { count: 'exact', head: true }),
-          supabase.from('profiles').select('user_id', { count: 'exact', head: true }),
+          supabase.from('profiles').select('user_id', { count: 'exact', head: true }).or('is_placeholder.is.null,is_placeholder.eq.false'),
           supabase.from('rooms').select('id', { count: 'exact', head: true }),
           supabase.from('messages').select('id', { count: 'exact', head: true }),
           supabase
@@ -268,7 +268,6 @@ export default function AdminHomePage() {
                       </div>
                       <div className="stat-title text-xs font-bold uppercase tracking-widest">Klasser</div>
                       <div className="stat-value text-primary">{stats.totalClasses}</div>
-                      <div className="stat-desc text-xs font-mono uppercase tracking-wider">Total antal klasser</div>
                     </div>
 
                     <div className="stat">
@@ -277,7 +276,6 @@ export default function AdminHomePage() {
                       </div>
                       <div className="stat-title text-xs font-bold uppercase tracking-widest">Brugere</div>
                       <div className="stat-value text-secondary">{stats.totalUsers}</div>
-                      <div className="stat-desc text-xs font-mono uppercase tracking-wider">Total antal brugere</div>
                     </div>
 
                     <div className="stat">
@@ -286,7 +284,6 @@ export default function AdminHomePage() {
                       </div>
                       <div className="stat-title text-xs font-bold uppercase tracking-widest">Kanaler</div>
                       <div className="stat-value text-accent">{stats.totalRooms}</div>
-                      <div className="stat-desc text-xs font-mono uppercase tracking-wider">Aktive chat-kanaler</div>
                     </div>
                   </div>
                 </div>
@@ -319,10 +316,10 @@ export default function AdminHomePage() {
                           <span className="text-2xl font-black text-base-content">{stats.messages24h.toLocaleString()}</span>
                         </div>
                         <h3 className="text-sm font-black uppercase tracking-tight text-base-content mb-1">
-                          Sidste 24 Timer
+                          I Dag
                         </h3>
                         <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
-                          Nye beskeder i dag
+                          Beskeder sendt i dag
                         </p>
                       </div>
                     </div>
@@ -362,7 +359,7 @@ export default function AdminHomePage() {
                           <span className="text-2xl font-black text-base-content">{stats.avgMessageSendMs}ms</span>
                         </div>
                         <h3 className="text-sm font-black uppercase tracking-tight text-base-content mb-1">
-                          Gennemsnitlig Besked Send Tid
+                          Gennemsnitlig Afsendelsestid
                         </h3>
                         <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
                           Sidste 24 timer

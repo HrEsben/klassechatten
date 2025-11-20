@@ -24,6 +24,13 @@ export default function PerformanceDashboard() {
     realtime_reconnect: null,
     page_load: null,
     room_switch: null,
+    navigation: null,
+    tti: null,
+    fcp: null,
+    lcp: null,
+    cls: null,
+    fid: null,
+    component_render: null,
   });
   const [flaggedStats, setFlaggedStats] = useState<PerformanceStats | null>(null);
   const [nonFlaggedStats, setNonFlaggedStats] = useState<PerformanceStats | null>(null);
@@ -99,6 +106,13 @@ export default function PerformanceDashboard() {
         realtime_reconnect: calculateStats(metricsByType['realtime_reconnect'] || []),
         page_load: calculateStats(metricsByType['page_load'] || []),
         room_switch: calculateStats(metricsByType['room_switch'] || []),
+        navigation: calculateStats(metricsByType['navigation'] || []),
+        tti: calculateStats(metricsByType['tti'] || []),
+        fcp: calculateStats(metricsByType['fcp'] || []),
+        lcp: calculateStats(metricsByType['lcp'] || []),
+        cls: calculateStats(metricsByType['cls'] || []),
+        fid: calculateStats(metricsByType['fid'] || []),
+        component_render: calculateStats(metricsByType['component_render'] || []),
       };
 
       setStats(newStats);
@@ -182,6 +196,13 @@ export default function PerformanceDashboard() {
       realtime_reconnect: 5000,
       page_load: 5000,
       room_switch: 2000,
+      navigation: 1000,
+      tti: 3500,
+      fcp: 1800,
+      lcp: 2500,
+      cls: 0.1,
+      fid: 100,
+      component_render: 16,
     };
 
     const threshold = thresholds[type];
@@ -198,6 +219,13 @@ export default function PerformanceDashboard() {
     realtime_reconnect: 'Real-time genopretning',
     page_load: 'Side indlæsning',
     room_switch: 'Rum skift',
+    navigation: 'Navigation (klient-side)',
+    tti: 'Time to Interactive',
+    fcp: 'First Contentful Paint',
+    lcp: 'Largest Contentful Paint',
+    cls: 'Cumulative Layout Shift',
+    fid: 'First Input Delay',
+    component_render: 'Komponent rendering',
   };
 
   return (

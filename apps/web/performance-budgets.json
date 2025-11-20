@@ -1,0 +1,151 @@
+{
+  "budgets": [
+    {
+      "path": "/*",
+      "timings": [
+        {
+          "metric": "interactive",
+          "budget": 3500,
+          "tolerance": 10
+        },
+        {
+          "metric": "first-contentful-paint",
+          "budget": 1800,
+          "tolerance": 10
+        },
+        {
+          "metric": "largest-contentful-paint",
+          "budget": 2500,
+          "tolerance": 10
+        },
+        {
+          "metric": "cumulative-layout-shift",
+          "budget": 0.1,
+          "tolerance": 10
+        },
+        {
+          "metric": "first-input-delay",
+          "budget": 100,
+          "tolerance": 10
+        }
+      ],
+      "resourceSizes": [
+        {
+          "resourceType": "script",
+          "budget": 400,
+          "tolerance": 10
+        },
+        {
+          "resourceType": "stylesheet",
+          "budget": 50,
+          "tolerance": 10
+        },
+        {
+          "resourceType": "image",
+          "budget": 200,
+          "tolerance": 10
+        },
+        {
+          "resourceType": "font",
+          "budget": 100,
+          "tolerance": 10
+        },
+        {
+          "resourceType": "total",
+          "budget": 1000,
+          "tolerance": 10
+        }
+      ]
+    },
+    {
+      "path": "/admin/*",
+      "comment": "Admin pages can have slightly larger bundles due to complex dashboards",
+      "resourceSizes": [
+        {
+          "resourceType": "script",
+          "budget": 500,
+          "tolerance": 10
+        },
+        {
+          "resourceType": "total",
+          "budget": 1200,
+          "tolerance": 10
+        }
+      ]
+    }
+  ],
+  "applicationMetrics": {
+    "message_send": {
+      "budget": 3000,
+      "unit": "ms",
+      "description": "User clicks send → message appears"
+    },
+    "message_realtime": {
+      "budget": 2000,
+      "unit": "ms",
+      "description": "Other user sends → appears on screen"
+    },
+    "image_upload": {
+      "budget": 15000,
+      "unit": "ms",
+      "description": "Select image → upload complete"
+    },
+    "image_compression": {
+      "budget": 5000,
+      "unit": "ms",
+      "description": "Image compression time"
+    },
+    "realtime_reconnect": {
+      "budget": 5000,
+      "unit": "ms",
+      "description": "Realtime connection lost → reconnected"
+    },
+    "page_load": {
+      "budget": 5000,
+      "unit": "ms",
+      "description": "Initial page load time"
+    },
+    "room_switch": {
+      "budget": 2000,
+      "unit": "ms",
+      "description": "Switch rooms → messages loaded"
+    },
+    "navigation": {
+      "budget": 1000,
+      "unit": "ms",
+      "description": "Client-side navigation duration (should be instant)"
+    },
+    "component_render": {
+      "budget": 16,
+      "unit": "ms",
+      "description": "Component re-render duration (60fps target)"
+    }
+  },
+  "webVitalsTargets": {
+    "LCP": {
+      "good": 2500,
+      "needsImprovement": 4000,
+      "poor": "> 4000"
+    },
+    "FID": {
+      "good": 100,
+      "needsImprovement": 300,
+      "poor": "> 300"
+    },
+    "CLS": {
+      "good": 0.1,
+      "needsImprovement": 0.25,
+      "poor": "> 0.25"
+    },
+    "FCP": {
+      "good": 1800,
+      "needsImprovement": 3000,
+      "poor": "> 3000"
+    },
+    "TTI": {
+      "good": 3500,
+      "needsImprovement": 7500,
+      "poor": "> 7500"
+    }
+  }
+}

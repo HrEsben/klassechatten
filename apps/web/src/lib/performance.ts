@@ -11,7 +11,14 @@ export type PerformanceMetricType =
   | 'image_compression'      // Image compression time
   | 'realtime_reconnect'     // Realtime connection lost → reconnected
   | 'page_load'              // Initial page load time
-  | 'room_switch';           // Switch rooms → messages loaded
+  | 'room_switch'            // Switch rooms → messages loaded
+  | 'navigation'             // Client-side navigation duration
+  | 'tti'                    // Time to Interactive
+  | 'fcp'                    // First Contentful Paint
+  | 'lcp'                    // Largest Contentful Paint
+  | 'cls'                    // Cumulative Layout Shift
+  | 'fid'                    // First Input Delay
+  | 'component_render';      // Component re-render duration
 
 export interface PerformanceMetric {
   type: PerformanceMetricType;
@@ -41,6 +48,13 @@ const ALERT_THRESHOLDS: Record<PerformanceMetricType, number> = {
   realtime_reconnect: 5000,  // 5 seconds
   page_load: 5000,           // 5 seconds
   room_switch: 2000,         // 2 seconds
+  navigation: 1000,          // 1 second (should be instant)
+  tti: 3500,                 // 3.5 seconds (Google recommends < 3.8s)
+  fcp: 1800,                 // 1.8 seconds (Good: < 1.8s)
+  lcp: 2500,                 // 2.5 seconds (Good: < 2.5s)
+  cls: 0.1,                  // 0.1 (Good: < 0.1)
+  fid: 100,                  // 100ms (Good: < 100ms)
+  component_render: 16,      // 16ms (60fps target)
 };
 
 class PerformanceMonitor {
@@ -53,6 +67,8 @@ class PerformanceMonitor {
     this.isClient = typeof globalThis !== 'undefined' && 'window' in globalThis;
     if (this.isClient) {
       this.loadMetrics();
+      this.initWebVitals();
+      this.initNavigationTracking();
     }
   }
 
@@ -219,6 +235,13 @@ class PerformanceMonitor {
       'realtime_reconnect',
       'page_load',
       'room_switch',
+      'navigation',
+      'tti',
+      'fcp',
+      'lcp',
+      'cls',
+      'fid',
+      'component_render',
     ];
 
     return types.reduce((acc, type) => {
@@ -343,6 +366,173 @@ class PerformanceMonitor {
     } catch (error) {
       console.error('[Performance] Failed to save metrics:', error);
     }
+  }
+
+  /**
+   * Initialize Web Vitals tracking using PerformanceObserver
+   */
+  private initWebVitals(): void {
+    if (!this.isClient || typeof PerformanceObserver === 'undefined') return;
+
+    try {
+      // Track Largest Contentful Paint (LCP)
+      const lcpObserver = new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        const lastEntry = entries[entries.length - 1] as any;
+        if (lastEntry) {
+          this.recordMetric({
+            type: 'lcp',
+            duration: lastEntry.renderTime || lastEntry.loadTime,
+            timestamp: Date.now(),
+            success: true,
+          });
+        }
+      });
+      lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
+
+      // Track First Contentful Paint (FCP)
+      const fcpObserver = new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        entries.forEach((entry: any) => {
+          if (entry.name === 'first-contentful-paint') {
+            this.recordMetric({
+              type: 'fcp',
+              duration: entry.startTime,
+              timestamp: Date.now(),
+              success: true,
+            });
+          }
+        });
+      });
+      fcpObserver.observe({ type: 'paint', buffered: true });
+
+      // Track First Input Delay (FID)
+      const fidObserver = new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        entries.forEach((entry: any) => {
+          this.recordMetric({
+            type: 'fid',
+            duration: entry.processingStart - entry.startTime,
+            timestamp: Date.now(),
+            success: true,
+          });
+        });
+      });
+      fidObserver.observe({ type: 'first-input', buffered: true });
+
+      // Track Cumulative Layout Shift (CLS)
+      let clsScore = 0;
+      const clsObserver = new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        entries.forEach((entry: any) => {
+          if (!entry.hadRecentInput) {
+            clsScore += entry.value;
+          }
+        });
+      });
+      clsObserver.observe({ type: 'layout-shift', buffered: true });
+
+      // Report CLS on page unload
+      window.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden' && clsScore > 0) {
+          this.recordMetric({
+            type: 'cls',
+            duration: clsScore,
+            timestamp: Date.now(),
+            success: true,
+          });
+        }
+      });
+
+      // Track Time to Interactive (TTI) - approximate using load event
+      window.addEventListener('load', () => {
+        // TTI is approximately when the page is fully loaded and interactive
+        const tti = performance.timing.domInteractive - performance.timing.navigationStart;
+        this.recordMetric({
+          type: 'tti',
+          duration: tti,
+          timestamp: Date.now(),
+          success: true,
+        });
+      });
+
+      console.log('[Performance] Web Vitals tracking initialized');
+    } catch (error) {
+      console.warn('[Performance] Failed to initialize Web Vitals:', error);
+    }
+  }
+
+  /**
+   * Initialize client-side navigation tracking
+   */
+  private initNavigationTracking(): void {
+    if (!this.isClient) return;
+
+    // Track route changes (works with Next.js App Router)
+    let navigationStart: number | null = null;
+
+    // Intercept navigation
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+
+    history.pushState = function(...args) {
+      navigationStart = Date.now();
+      return originalPushState.apply(history, args);
+    };
+
+    history.replaceState = function(...args) {
+      navigationStart = Date.now();
+      return originalReplaceState.apply(history, args);
+    };
+
+    // Listen for popstate (back/forward navigation)
+    window.addEventListener('popstate', () => {
+      navigationStart = Date.now();
+    });
+
+    // Detect when navigation completes (DOM is ready)
+    const checkNavigationComplete = () => {
+      if (navigationStart && document.readyState === 'complete') {
+        const duration = Date.now() - navigationStart;
+        this.recordMetric({
+          type: 'navigation',
+          duration,
+          timestamp: Date.now(),
+          metadata: { url: window.location.pathname },
+          success: true,
+        });
+        navigationStart = null;
+      }
+    };
+
+    // Check on readystatechange
+    document.addEventListener('readystatechange', checkNavigationComplete);
+
+    // Also check periodically during navigation
+    setInterval(() => {
+      if (navigationStart && Date.now() - navigationStart > 50) {
+        checkNavigationComplete();
+      }
+    }, 50);
+
+    console.log('[Performance] Navigation tracking initialized');
+  }
+
+  /**
+   * Track component re-renders (use with React.Profiler)
+   */
+  trackComponentRender(
+    componentName: string,
+    phase: 'mount' | 'update' | 'nested-update',
+    actualDuration: number
+  ): void {
+    this.recordMetric({
+      type: 'component_render',
+      duration: actualDuration,
+      timestamp: Date.now(),
+      metadata: { componentName, phase },
+      success: true,
+    });
   }
 }
 

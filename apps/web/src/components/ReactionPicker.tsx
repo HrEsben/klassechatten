@@ -170,7 +170,6 @@ export default function ReactionPicker({ onSelect, onClose, position }: Reaction
           bg-base-100 border-2 border-base-content/10 overflow-hidden
           w-full md:w-64
           md:h-auto
-          rounded-t-xl md:rounded-none
           shadow-lg
           p-4
         `}

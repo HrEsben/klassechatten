@@ -64,7 +64,7 @@ export default async function CachedClassRoomBrowser({ userId, children }: Cache
                   {classData.rooms.map((room) => (
                     <div
                       key={room.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-base-200/50 hover:bg-base-200 transition-colors border border-transparent hover:border-primary/20"
+                      className="flex items-center justify-between p-3 bg-base-200/50 hover:bg-base-200 transition-colors border-2 border-transparent hover:border-primary/20"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-success"></div>

@@ -79,7 +79,7 @@ export default async function CachedChatRoom({ roomId, userId: _userId, children
                       <img 
                         src={message.image_url} 
                         alt="Message attachment"
-                        className="max-w-xs rounded-lg mt-2"
+                        className="max-w-xs mt-2"
                       />
                     )}
                     {message.edited_at && (

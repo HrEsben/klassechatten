@@ -125,14 +125,14 @@ export default function LoginForm() {
       
       <div className="relative bg-base-100 shadow-xl">
             {/* Header with strong typography */}
-            <div className="border-b-2 border-primary/20 px-10 py-8">
-              <h1 className="text-4xl font-black tracking-tight text-base-content uppercase">
+            <div className="border-b-2 border-primary/20 px-6 sm:px-10 py-6 sm:py-8">
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-base-content uppercase">
                 {isSignUp ? 'Opret Konto' : 'Log Ind'}
               </h1>
               <div className="h-1 w-16 bg-primary mt-4"></div>
             </div>
 
-            <div className="px-10 py-8">
+            <div className="px-6 sm:px-10 py-6 sm:py-8">
               <form onSubmit={handleSubmit} className="space-y-6">
                 {isSignUp && (
                   <div className="space-y-2">

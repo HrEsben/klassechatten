@@ -78,7 +78,7 @@ export default function AcceptInvitePage() {
   if (loading) {
     return (
       <>
-        <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 max-w-md w-full text-center">
+        <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-6 sm:p-12 max-w-md w-full text-center">
           <span className="loading loading-ball loading-lg text-primary"></span>
           <p className="mt-6 text-base-content/60">Behandler invitation...</p>
         </div>
@@ -89,7 +89,7 @@ export default function AcceptInvitePage() {
   if (success) {
     return (
       <>
-        <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 max-w-md w-full">
+        <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-6 sm:p-12 max-w-md w-full">
           <div className="text-center space-y-6">
             <CheckCircle className="w-16 h-16 mx-auto text-success" strokeWidth={2} />
             <div>
@@ -113,7 +113,7 @@ export default function AcceptInvitePage() {
   if (error) {
     return (
       <>
-        <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 max-w-md w-full">
+        <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-6 sm:p-12 max-w-md w-full">
           <div className="text-center space-y-6">
             <XCircle className="w-16 h-16 mx-auto text-error" strokeWidth={2} />
             <div>
@@ -139,7 +139,7 @@ export default function AcceptInvitePage() {
   // Not authenticated
   return (
     <>
-      <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 max-w-md w-full">
+      <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-6 sm:p-12 max-w-md w-full">
         <div className="text-center space-y-6">
           <Mail className="w-16 h-16 mx-auto text-primary" strokeWidth={2} />
           <div>

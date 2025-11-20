@@ -162,12 +162,14 @@ Created 4 additional shared components to eliminate more duplication:
 - ✅ Create-child: Replaced 4 form inputs (~30 lines) with FormInput component
 - ✅ UsersSidebar: Replaced inline user rendering (~30 lines) with UserCard component
 - ✅ admin/classes/[id]: Replaced 2 member list patterns (~90 lines) with UserCard component
-- ✅ Removed ~345 lines of duplicate logic total (14 replacements across 6 files)
+- ✅ admin/users: Replaced user table (~40 lines) with UserCard list layout
+- ✅ UserMenu: Replaced children list (~15 lines) with UserCard compact variant
+- ✅ Removed ~400 lines of duplicate logic total (16 replacements across 8 files)
 
 **Ready for Future Replacements:**
-- [ ] User list patterns (admin/users, admin/classes/[id], UserMenu) - **7+ locations identified**
-- [ ] Form input patterns (accept-invite, class settings, profile) - **7+ inputs remaining**
+- [ ] Form input patterns (accept-invite, class settings, profile, my-children) - **10+ inputs remaining**
 - [ ] Modal patterns (confirmation dialogs, form modals) - **5+ locations identified**
+- [ ] Additional UserCard opportunities (profile page, child pages) - **5+ locations**
 
 **Design Improvements Needed:**
 - ⚠️ Icon library research - Find icon set with better Berlin Edgy aesthetic (square linecaps)
@@ -176,10 +178,11 @@ Created 4 additional shared components to eliminate more duplication:
 
 **Impact:**
 - 700+ lines of new reusable component code
-- ~345 lines of duplicate logic removed (14 replacements across 6 files)
-- Foundation for replacing 30+ additional inline patterns
+- ~400 lines of duplicate logic removed (16 replacements across 8 files)
+- Foundation for replacing 25+ additional inline patterns
 - Consistent Berlin Edgy design across all card/form/modal patterns
 - All 42 routes compile successfully
+- Major admin pages now use shared components (dashboard, classes, users)
 
 ### Impact:
 - Consistent loading, empty, and error states throughout entire app

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { PerformanceStats, PerformanceMetricType } from '@/lib/performance';
 import { supabase } from '@/lib/supabase';
 import { Pause, Play, Download, Trash2, BarChart3, Target, Database, Timer, AlertTriangle, RefreshCw } from 'lucide-react';
-import { Modal } from '@/components/shared';
+import { Modal, PerformanceChart } from '@/components/shared';
 
 interface MetricRow {
   type: PerformanceMetricType;
@@ -37,6 +37,7 @@ export default function PerformanceDashboard() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [timeSeriesData, setTimeSeriesData] = useState<Record<string, { timestamp: Date; value: number }[]>>({});
 
   const calculateStats = (metrics: number[]): PerformanceStats | null => {
     if (metrics.length === 0) return null;
@@ -119,10 +120,52 @@ export default function PerformanceDashboard() {
       setFlaggedStats(calculateStats(flaggedMessages));
       setNonFlaggedStats(calculateStats(nonFlaggedMessages));
       setLastUpdated(new Date());
-    } catch (error) {
-      console.error('[Performance Dashboard] Error:', error);
+
+      // Fetch time-series data for charts
+      await fetchTimeSeriesData(data as MetricRow[]);
+    } catch (err) {
+      console.error('[Performance Dashboard] Error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTimeSeriesData = async (metrics: MetricRow[]) => {
+    try {
+      // Group metrics by type and hour
+      const timeSeriesByType: Record<string, Map<string, number[]>> = {};
+      
+      metrics.forEach(metric => {
+        if (!timeSeriesByType[metric.type]) {
+          timeSeriesByType[metric.type] = new Map();
+        }
+        
+        // Round to nearest hour for grouping
+        const date = new Date(metric.created_at);
+        const hourKey = new Date(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours()).toISOString();
+        
+        if (!timeSeriesByType[metric.type].has(hourKey)) {
+          timeSeriesByType[metric.type].set(hourKey, []);
+        }
+        
+        timeSeriesByType[metric.type].get(hourKey)!.push(metric.duration);
+      });
+
+      // Calculate averages for each hour
+      const timeSeriesFormatted: Record<string, { timestamp: Date; value: number }[]> = {};
+      
+      Object.entries(timeSeriesByType).forEach(([type, hourMap]) => {
+        timeSeriesFormatted[type] = Array.from(hourMap.entries())
+          .map(([hourKey, durations]) => ({
+            timestamp: new Date(hourKey),
+            value: Math.round(durations.reduce((sum, d) => sum + d, 0) / durations.length),
+          }))
+          .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      });
+
+      setTimeSeriesData(timeSeriesFormatted);
+    } catch (err) {
+      console.error('[Performance Dashboard] Error fetching time-series data:', err);
     }
   };
 
@@ -336,6 +379,135 @@ export default function PerformanceDashboard() {
               </div>
             )
           )}
+          </div>
+        )}
+
+        {/* Performance Over Time Charts */}
+        {!loading && Object.keys(timeSeriesData).length > 0 && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-black uppercase tracking-tight text-base-content">
+              Performance Over Tid
+            </h2>
+            <div className="h-1 w-24 bg-primary"></div>
+
+            {/* Key User Actions Charts */}
+            <div className="grid gap-6 lg:grid-cols-2">
+              {timeSeriesData['message_send'] && timeSeriesData['message_send'].length > 0 && (
+                <PerformanceChart
+                  title="Besked Sendt"
+                  data={timeSeriesData['message_send']}
+                  yAxisLabel="Latens (ms)"
+                  threshold={1000}
+                  color="#ff3fa4"
+                />
+              )}
+              
+              {timeSeriesData['navigation'] && timeSeriesData['navigation'].length > 0 && (
+                <PerformanceChart
+                  title="Navigation"
+                  data={timeSeriesData['navigation']}
+                  yAxisLabel="Latens (ms)"
+                  threshold={200}
+                  color="#ffb347"
+                />
+              )}
+            </div>
+
+            {/* Web Vitals Charts */}
+            <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-6">
+              <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-4">
+                Web Vitals
+              </h3>
+              <div className="grid gap-6 lg:grid-cols-2">
+                {timeSeriesData['lcp'] && timeSeriesData['lcp'].length > 0 && (
+                  <PerformanceChart
+                    title="LCP (Largest Contentful Paint)"
+                    data={timeSeriesData['lcp']}
+                    yAxisLabel="Tid (ms)"
+                    threshold={2500}
+                    color="#7fdb8f"
+                  />
+                )}
+                
+                {timeSeriesData['fcp'] && timeSeriesData['fcp'].length > 0 && (
+                  <PerformanceChart
+                    title="FCP (First Contentful Paint)"
+                    data={timeSeriesData['fcp']}
+                    yAxisLabel="Tid (ms)"
+                    threshold={1800}
+                    color="#6b9bd1"
+                  />
+                )}
+
+                {timeSeriesData['tti'] && timeSeriesData['tti'].length > 0 && (
+                  <PerformanceChart
+                    title="TTI (Time to Interactive)"
+                    data={timeSeriesData['tti']}
+                    yAxisLabel="Tid (ms)"
+                    threshold={3800}
+                    color="#6247f5"
+                  />
+                )}
+
+                {timeSeriesData['fid'] && timeSeriesData['fid'].length > 0 && (
+                  <PerformanceChart
+                    title="FID (First Input Delay)"
+                    data={timeSeriesData['fid']}
+                    yAxisLabel="Forsinkelse (ms)"
+                    threshold={100}
+                    color="#e86b6b"
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Backend Operations Charts */}
+            <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-6">
+              <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-4">
+                Backend Operationer
+              </h3>
+              <div className="grid gap-6 lg:grid-cols-2">
+                {timeSeriesData['image_upload'] && timeSeriesData['image_upload'].length > 0 && (
+                  <PerformanceChart
+                    title="Billede Upload"
+                    data={timeSeriesData['image_upload']}
+                    yAxisLabel="Latens (ms)"
+                    threshold={2000}
+                    color="#ffb347"
+                  />
+                )}
+
+                {timeSeriesData['image_compression'] && timeSeriesData['image_compression'].length > 0 && (
+                  <PerformanceChart
+                    title="Billede Komprimering"
+                    data={timeSeriesData['image_compression']}
+                    yAxisLabel="Tid (ms)"
+                    threshold={1500}
+                    color="#ffd966"
+                  />
+                )}
+
+                {timeSeriesData['realtime_reconnect'] && timeSeriesData['realtime_reconnect'].length > 0 && (
+                  <PerformanceChart
+                    title="Realtime Genforbindelse"
+                    data={timeSeriesData['realtime_reconnect']}
+                    yAxisLabel="Tid (ms)"
+                    threshold={3000}
+                    color="#6b9bd1"
+                  />
+                )}
+
+                {timeSeriesData['room_switch'] && timeSeriesData['room_switch'].length > 0 && (
+                  <PerformanceChart
+                    title="Rum Skift"
+                    data={timeSeriesData['room_switch']}
+                    yAxisLabel="Latens (ms)"
+                    threshold={500}
+                    color="#7fdb8f"
+                  />
+                )}
+              </div>
+            </div>
           </div>
         )}
 

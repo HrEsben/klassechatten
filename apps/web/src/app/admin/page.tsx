@@ -1,11 +1,12 @@
 "use client";
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserClasses } from '@/hooks/useUserClasses';
 import { School, Users, MessageSquare, TriangleAlert, TrendingUp, Activity, Hash, LayoutList } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { LoadingSpinner } from '@/components/shared';
+import { LoadingSpinner, EmptyState } from '@/components/shared';
 
 interface DashboardStats {
   totalClasses: number;
@@ -147,6 +148,7 @@ function ClassStatsCard({ classData }: { classData: any }) {
 }
 
 export default function AdminHomePage() {
+  const router = useRouter();
   const { profile, loading: profileLoading } = useUserProfile();
   const { classes, loading: classesLoading } = useUserClasses();
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -373,18 +375,16 @@ export default function AdminHomePage() {
 
         {/* No Admin Classes */}
         {!isGlobalAdmin && adminClasses.length === 0 && (
-          <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 text-center space-y-4">
-            <LayoutList className="w-16 h-16 stroke-current text-secondary mx-auto" strokeWidth={2} />
-            <h2 className="text-2xl font-black uppercase tracking-tight text-base-content">
-              Ingen klasser fundet
-            </h2>
-            <p className="text-base-content/60">
-              Du er ikke klasseadministrator for nogen klasser endnu.
-            </p>
-            <Link href="/" className="btn bg-base-content text-base-100 hover:bg-primary hover:text-primary-content">
-              Gå til Mine Beskeder
-            </Link>
-          </div>
+          <EmptyState
+            icon={LayoutList}
+            title="Ingen klasser fundet"
+            description="Du er ikke klasseadministrator for nogen klasser endnu."
+            iconColor="text-secondary"
+            action={{
+              label: "Gå til Mine Beskeder",
+              onClick: () => router.push('/')
+            }}
+          />
         )}
       </div>
   );

@@ -5,7 +5,8 @@ import { useAdminClasses } from '@/hooks/useAdminClasses';
 import { format } from 'date-fns';
 import { da } from 'date-fns/locale';
 import { useState } from 'react';
-import { LoadingSpinner, ErrorState } from '@/components/shared';
+import { School } from 'lucide-react';
+import { LoadingSpinner, ErrorState, EmptyState } from '@/components/shared';
 
 function AdminClassesContent() {
   const router = useRouter();
@@ -195,15 +196,11 @@ function AdminClassesContent() {
         </div>
 
         {classes.length === 0 && (
-          <div className="p-12 text-center">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-16 h-16 stroke-current text-base-content/30 mx-auto mb-4" strokeWidth={2}>
-              <path strokeLinecap="square" strokeLinejoin="miter" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-            </svg>
-            <h2 className="text-2xl font-black uppercase tracking-tight text-base-content mb-2">
-              Ingen klasser
-            </h2>
-            <p className="text-base-content/60">Der er endnu ikke oprettet nogen klasser</p>
-          </div>
+          <EmptyState
+            icon={School}
+            title="Ingen klasser"
+            description="Der er endnu ikke oprettet nogen klasser"
+          />
         )}
       </div>
     </div>

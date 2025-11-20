@@ -7,7 +7,8 @@ import { useUnreadCounts } from '@/hooks/useUnreadCounts';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useGuardianChildren } from '@/hooks/useGuardianChildren';
 import { supabase } from '@/lib/supabase';
-import { Flag, Settings, Info, Users, UserPlus, UserCheck, ArrowRight, ChevronRight, Lock } from 'lucide-react';
+import { Flag, Settings, Info, Users, UserPlus, UserCheck, ArrowRight, ChevronRight, Lock, MessageCircle } from 'lucide-react';
+import { EmptyState, LoadingSpinner, ErrorState } from '@/components/shared';
 import ChatRoom from './ChatRoom';
 
 export default function ClassRoomBrowser() {

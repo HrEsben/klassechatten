@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { Flag, Check, X, AlertCircle, CheckCircle, AlertTriangle, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { da } from 'date-fns/locale';
+import { EmptyState } from '@/components/shared';
 
 interface ModerationEventWithContext {
   event_id: string;
@@ -711,13 +712,12 @@ export default function FlaggedMessagesList({ classId, isAdmin = false, showDism
       {view === 'active' && (
         <>
           {flaggedMessages.length === 0 ? (
-            <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 text-center space-y-4">
-              <CheckCircle className="w-16 h-16 stroke-current text-success mx-auto" strokeWidth={2} />
-              <h2 className="text-2xl font-black uppercase tracking-tight text-base-content">
-                Ingen flaggede beskeder
-              </h2>
-              <p className="text-base-content/60">Alle beskeder er godkendt af AI-moderation</p>
-            </div>
+            <EmptyState
+              icon={CheckCircle}
+              title="Ingen flaggede beskeder"
+              description="Alle beskeder er godkendt af AI-moderation"
+              iconColor="text-success"
+            />
           ) : (
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-4">

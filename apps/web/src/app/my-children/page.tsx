@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { ArrowLeft, Users, UserPlus, TriangleAlert, ChevronRight, Check } from 'lucide-react';
-import { LoadingSpinner } from '@/components/shared';
+import { LoadingSpinner, EmptyState } from '@/components/shared';
 
 interface Child {
   child_id: string;
@@ -78,21 +78,16 @@ export default function MyChildrenPage() {
         )}
 
         {children.length === 0 ? (
-          <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 text-center">
-            <Users className="w-16 h-16 stroke-current text-secondary mx-auto mb-4" strokeWidth={2} />
-            <h2 className="text-2xl font-black uppercase tracking-tight text-base-content mb-2">
-              Ingen Børn
-            </h2>
-            <p className="text-base-content/60 mb-6">
-              Du har ikke oprettet nogen børn endnu
-            </p>
-            <button
-              onClick={() => router.push('/create-child')}
-              className="btn bg-base-content text-base-100 hover:bg-primary hover:text-primary-content"
-            >
-              Opret Barn Konto
-            </button>
-          </div>
+          <EmptyState
+            icon={Users}
+            title="Ingen Børn"
+            description="Du har ikke oprettet nogen børn endnu"
+            iconColor="text-secondary"
+            action={{
+              label: "Opret Barn Konto",
+              onClick: () => router.push('/create-child')
+            }}
+          />
         ) : (
           <div className="space-y-4">
             {children.map((child) => (

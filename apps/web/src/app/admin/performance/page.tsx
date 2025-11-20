@@ -201,46 +201,50 @@ export default function PerformanceDashboard() {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-12 py-8 space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-12 space-y-6">
+        {/* Page Header - Below AdminLayout header */}
+        <div className="pt-6 sm:pt-8 space-y-4">
+          {/* Title */}
           <div>
-            <h1 className="text-3xl font-black uppercase tracking-tight text-base-content">
+            <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-base-content">
               Performance Dashboard
             </h1>
             <div className="h-1 w-24 bg-primary mt-2"></div>
           </div>
           
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Timestamp and Actions */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
             {lastUpdated && (
               <span className="text-xs text-base-content/60">
                 Sidst opdateret: {lastUpdated.toLocaleTimeString('da-DK')}
               </span>
             )}
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={fetchMetrics}
-              disabled={loading}
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} strokeWidth={2} />
-              Opdater
-            </button>
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => setAutoRefresh(!autoRefresh)}
-            >
-              {autoRefresh ? (
-                <><Pause className="w-4 h-4" strokeWidth={2} /> Pause</>
-              ) : (
-                <><Play className="w-4 h-4" strokeWidth={2} /> Start</>
-              )}
-            </button>
-            <button className="btn btn-ghost btn-sm" onClick={handleExport}>
-              <Download className="w-4 h-4" strokeWidth={2} /> Eksporter
-            </button>
-            <button className="btn btn-error btn-ghost btn-sm" onClick={() => setShowClearConfirm(true)}>
-              <Trash2 className="w-4 h-4" strokeWidth={2} /> Ryd (7 dage)
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={fetchMetrics}
+                disabled={loading}
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} strokeWidth={2} />
+                Opdater
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setAutoRefresh(!autoRefresh)}
+              >
+                {autoRefresh ? (
+                  <><Pause className="w-4 h-4" strokeWidth={2} /> Pause</>
+                ) : (
+                  <><Play className="w-4 h-4" strokeWidth={2} /> Start</>
+                )}
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={handleExport}>
+                <Download className="w-4 h-4" strokeWidth={2} /> Eksporter
+              </button>
+              <button className="btn btn-error btn-ghost btn-sm" onClick={() => setShowClearConfirm(true)}>
+                <Trash2 className="w-4 h-4" strokeWidth={2} /> Ryd (7 dage)
+              </button>
+            </div>
           </div>
         </div>
 

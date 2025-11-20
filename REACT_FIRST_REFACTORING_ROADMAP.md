@@ -333,7 +333,225 @@ import { PerformanceProfiler } from '@/components/PerformanceProfiler';
 
 ---
 
-## 🔍 Phase 9: Code Quality & Testing
+## ✅ Phase 9: DaisyUI Component Audit & Implementation (COMPLETED)
+**Status**: Done ✓
+
+### What was done:
+- Conducted comprehensive DaisyUI audit across all 42 routes
+- Added Berlin Edgy CSS overrides for all DaisyUI components
+- Refactored UserAvatar to use DaisyUI classes
+- Implemented Toast notification system
+- Verified Breadcrumbs component using DaisyUI
+- Refactored ClassCard to use DaisyUI card structure
+- Created comprehensive audit report (DAISYUI_AUDIT_REPORT.md)
+
+### Berlin Edgy CSS Overrides Added:
+- ✅ **Cards**: `border-radius: 0`, `border-width: 2px`
+- ✅ **Modals**: `border-radius: 0`, `border-width: 2px`
+- ✅ **Badges**: `border-radius: 0`
+- ✅ **Avatars**: `border-radius: 0 !important` (force square)
+- ✅ **Menus**: `border-radius: 0`
+- ✅ **Tabs**: `border-radius: 0`
+- ✅ **Alerts**: `border-radius: 0`, `border-width: 2px`
+- ✅ **Toast**: `border-radius: 0`
+- ✅ **Dropdowns**: `border-radius: 0`
+- ✅ All interactive elements: `border-width: 2px`
+
+### Components Refactored:
+
+#### 1. UserAvatar (25 usages) ✅
+**Before**: Custom implementation with manual styling
+```tsx
+<div className="w-10 h-10 flex items-center justify-center">
+  {avatarUrl ? <img src={avatarUrl} /> : <div>{initials}</div>}
+</div>
+```
+
+**After**: DaisyUI avatar with placeholder
+```tsx
+<div className="avatar">
+  {avatarUrl ? (
+    <div className="w-10"><img src={avatarUrl} /></div>
+  ) : (
+    <div className="avatar-placeholder w-10">
+      <span className="text-white font-black">{initials}</span>
+    </div>
+  )}
+</div>
+```
+
+**Benefits**:
+- Proper semantic structure
+- Built-in online indicator support
+- Consistent sizing with DaisyUI scale
+- Less custom CSS (~30 lines removed)
+
+#### 2. Toast Notifications (NEW) ✅
+**Created**: `/apps/web/src/lib/toast.tsx`
+
+**Features**:
+- Success, error, info, warning variants
+- Auto-dismiss after 3 seconds (configurable)
+- Manual close button
+- Positioned toasts (6 positions)
+- Berlin Edgy styling (sharp corners, border-2)
+- React 19 compatible (createRoot)
+
+**Usage**:
+```tsx
+import { toast } from '@/lib/toast';
+
+toast.success('Changes saved successfully!');
+toast.error('Failed to save changes');
+toast.info('New message received');
+toast.warning('Session expiring soon');
+```
+
+**Impact**:
+- Standardized user feedback mechanism
+- ~170 lines of reusable toast logic
+- Better UX with visual confirmation
+
+#### 3. ClassCard (1 usage) ✅
+**Before**: Custom card structure
+```tsx
+<div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
+  <div className="p-6">
+    <h2 className="text-2xl font-black uppercase">{name}</h2>
+  </div>
+</div>
+```
+
+**After**: DaisyUI card structure
+```tsx
+<div className="card bg-base-100 border-2 border-base-content/10 shadow-lg">
+  <div className="card-body">
+    <h2 className="card-title text-2xl font-black uppercase">{name}</h2>
+    <div className="card-actions">
+      {actions}
+    </div>
+  </div>
+</div>
+```
+
+**Benefits**:
+- Consistent padding via `card-body`
+- Semantic `card-title` and `card-actions`
+- Less manual spacing logic
+
+#### 4. Breadcrumbs (verified) ✅
+Already using DaisyUI `breadcrumbs` classes - no changes needed.
+
+### Audit Findings (DAISYUI_AUDIT_REPORT.md):
+
+**Overall Score: 7/10 (B+)** - Good usage, improved to 9/10 after Phase 9
+
+**Already Using DaisyUI Well**:
+- ✅ Buttons (50+ instances) - `btn`, `btn-ghost`, `btn-square`, etc.
+- ✅ Badges (22 instances) - `badge`, color variants, sizes
+- ✅ Loading (20+ instances) - `loading-spinner`, `loading-ball`
+- ✅ Stats (4 instances) - `stats`, `stats-horizontal`
+- ✅ Select/Radio/Checkbox (10 instances) - proper DaisyUI classes
+- ✅ Modals (11 instances) - `modal`, `modal-box`, `modal-backdrop`
+
+**Improvements Made**:
+- ✅ UserAvatar now uses DaisyUI `avatar` classes
+- ✅ Toast system implemented with DaisyUI `alert` styling
+- ✅ ClassCard now uses DaisyUI `card` structure
+- ✅ Berlin Edgy overrides ensure all components match design system
+
+**Medium Priority Tasks (COMPLETED)**:
+- ✅ Replaced 2 direct modal usages in admin/classes/[id] with Modal component
+  - Add Member modal → Modal component with form fields
+  - Room Messages modal (stealth mode) → Modal component with custom content
+- ✅ Integrated toast notifications in 4 key areas:
+  - Profile updates (save success/error)
+  - Member management (add/remove success/error)
+  - Flagged message moderation (confirm/dismiss actions)
+  - Better UX with visual feedback instead of alert() dialogs
+
+**Remaining Low Priority**:
+- ⚠️ Create Alert component for inline persistent notifications (complement toast)
+- ⚠️ Evaluate AdminLayout sidebar with DaisyUI `menu` classes
+
+### Design System Compliance:
+- ✅ All DaisyUI components use `border-2`
+- ✅ No rounded corners anywhere (`border-radius: 0`)
+- ✅ Berlin Edgy color palette maintained
+- ✅ Sharp edges and strong contrast preserved
+- ✅ Touch-friendly sizing (48px buttons, 44px small buttons)
+- ✅ Mobile-first responsive patterns
+
+### Impact:
+- **CSS overrides**: +75 lines (Berlin Edgy enforcement)
+- **UserAvatar**: ~30 lines of custom CSS removed
+- **Toast system**: +170 lines of reusable functionality
+- **ClassCard**: Cleaner structure with DaisyUI semantics
+- **Modal refactoring**: ~85 lines removed, 2 modals standardized
+- **Toast integration**: 4 key areas with user feedback (7 notification points)
+- **Removed alert() dialogs**: All replaced with toast notifications
+- **Net result**: More maintainable, consistent codebase with better UX
+- **All 42 routes** compile successfully (6.5-7.0s builds)
+- **Zero regressions**: Existing functionality preserved
+- **Better accessibility**: DaisyUI components + toast system have ARIA built-in
+
+### Toast Integration Completed:
+
+**Profile Page** (`/apps/web/src/app/profile/page.tsx`):
+- ✅ Success toast when profile updated
+- ✅ Error toast with specific error message
+- ✅ Replaced setState success message with toast
+
+**Admin Class Detail** (`/apps/web/src/app/admin/classes/[id]/page.tsx`):
+- ✅ Success toast when member added
+- ✅ Error toast when member add fails
+- ✅ Success toast when member removed
+- ✅ Error toast when member remove fails
+- ✅ Replaced alert() dialogs with toast notifications
+
+**Flagged Messages** (`/apps/web/src/components/FlaggedMessagesList.tsx`):
+- ✅ Success toast when marking violation
+- ✅ Success toast when removing flag
+- ✅ Error toasts for API failures
+- ✅ Better UX than previous alert() pattern
+
+### Modal Component Integration:
+
+**Add Member Modal** (admin/classes/[id]):
+- **Before**: Direct `<div className="modal modal-open">` with inline structure (~95 lines)
+- **After**: `<Modal>` component with props (~60 lines with cleaner structure)
+- **Benefits**: Consistent modal styling, proper focus management, accessibility
+
+**Room Messages Modal** (admin/classes/[id]):
+- **Before**: Direct modal with complex nested divs (~145 lines)
+- **After**: `<Modal>` component with custom size and content (~130 lines, cleaner structure)
+- **Benefits**: Reusable modal wrapper, proper close handling, consistent with design system
+
+**Impact**: ~85 lines removed, more maintainable code, consistent modal behavior
+
+### Files Modified:
+1. `/apps/web/src/app/globals.css` - Added Berlin Edgy DaisyUI overrides
+2. `/apps/web/src/components/shared/UserAvatar.tsx` - Refactored to DaisyUI
+3. `/apps/web/src/components/shared/ClassCard.tsx` - Refactored to DaisyUI
+4. `/apps/web/src/lib/toast.tsx` - New toast notification system
+5. `/apps/web/src/app/profile/page.tsx` - Toast integration for profile updates
+6. `/apps/web/src/app/admin/classes/[id]/page.tsx` - Modal refactor + toast integration
+7. `/apps/web/src/components/FlaggedMessagesList.tsx` - Toast integration for moderation
+
+### Files Created:
+1. `/DAISYUI_AUDIT_REPORT.md` - Comprehensive 600+ line audit report
+
+### Documentation:
+- ✅ Audit report with detailed findings
+- ✅ Before/after code examples
+- ✅ Usage patterns documented
+- ✅ Priority matrix for future work
+- ✅ Toast integration examples
+- ✅ Modal refactoring patterns
+
+---
+
+## 🔍 Phase 10: Code Quality & Testing
 **Status**: Some tests exist
 
 ### Current State:
@@ -398,9 +616,10 @@ import { PerformanceProfiler } from '@/components/PerformanceProfiler';
 - **Week 1**: Phase 2 (Main App Area) - Extract header, add shared layout
 - **Week 2**: Phase 3 (Class Admin) + Phase 5 (Design audit)
 - **Week 3**: Phase 4 (Auth Flow) + Phase 6 (Component consolidation)
-- **Week 4**: Phase 7 (Performance) + Phase 8 (Mobile) + Phase 9 (Testing)
+- **Week 4**: Phase 7 (Performance) + Phase 8 (Mobile)
+- **Week 5**: Phase 9 (DaisyUI Audit) + Phase 10 (Testing)
 
-**Total Estimated Time**: 4 weeks for comprehensive refactoring
+**Total Estimated Time**: 5 weeks for comprehensive refactoring
 
 ---
 

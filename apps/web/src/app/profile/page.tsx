@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { Check } from 'lucide-react';
 import { LoadingSpinner, ErrorState, FormInput } from '@/components/shared';
 import AppLayout from '@/components/AppLayout';
+import { toast } from '@/lib/toast';
 
 interface ProfileData {
   user_id: string;
@@ -101,14 +102,13 @@ export default function ProfilePage() {
         throw updateError;
       }
 
-      setSuccessMessage('Profil opdateret!');
+      toast.success('Profil opdateret!');
       setProfile({ ...profile, display_name: displayName.trim() || profile.display_name, avatar_color: avatarColor });
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
       console.error('Error updating profile:', err);
-      setError(err instanceof Error ? err.message : 'Kunne ikke opdatere profil');
+      const errorMessage = err instanceof Error ? err.message : 'Kunne ikke opdatere profil';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }

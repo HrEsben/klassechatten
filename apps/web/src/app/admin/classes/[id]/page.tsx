@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Hash, Eye, MessageSquare, X } from 'lucide-react';
 import { UserCard, Modal } from '@/components/shared';
+import { toast } from '@/lib/toast';
 
 export default function ClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -55,8 +56,10 @@ function ClassDetailContent({ classId }: { classId: string }) {
     setRemoving(false);
     setRemoveConfirm(null);
 
-    if (!result.success) {
-      alert(`Fejl ved fjernelse af medlem: ${result.error}`);
+    if (result.success) {
+      toast.success('Medlem fjernet fra klassen');
+    } else {
+      toast.error(`Fejl ved fjernelse: ${result.error}`);
     }
   };
 
@@ -81,8 +84,10 @@ function ClassDetailContent({ classId }: { classId: string }) {
       setNewMemberName('');
       setNewMemberRole('child');
       setAddError(null);
+      toast.success('Medlem tilføjet til klassen');
     } else {
       setAddError(result.error || 'Kunne ikke tilføje medlem');
+      toast.error(result.error || 'Kunne ikke tilføje medlem');
     }
   };
 
@@ -481,108 +486,121 @@ function ClassDetailContent({ classId }: { classId: string }) {
       </div>
 
       {/* Add Member Modal */}
-      {showAddModal && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-2xl bg-base-100 border-2 border-base-content/10">
-            <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-6">
-              Tilføj Medlem
-            </h3>
-            
-            <div className="space-y-4">
-              {/* Email Field */}
-              <div>
-                <label className="text-xs font-bold uppercase tracking-widest text-base-content/50 mb-2 block">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={newMemberEmail}
-                  onChange={(e) => setNewMemberEmail(e.target.value)}
-                  placeholder="bruger@eksempel.dk"
-                  className="input input-md w-full border-2 border-primary/30 bg-base-200 focus:border-primary focus:bg-base-100"
-                />
-              </div>
-
-              {/* Name Field */}
-              <div>
-                <label className="text-xs font-bold uppercase tracking-widest text-base-content/50 mb-2 block">
-                  Navn
-                </label>
-                <input
-                  type="text"
-                  value={newMemberName}
-                  onChange={(e) => setNewMemberName(e.target.value)}
-                  placeholder="Fulde navn"
-                  className="input input-md w-full border-2 border-secondary/30 bg-base-200 focus:border-secondary focus:bg-base-100"
-                />
-              </div>
-
-              {/* Role Selector */}
-              <div>
-                <label className="text-xs font-bold uppercase tracking-widest text-base-content/50 mb-2 block">
-                  Rolle i Klasse
-                </label>
-                <select
-                  value={newMemberRole}
-                  onChange={(e) => setNewMemberRole(e.target.value as 'child' | 'guardian' | 'adult')}
-                  className="select select-md w-full border-2 border-accent/50 font-bold focus:border-accent"
-                >
-                  <option value="child">Elev</option>
-                  <option value="guardian">Forælder</option>
-                  <option value="adult">Lærer</option>
-                </select>
-              </div>
-
-              {addError && (
-                <div className="alert alert-error border-2 border-error/20">
-                  <svg className="w-6 h-6 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                    <path strokeLinecap="square" strokeLinejoin="miter" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <span className="text-sm">{addError}</span>
-                </div>
+      <Modal
+        id="add-member-modal"
+        open={showAddModal}
+        onClose={() => {
+          setShowAddModal(false);
+          setNewMemberEmail('');
+          setNewMemberName('');
+          setNewMemberRole('child');
+          setAddError(null);
+        }}
+        title="Tilføj Medlem"
+        size="md"
+        actions={
+          <>
+            <button
+              onClick={() => {
+                setShowAddModal(false);
+                setNewMemberEmail('');
+                setNewMemberName('');
+                setNewMemberRole('child');
+                setAddError(null);
+              }}
+              className="btn btn-ghost"
+              disabled={adding}
+            >
+              Annuller
+            </button>
+            <button
+              onClick={handleAddMember}
+              className="btn bg-base-content text-base-100 hover:bg-primary hover:text-primary-content"
+              disabled={adding}
+            >
+              {adding ? (
+                <>
+                  <span className="loading loading-ball loading-xs"></span>
+                  Tilføjer...
+                </>
+              ) : (
+                'Tilføj'
               )}
-            </div>
-
-            <div className="modal-action">
-              <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  setNewMemberEmail('');
-                  setNewMemberName('');
-                  setNewMemberRole('child');
-                  setAddError(null);
-                }}
-                className="btn btn-ghost"
-                disabled={adding}
-              >
-                Annuller
-              </button>
-              <button
-                onClick={handleAddMember}
-                className="btn bg-base-content text-base-100 hover:bg-primary hover:text-primary-content"
-                disabled={adding}
-              >
-                {adding ? (
-                  <>
-                    <span className="loading loading-ball loading-xs"></span>
-                    Tilføjer...
-                  </>
-                ) : (
-                  'Tilføj'
-                )}
-              </button>
-            </div>
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {/* Email Field */}
+          <div>
+            <label className="text-xs font-bold uppercase tracking-widest text-base-content/50 mb-2 block">
+              Email
+            </label>
+            <input
+              type="email"
+              value={newMemberEmail}
+              onChange={(e) => setNewMemberEmail(e.target.value)}
+              placeholder="bruger@eksempel.dk"
+              className="input input-md w-full border-2 border-primary/30 bg-base-200 focus:border-primary focus:bg-base-100"
+            />
           </div>
-          <div className="modal-backdrop bg-base-content/50" onClick={() => setShowAddModal(false)}></div>
+
+          {/* Name Field */}
+          <div>
+            <label className="text-xs font-bold uppercase tracking-widest text-base-content/50 mb-2 block">
+              Navn
+            </label>
+            <input
+              type="text"
+              value={newMemberName}
+              onChange={(e) => setNewMemberName(e.target.value)}
+              placeholder="Fulde navn"
+              className="input input-md w-full border-2 border-secondary/30 bg-base-200 focus:border-secondary focus:bg-base-100"
+            />
+          </div>
+
+          {/* Role Selector */}
+          <div>
+            <label className="text-xs font-bold uppercase tracking-widest text-base-content/50 mb-2 block">
+              Rolle i Klasse
+            </label>
+            <select
+              value={newMemberRole}
+              onChange={(e) => setNewMemberRole(e.target.value as 'child' | 'guardian' | 'adult')}
+              className="select select-md w-full border-2 border-accent/50 font-bold focus:border-accent"
+            >
+              <option value="child">Elev</option>
+              <option value="guardian">Forælder</option>
+              <option value="adult">Lærer</option>
+            </select>
+          </div>
+
+          {addError && (
+            <div className="alert alert-error border-2 border-error/20">
+              <svg className="w-6 h-6 stroke-current" strokeWidth={2} fill="none" viewBox="0 0 24 24">
+                <path strokeLinecap="square" strokeLinejoin="miter" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span className="text-sm">{addError}</span>
+            </div>
+          )}
         </div>
-      )}
+      </Modal>
 
       {/* Room Messages Modal (Stealth Mode) */}
-      {selectedRoom && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-4xl h-[80vh] max-h-[800px] bg-base-100 border-2 border-base-content/10 flex flex-col p-0">
+      <Modal
+        id="room-messages-modal"
+        open={!!selectedRoom}
+        onClose={() => {
+          setSelectedRoom(null);
+          setRoomMessages([]);
+        }}
+        size="lg"
+        className="h-[80vh] max-h-[800px]"
+      >
+        {selectedRoom && (
+          <div className="flex flex-col h-full">
             {/* Modal Header */}
-            <div className="p-6 border-b-2 border-base-content/10 flex items-center justify-between shrink-0">
+            <div className="pb-4 border-b-2 border-base-content/10 shrink-0">
               <div className="flex items-center gap-3">
                 <Hash className="w-6 h-6 stroke-current text-primary" strokeWidth={2} />
                 <div>
@@ -600,19 +618,10 @@ function ClassDetailContent({ classId }: { classId: string }) {
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  setSelectedRoom(null);
-                  setRoomMessages([]);
-                }}
-                className="btn btn-ghost btn-square btn-sm"
-              >
-                <X className="w-5 h-5" strokeWidth={2} />
-              </button>
             </div>
 
             {/* Messages Container */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto py-4 space-y-4 min-h-0">
               {loadingMessages ? (
                 <div className="flex justify-center items-center h-full">
                   <span className="loading loading-ball loading-lg text-primary"></span>
@@ -695,7 +704,7 @@ function ClassDetailContent({ classId }: { classId: string }) {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t-2 border-base-content/10 bg-base-200/50 shrink-0">
+            <div className="pt-4 border-t-2 border-base-content/10 bg-base-200/50 shrink-0">
               <div className="flex items-center justify-between">
                 <div className="text-xs text-base-content/60">
                   {roomMessages.length > 0 ? (
@@ -716,15 +725,8 @@ function ClassDetailContent({ classId }: { classId: string }) {
               </div>
             </div>
           </div>
-          <div
-            className="modal-backdrop bg-base-content/50"
-            onClick={() => {
-              setSelectedRoom(null);
-              setRoomMessages([]);
-            }}
-          ></div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* Remove Member Confirmation Modal */}
       <Modal

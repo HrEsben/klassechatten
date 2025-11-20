@@ -7,6 +7,7 @@ import { Flag, Check, X, AlertCircle, CheckCircle, AlertTriangle, MessageSquare,
 import { format, formatDistanceToNow } from 'date-fns';
 import { da } from 'date-fns/locale';
 import { EmptyState } from '@/components/shared';
+import { toast } from '@/lib/toast';
 
 interface ModerationEventWithContext {
   event_id: string;
@@ -139,15 +140,17 @@ export default function FlaggedMessagesList({ classId, isAdmin = false, showDism
         console.log(`${logPrefix} Success response:`, data);
         setFlaggedMessages(prev => prev.filter(m => m.event_id !== eventId));
         setConfirmedCount(prev => prev + 1);
+        toast.success('Besked markeret som overtrædelse');
       } else {
         const errorData = await res.json();
         console.error(`${logPrefix} Failed:`, res.status, errorData);
-        alert(`Kunne ikke markere som overtrædelse: ${errorData.error || 'Ukendt fejl'}`);
+        const errorMsg = `Kunne ikke markere som overtrædelse: ${errorData.error || 'Ukendt fejl'}`;
+        toast.error(errorMsg);
       }
     } catch (err) {
       const logPrefix = classId ? '[Class Admin - Mark as Violation]' : '[Mark as Violation]';
       console.error(`${logPrefix} Exception:`, err);
-      alert('Der opstod en fejl ved markering af overtrædelse');
+      toast.error('Der opstod en fejl ved markering af overtrædelse');
     }
   };
 
@@ -178,6 +181,7 @@ export default function FlaggedMessagesList({ classId, isAdmin = false, showDism
         console.log(`${logPrefix} Success response:`, data);
         setFlaggedMessages(prev => prev.filter(m => m.event_id !== eventId));
         setDismissedCount(prev => prev + 1);
+        toast.success('Flag fjernet fra besked');
       } else {
         const errorData = await res.json();
         console.error(`${logPrefix} Failed:`, res.status, errorData);

@@ -192,6 +192,78 @@ a {
     padding-top: 0.625rem;
     padding-bottom: 0.625rem;
   }
+
+  /* Berlin Edgy DaisyUI Overrides - Enforce sharp corners and strong borders */
+  
+  /* Cards - sharp corners, strong borders */
+  .card {
+    border-radius: 0 !important;
+    border-width: 2px;
+  }
+
+  /* Modals - sharp corners, strong borders */
+  .modal-box {
+    border-radius: 0 !important;
+    border-width: 2px;
+  }
+
+  /* Badges - sharp corners */
+  .badge {
+    border-radius: 0 !important;
+  }
+
+  /* Avatars - square, never rounded */
+  .avatar,
+  .avatar > div,
+  .avatar img,
+  .avatar-placeholder {
+    border-radius: 0 !important;
+  }
+
+  /* Avatar groups - square */
+  .avatar-group .avatar {
+    border-radius: 0 !important;
+  }
+
+  /* Menus - sharp corners */
+  .menu,
+  .menu li > *,
+  .menu :where(li > *):not(ul):not(.menu-title):not(details):active,
+  .menu :where(li > *):not(ul):not(.menu-title):not(details).active {
+    border-radius: 0 !important;
+  }
+
+  /* Tabs - sharp corners */
+  .tabs,
+  .tab,
+  .tab-active {
+    border-radius: 0 !important;
+  }
+
+  /* Dropdowns - sharp corners */
+  .dropdown-content {
+    border-radius: 0 !important;
+  }
+
+  /* Alerts - sharp corners, strong borders */
+  .alert {
+    border-radius: 0 !important;
+    border-width: 2px;
+  }
+
+  /* Toast - sharp corners */
+  .toast {
+    border-radius: 0 !important;
+  }
+
+  .toast > * {
+    border-radius: 0 !important;
+  }
+
+  /* Breadcrumbs - sharp styling */
+  .breadcrumbs {
+    border-radius: 0 !important;
+  }
   
   /* Input fields have proper padding and touch-friendly height */
   .input,
@@ -217,29 +289,6 @@ a {
   textarea.textarea {
     min-height: 120px;
     font-size: 1rem;
-  }
-
-  /* Alerts have proper padding and sharp edges */
-  .alert {
-    padding: 1rem;
-    border-radius: 0 !important;
-  }
-
-  /* Cards have sharp edges */
-  .card {
-    border-radius: 0 !important;
-  }
-
-  /* Remove rounded corners from all images and avatars globally */
-  img,
-  .avatar > div,
-  .avatar img {
-    border-radius: 0 !important;
-  }
-  
-  /* Force avatar-group avatars to be square, override DaisyUI extreme border-radius */
-  .avatar-group .avatar {
-    border-radius: 0 !important;
   }
 
   /* Chat bubble - Berlin edgy style */

@@ -92,17 +92,17 @@ export function ClassCard({
 
   const isClickable = !!onClick;
 
-  const containerClass = `bg-base-100 border-2 border-base-content/10 shadow-lg ${
+  const containerClass = `card bg-base-100 border-2 border-base-content/10 shadow-lg ${
     isClickable ? 'hover:border-primary/50 cursor-pointer transition-all duration-200' : ''
   } ${className}`;
 
   const content = (
     <>
       {/* Header */}
-      <div className="p-6 space-y-2">
+      <div className="card-body space-y-2">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h2 className="text-2xl font-black uppercase tracking-tight text-base-content">
+            <h2 className="card-title text-2xl font-black uppercase tracking-tight text-base-content">
               {classData.nickname || classData.label}
             </h2>
             {classData.school_name && classData.grade_level && (
@@ -112,7 +112,7 @@ export function ClassCard({
             )}
           </div>
           {actions && (
-            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+            <div className="card-actions flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
               {actions}
             </div>
           )}
@@ -144,7 +144,7 @@ export function ClassCard({
 
       {/* Stats Grid */}
       {showStats && stats && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 p-6 border-t-2 border-base-content/10">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 px-6 pb-6 border-t-2 border-base-content/10">
           {stats.memberCount !== undefined && (
             <div className="space-y-1">
               <div className="flex items-center gap-2">

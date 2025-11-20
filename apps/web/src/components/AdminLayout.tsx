@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -20,11 +22,15 @@ export default function AdminLayout({
 }) {
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const { profile, roleLabel, isClassAdmin } = useUserProfile(classId);
   const { classes } = useUserClasses();
   
   const isGlobalAdmin = profile?.role === 'admin';
   const adminClasses = classes.filter(c => c.is_class_admin);
+  
+  // Helper function to determine if a link is active
+  const isActive = (path: string) => pathname === path;
 
   const handleSignOut = async () => {
     await signOut();
@@ -89,41 +95,61 @@ export default function AdminLayout({
               <p className="text-xs font-bold uppercase tracking-widest text-base-content/50 px-4 mb-4">
                 System Administration
               </p>
-              <a
+              <Link
                 href="/admin"
-                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all border-l-2 ${
+                  isActive('/admin')
+                    ? 'bg-primary/20 border-primary text-primary font-bold'
+                    : 'text-base-content border-transparent hover:bg-primary/10 hover:border-primary'
+                }`}
               >
                 <Home className="w-5 h-5 stroke-current" strokeWidth={2} />
                 Dashboard
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/admin/classes"
-                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all border-l-2 ${
+                  isActive('/admin/classes')
+                    ? 'bg-primary/20 border-primary text-primary font-bold'
+                    : 'text-base-content border-transparent hover:bg-primary/10 hover:border-primary'
+                }`}
               >
                 <LayoutList className="w-5 h-5 stroke-current" strokeWidth={2} />
                 Klasser
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/admin/users"
-                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all border-l-2 ${
+                  isActive('/admin/users')
+                    ? 'bg-primary/20 border-primary text-primary font-bold'
+                    : 'text-base-content border-transparent hover:bg-primary/10 hover:border-primary'
+                }`}
               >
                 <Users className="w-5 h-5 stroke-current" strokeWidth={2} />
                 Brugere
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/admin/flagged-messages"
-                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all border-l-2 ${
+                  isActive('/admin/flagged-messages')
+                    ? 'bg-primary/20 border-primary text-primary font-bold'
+                    : 'text-base-content border-transparent hover:bg-primary/10 hover:border-primary'
+                }`}
               >
                 <TriangleAlert className="w-5 h-5 stroke-current" strokeWidth={2} />
                 Moderation
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/admin/performance"
-                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all border-l-2 ${
+                  isActive('/admin/performance')
+                    ? 'bg-primary/20 border-primary text-primary font-bold'
+                    : 'text-base-content border-transparent hover:bg-primary/10 hover:border-primary'
+                }`}
               >
                 <Activity className="w-5 h-5 stroke-current" strokeWidth={2} />
                 Performance
-              </a>
+              </Link>
             </div>
           )}
 
@@ -138,27 +164,39 @@ export default function AdminLayout({
                   <div className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-base-content/70">
                     {cls.nickname || cls.label}
                   </div>
-                  <a
+                  <Link
                     href={`/?class=${cls.id}`}
-                    className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+                    className={`flex items-center gap-3 px-4 py-2 text-sm font-medium transition-all border-l-2 ${
+                      pathname === '/' && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('class') === cls.id
+                        ? 'bg-primary/20 border-primary text-primary font-bold'
+                        : 'text-base-content border-transparent hover:bg-primary/10 hover:border-primary'
+                    }`}
                   >
                     <CirclePlus className="w-5 h-5 stroke-current" strokeWidth={2} />
                     Kanaler
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href={`/admin/flagged-messages?class_id=${cls.id}`}
-                    className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+                    className={`flex items-center gap-3 px-4 py-2 text-sm font-medium transition-all border-l-2 ${
+                      pathname === '/admin/flagged-messages' && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('class_id') === cls.id
+                        ? 'bg-primary/20 border-primary text-primary font-bold'
+                        : 'text-base-content border-transparent hover:bg-primary/10 hover:border-primary'
+                    }`}
                   >
                     <TriangleAlert className="w-5 h-5 stroke-current" strokeWidth={2} />
                     Flaggede Beskeder
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href={`/class/${cls.id}/settings`}
-                    className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+                    className={`flex items-center gap-3 px-4 py-2 text-sm font-medium transition-all border-l-2 ${
+                      isActive(`/class/${cls.id}/settings`)
+                        ? 'bg-primary/20 border-primary text-primary font-bold'
+                        : 'text-base-content border-transparent hover:bg-primary/10 hover:border-primary'
+                    }`}
                   >
                     <Settings className="w-5 h-5 stroke-current" strokeWidth={2} />
                     Indstillinger
-                  </a>
+                  </Link>
                 </div>
               ))}
             </div>
@@ -170,13 +208,17 @@ export default function AdminLayout({
               <p className="text-xs font-bold uppercase tracking-widest text-base-content/50 px-4 mb-4">
                 Hurtige Genveje
               </p>
-              <a
+              <Link
                 href="/"
-                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
+                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all border-l-2 ${
+                  isActive('/')
+                    ? 'bg-primary/20 border-primary text-primary font-bold'
+                    : 'text-base-content border-transparent hover:bg-primary/10 hover:border-primary'
+                }`}
               >
                 <MessageSquare className="w-5 h-5 stroke-current" strokeWidth={2} />
                 Mine Beskeder
-              </a>
+              </Link>
             </div>
           )}
         </nav>
@@ -195,29 +237,29 @@ export default function AdminLayout({
           {isGlobalAdmin ? (
             <>
               <li className="menu-title"><span>System Administration</span></li>
-              <li><a href="/admin">Dashboard</a></li>
-              <li><a href="/admin/classes">Klasser</a></li>
-              <li><a href="/admin/users">Brugere</a></li>
-              <li><a href="/admin/flagged-messages">Moderation</a></li>
-              <li><a href="/admin/performance">Performance</a></li>
+              <li><Link href="/admin" className={isActive('/admin') ? 'active' : ''}>Dashboard</Link></li>
+              <li><Link href="/admin/classes" className={isActive('/admin/classes') ? 'active' : ''}>Klasser</Link></li>
+              <li><Link href="/admin/users" className={isActive('/admin/users') ? 'active' : ''}>Brugere</Link></li>
+              <li><Link href="/admin/flagged-messages" className={isActive('/admin/flagged-messages') ? 'active' : ''}>Moderation</Link></li>
+              <li><Link href="/admin/performance" className={isActive('/admin/performance') ? 'active' : ''}>Performance</Link></li>
               <li className="menu-title"><span>Hurtige Genveje</span></li>
-              <li><a href="/">Mine Beskeder</a></li>
+              <li><Link href="/" className={isActive('/') ? 'active' : ''}>Mine Beskeder</Link></li>
             </>
           ) : adminClasses.length > 0 ? (
             <>
               {adminClasses.map((cls) => (
                 <React.Fragment key={cls.id}>
                   <li className="menu-title"><span>{cls.nickname || cls.label}</span></li>
-                  <li><a href={`/?class=${cls.id}`}>Kanaler</a></li>
-                  <li><a href={`/admin/flagged-messages?class_id=${cls.id}`}>Flaggede Beskeder</a></li>
-                  <li><a href={`/class/${cls.id}/settings`}>Indstillinger</a></li>
+                  <li><Link href={`/?class=${cls.id}`}>Kanaler</Link></li>
+                  <li><Link href={`/admin/flagged-messages?class_id=${cls.id}`}>Flaggede Beskeder</Link></li>
+                  <li><Link href={`/class/${cls.id}/settings`}>Indstillinger</Link></li>
                 </React.Fragment>
               ))}
               <li className="menu-title"><span>Hurtige Genveje</span></li>
-              <li><a href="/">Mine Beskeder</a></li>
+              <li><Link href="/">Mine Beskeder</Link></li>
             </>
           ) : (
-            <li><a href="/">Mine Beskeder</a></li>
+            <li><Link href="/">Mine Beskeder</Link></li>
           )}
         </ul>
       </div>

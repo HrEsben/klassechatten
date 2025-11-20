@@ -9,7 +9,7 @@ import { da } from 'date-fns/locale';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Hash, Eye, MessageSquare, X } from 'lucide-react';
-import { UserCard } from '@/components/shared';
+import { UserCard, Modal } from '@/components/shared';
 
 export default function ClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -47,14 +47,11 @@ function ClassDetailContent({ classId }: { classId: string }) {
     }
   };
 
-  const handleRemove = async (userId: string, userName: string) => {
-    if (removeConfirm !== userId) {
-      setRemoveConfirm(userId);
-      return;
-    }
+  const confirmRemove = async () => {
+    if (!removeConfirm) return;
 
     setRemoving(true);
-    const result = await removeMember(userId);
+    const result = await removeMember(removeConfirm);
     setRemoving(false);
     setRemoveConfirm(null);
 
@@ -405,28 +402,13 @@ function ClassDetailContent({ classId }: { classId: string }) {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleRemove(member.user_id, member.display_name);
+                              setRemoveConfirm(member.user_id);
                             }}
                             disabled={removing}
-                            className={`btn btn-xs ${
-                              removeConfirm === member.user_id
-                                ? 'btn-error'
-                                : 'btn-ghost'
-                            }`}
+                            className="btn btn-xs btn-ghost"
                           >
-                            {removeConfirm === member.user_id ? 'Bekræft?' : 'Fjern'}
+                            Fjern
                           </button>
-                          {removeConfirm === member.user_id && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setRemoveConfirm(null);
-                              }}
-                              className="btn btn-xs btn-ghost"
-                            >
-                              Annuller
-                            </button>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -448,33 +430,16 @@ function ClassDetailContent({ classId }: { classId: string }) {
                               roleLabel={getRoleLabel(guardian.role_in_class)}
                               roleBadgeColor={getRoleBadgeColor(guardian.role_in_class)}
                               actions={(
-                                <>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleRemove(guardian.user_id, guardian.display_name);
-                                    }}
-                                    disabled={removing}
-                                    className={`btn btn-xs ${
-                                      removeConfirm === guardian.user_id
-                                        ? 'btn-error'
-                                        : 'btn-ghost'
-                                    }`}
-                                  >
-                                    {removeConfirm === guardian.user_id ? 'Bekræft?' : 'Fjern'}
-                                  </button>
-                                  {removeConfirm === guardian.user_id && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setRemoveConfirm(null);
-                                      }}
-                                      className="btn btn-xs btn-ghost"
-                                    >
-                                      Annuller
-                                    </button>
-                                  )}
-                                </>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setRemoveConfirm(guardian.user_id);
+                                  }}
+                                  disabled={removing}
+                                  className="btn btn-xs btn-ghost"
+                                >
+                                  Fjern
+                                </button>
                               )}
                             />
                           </div>
@@ -499,27 +464,13 @@ function ClassDetailContent({ classId }: { classId: string }) {
                     roleLabel={getRoleLabel(member.role_in_class)}
                     roleBadgeColor={getRoleBadgeColor(member.role_in_class)}
                     actions={(
-                      <>
-                        <button
-                          onClick={() => handleRemove(member.user_id, member.display_name)}
-                          disabled={removing}
-                          className={`btn btn-xs ${
-                            removeConfirm === member.user_id
-                              ? 'btn-error'
-                              : 'btn-ghost'
-                          }`}
-                        >
-                          {removeConfirm === member.user_id ? 'Bekræft?' : 'Fjern'}
-                        </button>
-                        {removeConfirm === member.user_id && (
-                          <button
-                            onClick={() => setRemoveConfirm(null)}
-                            className="btn btn-xs btn-ghost"
-                          >
-                            Annuller
-                          </button>
-                        )}
-                      </>
+                      <button
+                        onClick={() => setRemoveConfirm(member.user_id)}
+                        disabled={removing}
+                        className="btn btn-xs btn-ghost"
+                      >
+                        Fjern
+                      </button>
                     )}
                   />
                 </div>
@@ -774,6 +725,47 @@ function ClassDetailContent({ classId }: { classId: string }) {
           ></div>
         </div>
       )}
+
+      {/* Remove Member Confirmation Modal */}
+      <Modal
+        id="remove-member-modal"
+        open={!!removeConfirm}
+        onClose={() => setRemoveConfirm(null)}
+        title="Fjern Medlem"
+        size="md"
+        actions={
+          <>
+            <button
+              onClick={() => setRemoveConfirm(null)}
+              className="btn btn-ghost"
+              disabled={removing}
+            >
+              Annuller
+            </button>
+            <button
+              onClick={confirmRemove}
+              className="btn btn-error"
+              disabled={removing}
+            >
+              {removing ? (
+                <>
+                  <span className="loading loading-ball loading-xs"></span>
+                  Fjerner...
+                </>
+              ) : (
+                'Fjern'
+              )}
+            </button>
+          </>
+        }
+      >
+        <p className="text-base-content/80">
+          Er du sikker på, at du vil fjerne dette medlem fra klassen?
+        </p>
+        <p className="text-base-content/60 text-sm mt-2">
+          Medlemmet vil miste adgang til klassens chatrum og data.
+        </p>
+      </Modal>
       </div>
   );
 }

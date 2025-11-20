@@ -96,10 +96,15 @@ export default function ClassFlaggedMessagesPage({
   // Action handlers
   const handleMarkAsViolation = async (eventId: string) => {
     try {
+      console.log('[Class Admin - Mark as Violation] Starting for event:', eventId);
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
-      if (!session) return;
+      if (!session) {
+        console.error('[Class Admin - Mark as Violation] No session found');
+        return;
+      }
 
+      console.log('[Class Admin - Mark as Violation] Sending PATCH request...');
       const res = await fetch(`/api/moderation/flagged-messages/${eventId}`, {
         method: 'PATCH',
         headers: {
@@ -109,25 +114,34 @@ export default function ClassFlaggedMessagesPage({
         body: JSON.stringify({ status: 'confirmed' }),
       });
 
+      console.log('[Class Admin - Mark as Violation] Response status:', res.status);
       if (res.ok) {
-        // Remove from list on success
+        const data = await res.json();
+        console.log('[Class Admin - Mark as Violation] Success response:', data);
         setMessages(prev => prev.filter(m => m.event_id !== eventId));
         setConfirmedCount(prev => prev + 1);
       } else {
         const errorData = await res.json();
-        console.error('Failed to mark as violation:', res.status, errorData);
+        console.error('[Class Admin - Mark as Violation] Failed:', res.status, errorData);
+        alert(`Kunne ikke markere som overtrædelse: ${errorData.error || 'Ukendt fejl'}`);
       }
     } catch (err) {
-      console.error('Error marking as violation:', err);
+      console.error('[Class Admin - Mark as Violation] Exception:', err);
+      alert('Der opstod en fejl ved markering af overtrædelse');
     }
   };
 
   const handleRemoveFlag = async (eventId: string) => {
     try {
+      console.log('[Class Admin - Remove Flag] Starting for event:', eventId);
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
-      if (!session) return;
+      if (!session) {
+        console.error('[Class Admin - Remove Flag] No session found');
+        return;
+      }
 
+      console.log('[Class Admin - Remove Flag] Sending PATCH request...');
       const res = await fetch(`/api/moderation/flagged-messages/${eventId}`, {
         method: 'PATCH',
         headers: {
@@ -137,15 +151,19 @@ export default function ClassFlaggedMessagesPage({
         body: JSON.stringify({ status: 'dismissed' }),
       });
 
+      console.log('[Class Admin - Remove Flag] Response status:', res.status);
       if (res.ok) {
-        // Remove from list on success
+        const data = await res.json();
+        console.log('[Class Admin - Remove Flag] Success response:', data);
         setMessages(prev => prev.filter(m => m.event_id !== eventId));
       } else {
         const errorData = await res.json();
-        console.error('Failed to remove flag:', res.status, errorData);
+        console.error('[Class Admin - Remove Flag] Failed:', res.status, errorData);
+        alert(`Kunne ikke fjerne flag: ${errorData.error || 'Ukendt fejl'}`);
       }
     } catch (err) {
-      console.error('Error removing flag:', err);
+      console.error('[Class Admin - Remove Flag] Exception:', err);
+      alert('Der opstod en fejl ved fjernelse af flag');
     }
   };
 

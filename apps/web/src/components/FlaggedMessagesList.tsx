@@ -720,12 +720,171 @@ export default function FlaggedMessagesList({ classId, isAdmin = false, showDism
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-4">
                 <p className="text-sm text-base-content/60">
                   {flaggedMessages.length} {flaggedMessages.length === 1 ? 'besked' : 'beskeder'} kræver gennemsyn
                 </p>
               </div>
-              {/* Messages will be rendered here - continuing in next part */}
+              
+              {flaggedMessages.map((item) => {
+                const severityColor = item.severity === 'high_severity' ? 'error' : 'warning';
+                return (
+                  <div
+                    key={item.event_id}
+                    className="bg-base-100 border-2 border-base-content/10 hover:border-primary/30 transition-all duration-200 overflow-hidden"
+                  >
+                    <div className="p-4 border-b-2 border-base-content/10">
+                      <div className="flex items-center gap-3">
+                        <div className="avatar">
+                          <div className="w-8 h-8 rounded-full">
+                            {item.message?.author?.avatar_url ? (
+                              <img
+                                src={item.message.author.avatar_url}
+                                alt={item.message.author.display_name}
+                              />
+                            ) : (
+                              <div
+                                className="w-full h-full flex items-center justify-center font-bold text-xs text-white"
+                                style={{
+                                  backgroundColor: item.message?.author?.avatar_color || '#10B981',
+                                }}
+                              >
+                                {item.message?.author?.display_name?.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+                          <span className="text-sm font-bold text-base-content">
+                            {item.message?.author?.display_name || 'Ukendt bruger'}
+                          </span>
+                          <span className="text-xs text-base-content/40">
+                            {formatDistanceToNow(new Date(item.message?.created_at || ''), {
+                              addSuffix: true,
+                              locale: da,
+                            })}
+                          </span>
+                          {item.room?.name && (
+                            <span className="badge badge-sm badge-ghost font-mono text-xs">
+                              #{item.room.name}
+                            </span>
+                          )}
+                          <span className={`badge badge-${severityColor} badge-xs font-bold uppercase ml-auto`}>
+                            {item.severity === 'high_severity' ? 'Høj' : 'Moderat'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4">
+                      <p className="text-sm text-base-content whitespace-pre-wrap break-words">
+                        {item.message?.body || '(Ingen besked)'}
+                      </p>
+                    </div>
+
+                    <div className="px-4 pb-4">
+                      <div className={`bg-base-200 p-3 border-l-2 ${
+                        severityColor === 'error' ? 'border-error' : 'border-warning'
+                      }`}>
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle className={`w-4 h-4 ${
+                            severityColor === 'error' ? 'text-error' : 'text-warning'
+                          } shrink-0 mt-0.5`} strokeWidth={2} />
+                          <div className="flex-1">
+                            <p className="text-xs font-medium text-base-content mb-1">
+                              {getSeverityDescription(item.severity, item.labels)}
+                            </p>
+                            {item.labels.length > 0 && (
+                              <div className="flex gap-1 flex-wrap">
+                                {item.labels.map((label, idx) => (
+                                  <span key={idx} className={`badge badge-xs badge-${severityColor}`}>
+                                    {getLabelTranslation(label)}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {item.reviewed_by && item.reviewed_at ? (
+                      <div className="px-4 py-3 bg-base-200 border-t-2 border-base-content/10">
+                        <div className="flex items-center gap-2">
+                          {item.status === 'confirmed' ? (
+                            <Check className="w-4 h-4 text-success" strokeWidth={2} />
+                          ) : (
+                            <X className="w-4 h-4 text-info" strokeWidth={2} />
+                          )}
+                          <span className="text-xs text-base-content/60">
+                            Noteret af {item.reviewed_by === user?.id ? 'dig' : 'anden moderator'} •{' '}
+                            {formatDistanceToNow(new Date(item.reviewed_at), {
+                              addSuffix: true,
+                              locale: da,
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="px-4 py-3 bg-base-100 border-t-2 border-base-content/10 flex gap-2">
+                        <button
+                          onClick={() => handleMarkAsViolation(item.event_id)}
+                          className="btn btn-sm btn-error flex-1"
+                        >
+                          <Check size={16} strokeWidth={2} />
+                          Noteret
+                        </button>
+                        <button
+                          onClick={() => handleRemoveFlag(item.event_id)}
+                          className="btn btn-sm btn-ghost flex-1"
+                        >
+                          <X size={16} strokeWidth={2} />
+                          Fjern flag
+                        </button>
+                        <button
+                          onClick={() => handleShowContext(item.message_id, item.room_id!)}
+                          className="btn btn-sm btn-ghost"
+                        >
+                          <MessageSquare size={16} strokeWidth={2} />
+                          Se kontekst
+                        </button>
+                      </div>
+                    )}
+
+                    {expandedContext === item.message_id.toString() && (
+                      <div className="px-4 pb-4">
+                        {loadingContext ? (
+                          <div className="flex justify-center py-4">
+                            <span className="loading loading-ball loading-sm text-primary"></span>
+                          </div>
+                        ) : (
+                          <div className="bg-base-200 p-4 space-y-2 max-h-96 overflow-y-auto">
+                            {contextMessages.map((msg: any) => (
+                              <div
+                                key={msg.id}
+                                className={`p-3 ${
+                                  msg.id === item.message_id ? 'bg-warning/20 border-l-2 border-warning' : 'bg-base-100'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-xs font-bold">
+                                    {msg.profiles?.display_name || 'Ukendt'}
+                                  </span>
+                                  <span className="text-xs text-base-content/40">
+                                    {format(new Date(msg.created_at), 'HH:mm', { locale: da })}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-base-content">{msg.body}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </>
@@ -775,7 +934,112 @@ export default function FlaggedMessagesList({ classId, isAdmin = false, showDism
                   </div>
                 )}
               </div>
-              {/* Messages will be rendered here */}
+
+              {/* Archive message cards */}
+              <div className="space-y-4">
+                {paginatedMessages.map((item) => {
+                  const msgClass = allClasses.find(c => c.id === item.class_id);
+                  const severityColor = item.severity === 'high_severity' ? 'error' : 'warning';
+                  
+                  return (
+                    <div
+                      key={item.event_id}
+                      className="bg-base-100 border-2 border-base-content/10 shadow-lg"
+                    >
+                      <div className="p-4 border-b-2 border-base-content/10">
+                        <div className="flex items-center gap-3">
+                          <div className="avatar">
+                            <div className="w-8 h-8 rounded-full">
+                              {item.message?.author?.avatar_url ? (
+                                <img
+                                  src={item.message.author.avatar_url}
+                                  alt={item.message.author.display_name}
+                                />
+                              ) : (
+                                <div
+                                  className="w-full h-full flex items-center justify-center font-bold text-xs text-white"
+                                  style={{
+                                    backgroundColor: item.message?.author?.avatar_color || '#10B981',
+                                  }}
+                                >
+                                  {item.message?.author?.display_name?.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+                            <span className="text-sm font-bold text-base-content">
+                              {item.message?.author?.display_name || 'Ukendt bruger'}
+                            </span>
+                            <span className="text-xs text-base-content/40">
+                              {format(new Date(item.message.created_at), 'dd/MM/yyyy HH:mm', { locale: da })}
+                            </span>
+                            {msgClass && (
+                              <span className="badge badge-sm badge-ghost font-mono text-xs">
+                                {msgClass.nickname || msgClass.label}
+                              </span>
+                            )}
+                            {item.room?.name && (
+                              <span className="badge badge-sm badge-ghost font-mono text-xs">
+                                #{item.room.name}
+                              </span>
+                            )}
+                            <span className={`badge badge-${severityColor} badge-xs font-bold uppercase ml-auto`}>
+                              {item.severity === 'high_severity' ? 'Høj' : 'Moderat'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-4">
+                        <p className="text-sm text-base-content whitespace-pre-wrap wrap-break-word">
+                          {item.message?.body || '(Ingen besked)'}
+                        </p>
+                      </div>
+
+                      <div className="px-4 pb-4">
+                        <div className={`bg-base-200 p-3 border-l-2 ${
+                          severityColor === 'error' ? 'border-error' : 'border-warning'
+                        }`}>
+                          <div className="flex items-start gap-2">
+                            <AlertTriangle className={`w-4 h-4 ${
+                              severityColor === 'error' ? 'text-error' : 'text-warning'
+                            } shrink-0 mt-0.5`} strokeWidth={2} />
+                            <div className="flex-1">
+                              <p className="text-xs font-medium text-base-content mb-1">
+                                {getSeverityDescription(item.severity, item.labels)}
+                              </p>
+                              {item.labels.length > 0 && (
+                                <div className="flex gap-1 flex-wrap">
+                                  {item.labels.map((label, idx) => (
+                                    <span key={idx} className={`badge badge-xs badge-${severityColor}`}>
+                                      {getLabelTranslation(label)}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="px-4 py-3 bg-base-200 border-t-2 border-base-content/10">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-success" strokeWidth={2} />
+                          <span className="text-xs text-base-content/60">
+                            Bekræftet overtrædelse •{' '}
+                            {formatDistanceToNow(new Date(item.reviewed_at!), {
+                              addSuffix: true,
+                              locale: da,
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </>

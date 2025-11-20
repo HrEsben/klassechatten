@@ -158,18 +158,21 @@ Created 4 additional shared components to eliminate more duplication:
 **Replacements Completed:**
 - ✅ admin/page.tsx: Replaced ClassStatsCard (~120 lines) with ClassCard component (~15 lines)
 - ✅ LoginForm: Replaced 3 form inputs (~40 lines) with FormInput component
-- ✅ Removed ~140 lines of duplicate logic total
+- ✅ Onboarding: Replaced 4 form inputs (~40 lines) with FormInput component
+- ✅ Create-child: Replaced 4 form inputs (~30 lines) with FormInput component
+- ✅ Removed ~230 lines of duplicate logic total (11 replacements)
 
 **Ready for Future Replacements:**
 - [ ] User list patterns (admin/users, admin/classes/[id], UsersSidebar, UserMenu) - **8+ locations identified**
-- [ ] Form input patterns (onboarding, create-child, accept-invite, class settings) - **15+ inputs identified**
+- [ ] Form input patterns (accept-invite, class settings, profile) - **7+ inputs remaining**
 - [ ] Modal patterns (confirmation dialogs, form modals) - **5+ locations identified**
 
 **Impact:**
 - 700+ lines of new reusable component code
-- ~100 lines of duplicate logic removed (initial replacement)
-- Foundation for replacing 50+ additional inline patterns
+- ~230 lines of duplicate logic removed (11 replacements across 4 files)
+- Foundation for replacing 40+ additional inline patterns
 - Consistent Berlin Edgy design across all card/form/modal patterns
+- All 42 routes compile successfully
 
 ### Impact:
 - Consistent loading, empty, and error states throughout entire app

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { LoadingSpinner } from '@/components/shared';
+import { LoadingSpinner, FormInput } from '@/components/shared';
 
 type OnboardingStep = 'choice' | 'create' | 'join' | 'claim-child' | 'success';
 
@@ -358,31 +358,27 @@ export default function OnboardingPage() {
                 </div>
 
                 {/* School name - full width */}
-                <label className="input input-accent w-full">
-                  <span className="label text-xs font-bold uppercase tracking-widest">Skole</span>
-                  <input
-                    type="text"
-                    placeholder="F.eks. Vadgård Skole"
-                    value={schoolName}
-                    onChange={(e) => setSchoolName(e.target.value)}
-                    className="font-bold"
-                    required
-                  />
-                </label>
+                <FormInput
+                  label="Skole"
+                  type="text"
+                  placeholder="F.eks. Vadgård Skole"
+                  value={schoolName}
+                  onChange={(e) => setSchoolName(e.target.value)}
+                  required
+                  color="accent"
+                />
 
                 {/* Student count - full width */}
-                <label className="input input-info w-full">
-                  <span className="label text-xs font-bold uppercase tracking-widest">Antal Elever</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="50"
-                    value={studentCount}
-                    onChange={(e) => setStudentCount(e.target.value)}
-                    className="font-bold"
-                    required
-                  />
-                </label>
+                <FormInput
+                  label="Antal Elever"
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={studentCount}
+                  onChange={(e) => setStudentCount(e.target.value)}
+                  required
+                  color="info"
+                />
               </div>
 
               {/* Live Preview - clean, no box */}
@@ -449,21 +445,17 @@ export default function OnboardingPage() {
               <fieldset className="fieldset">
                 <legend className="fieldset-legend">Invitationskode</legend>
                 
-                <label className="input">
-                  <span className="label">Kode</span>
-                  <input
-                    type="text"
-                    placeholder="F.eks. ABC123XY"
-                    value={inviteCode}
-                    onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                    maxLength={8}
-                    required
-                    className="font-mono uppercase"
-                  />
-                </label>
-                <p className="label text-xs">
-                  Indtast den 8-cifrede kode du har modtaget fra klasselæreren
-                </p>
+                <FormInput
+                  label="Kode"
+                  type="text"
+                  placeholder="F.eks. ABC123XY"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                  maxLength={8}
+                  required
+                  className="font-mono uppercase"
+                  helperText="Indtast den 8-cifrede kode du har modtaget fra klasselæreren"
+                />
               </fieldset>
 
               <div className="flex gap-2 justify-end">
@@ -530,21 +522,17 @@ export default function OnboardingPage() {
               <fieldset className="fieldset">
                 <legend className="fieldset-legend">Forældre-Kode</legend>
                 
-                <label className="input">
-                  <span className="label">Kode</span>
-                  <input
-                    type="text"
-                    placeholder="F.eks. ABC12XYZ"
-                    value={guardianInviteCode}
-                    onChange={(e) => setGuardianInviteCode(e.target.value.toUpperCase())}
-                    maxLength={8}
-                    required
-                    className="font-mono uppercase"
-                  />
-                </label>
-                <p className="label text-xs">
-                  Indtast den 8-cifrede forældre-kode du har modtaget
-                </p>
+                <FormInput
+                  label="Kode"
+                  type="text"
+                  placeholder="F.eks. ABC12XYZ"
+                  value={guardianInviteCode}
+                  onChange={(e) => setGuardianInviteCode(e.target.value.toUpperCase())}
+                  maxLength={8}
+                  required
+                  className="font-mono uppercase"
+                  helperText="Indtast den 8-cifrede forældre-kode du har modtaget"
+                />
               </fieldset>
 
               <div className="flex gap-2 justify-end">

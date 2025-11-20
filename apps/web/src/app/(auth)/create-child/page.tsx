@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { LoadingSpinner } from '@/components/shared';
+import { LoadingSpinner, FormInput } from '@/components/shared';
 
 interface ClassInfo {
   id: string;
@@ -355,16 +355,14 @@ export default function CreateChildPage() {
 
                   {!inviteSent ? (
                     <form onSubmit={handleSendEmailInvite} className="space-y-3">
-                      <label className="input">
-                        <span className="label">Anden forældres email</span>
-                        <input
-                          type="email"
-                          placeholder="forælder@eksempel.dk"
-                          value={coParentEmail}
-                          onChange={(e) => setCoParentEmail(e.target.value)}
-                          required
-                        />
-                      </label>
+                      <FormInput
+                        label="Anden forældres email"
+                        type="email"
+                        placeholder="forælder@eksempel.dk"
+                        value={coParentEmail}
+                        onChange={(e) => setCoParentEmail(e.target.value)}
+                        required
+                      />
                       <button
                         type="submit"
                         className="btn bg-primary text-primary-content hover:bg-primary/80 w-full"
@@ -444,37 +442,31 @@ export default function CreateChildPage() {
             <fieldset className="fieldset">
               <legend className="fieldset-legend">Barn information</legend>
               
-              <label className="input">
-                <span className="label">Fulde Navn</span>
-                <input
-                  type="text"
-                  placeholder="F.eks. Emma Nielsen"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  required
-                  minLength={2}
-                />
-              </label>
+              <FormInput
+                label="Fulde Navn"
+                type="text"
+                placeholder="F.eks. Emma Nielsen"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                required
+                minLength={2}
+              />
 
-              <label className="input">
-                <span className="label">Brugernavn</span>
-                <input
-                  type="text"
-                  placeholder="F.eks. emma2015"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value.toLowerCase())}
-                  required
-                  minLength={3}
-                  maxLength={20}
-                  pattern="[a-z0-9_]+"
-                  className="font-mono"
-                  autoComplete="off"
-                  name="child-username"
-                />
-              </label>
-              <p className="label text-xs">
-                Kun små bogstaver, tal og underscore. Dette bruges til login.
-              </p>
+              <FormInput
+                label="Brugernavn"
+                type="text"
+                placeholder="F.eks. emma2015"
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                required
+                minLength={3}
+                maxLength={20}
+                pattern="[a-z0-9_]+"
+                className="font-mono"
+                autoComplete="off"
+                name="child-username"
+                helperText="Kun små bogstaver, tal og underscore. Dette bruges til login."
+              />
 
               <label className="input">
                 <span className="label">Email (valgfri)</span>

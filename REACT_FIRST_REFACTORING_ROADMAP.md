@@ -157,12 +157,13 @@ Created 4 additional shared components to eliminate more duplication:
 
 **Replacements Completed:**
 - ✅ admin/page.tsx: Replaced ClassStatsCard (~120 lines) with ClassCard component (~15 lines)
-- ✅ Removed ~100 lines of duplicate card/stats logic
+- ✅ LoginForm: Replaced 3 form inputs (~40 lines) with FormInput component
+- ✅ Removed ~140 lines of duplicate logic total
 
 **Ready for Future Replacements:**
-- [ ] User list patterns (admin/users, admin/classes/[id], UsersSidebar, UserMenu)
-- [ ] Form input patterns (LoginForm, onboarding, create-child)  
-- [ ] Modal patterns (confirmation dialogs, form modals)
+- [ ] User list patterns (admin/users, admin/classes/[id], UsersSidebar, UserMenu) - **8+ locations identified**
+- [ ] Form input patterns (onboarding, create-child, accept-invite, class settings) - **15+ inputs identified**
+- [ ] Modal patterns (confirmation dialogs, form modals) - **5+ locations identified**
 
 **Impact:**
 - 700+ lines of new reusable component code

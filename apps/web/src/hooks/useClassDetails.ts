@@ -10,6 +10,7 @@ interface ClassMember {
   profile_role: string;
   joined_at: string;
   status: string;
+  is_placeholder?: boolean;
   guardians?: ClassMember[]; // For students, list of their guardians
 }
 

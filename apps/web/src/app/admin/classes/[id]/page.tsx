@@ -171,9 +171,13 @@ function ClassDetailContent({ classId }: { classId: string }) {
   const teachers = members.filter(m => m.role_in_class === 'adult');
   const parents = members.filter(m => m.role_in_class === 'guardian');
   
-  // Get only students and standalone teachers (not guardians nested under students)
+  // Count placeholders (only among students)
+  const placeholderCount = students.filter(m => m.is_placeholder).length;
+  const activeStudents = students.filter(m => !m.is_placeholder);
+  
+  // Get only non-placeholder students and standalone teachers (not guardians nested under students)
   const displayMembers = members.filter(m => 
-    m.role_in_class === 'child' || m.role_in_class === 'adult'
+    (m.role_in_class === 'child' && !m.is_placeholder) || m.role_in_class === 'adult'
   );
 
   return (
@@ -266,7 +270,12 @@ function ClassDetailContent({ classId }: { classId: string }) {
           <div className="stat-title text-xs font-bold uppercase tracking-widest text-base-content/50">
             Elever
           </div>
-          <div className="stat-value text-info">{students.length}</div>
+          <div className="stat-value text-info">{activeStudents.length}</div>
+          {placeholderCount > 0 && (
+            <div className="stat-desc text-xs font-mono uppercase tracking-wider text-base-content/40 mt-1">
+              + {placeholderCount} tomme pladser
+            </div>
+          )}
         </div>
         
         <div className="stat">

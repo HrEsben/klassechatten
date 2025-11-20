@@ -56,7 +56,7 @@ export async function GET(
         // Get profile
         const { data: profile } = await supabaseAdmin
           .from('profiles')
-          .select('display_name, avatar_url, avatar_color, role')
+          .select('display_name, avatar_url, avatar_color, role, is_placeholder')
           .eq('user_id', member.user_id)
           .single();
 
@@ -73,6 +73,7 @@ export async function GET(
           profile_role: profile?.role,
           joined_at: member.joined_at,
           status: member.status,
+          is_placeholder: profile?.is_placeholder || false,
         };
       })
     );

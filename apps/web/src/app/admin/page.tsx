@@ -300,12 +300,9 @@ export default function AdminHomePage() {
                           <MessageSquare className="w-8 h-8 stroke-current text-info" strokeWidth={2} />
                           <span className="text-2xl font-black text-base-content">{stats.totalMessages.toLocaleString()}</span>
                         </div>
-                        <h3 className="text-sm font-black uppercase tracking-tight text-base-content mb-1">
-                          Total Beskeder
+                        <h3 className="text-sm font-black uppercase tracking-tight text-base-content">
+                          Beskeder i alt
                         </h3>
-                        <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
-                          Alle beskeder i systemet
-                        </p>
                       </div>
                     </div>
 
@@ -315,12 +312,9 @@ export default function AdminHomePage() {
                           <TrendingUp className="w-8 h-8 stroke-current text-success" strokeWidth={2} />
                           <span className="text-2xl font-black text-base-content">{stats.messages24h.toLocaleString()}</span>
                         </div>
-                        <h3 className="text-sm font-black uppercase tracking-tight text-base-content mb-1">
-                          I Dag
+                        <h3 className="text-sm font-black uppercase tracking-tight text-base-content">
+                          Seneste døgn
                         </h3>
-                        <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
-                          Beskeder sendt i dag
-                        </p>
                       </div>
                     </div>
 

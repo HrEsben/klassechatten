@@ -26,5 +26,6 @@ AS $$
     au.last_sign_in_at
   FROM profiles p
   LEFT JOIN auth.users au ON au.id = p.user_id
+  WHERE (p.is_placeholder IS NULL OR p.is_placeholder = false)
   ORDER BY p.created_at DESC;
 $$;

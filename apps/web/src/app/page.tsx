@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ClassRoomBrowser from '@/components/ClassRoomBrowser';
-import AdminDashboard from '@/components/AdminDashboard';
 import UserMenu from '@/components/UserMenu';
 import { useUserClasses } from '@/hooks/useUserClasses';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -22,6 +21,12 @@ function HomePage() {
   const selectedClass = classes.find(c => c.id === classParam);
   const selectedRoom = selectedClass?.rooms.find(r => r.id === roomParam);
   const { profile, roleLabel, isClassAdmin } = useUserProfile(classParam || undefined);
+  
+  // Redirect global admins to /admin
+  if (profile?.role === 'admin') {
+    router.push('/admin');
+    return null;
+  }
   
   // Check if we're in a chat room for footer visibility
   const isInChatRoom = !!roomParam;
@@ -227,7 +232,7 @@ function HomePage() {
                 </div>
               </div>
             }>
-              {profile?.role === 'admin' ? <AdminDashboard /> : <ClassRoomBrowser />}
+              <ClassRoomBrowser />
             </Suspense>
           </div>
         ) : (
@@ -241,7 +246,7 @@ function HomePage() {
                   </div>
                 </div>
               }>
-                {profile?.role === 'admin' ? <AdminDashboard /> : <ClassRoomBrowser />}
+                <ClassRoomBrowser />
               </Suspense>
             </div>
           </div>

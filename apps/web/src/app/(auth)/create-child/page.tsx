@@ -239,15 +239,14 @@ export default function CreateChildPage() {
           <span className="loading loading-ball loading-lg text-primary"></span>
           <p className="text-base-content/60 font-medium">Indlæser...</p>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-base-300 p-4">
-      <div className="w-full max-w-2xl mx-auto py-8">
-        {/* Header */}
-        <div className="mb-8">
+    <>
+      {/* Header */}
+      <div className="mb-8">
           <button
             onClick={() => router.push('/')}
             className="btn btn-ghost btn-sm mb-4"
@@ -551,7 +550,6 @@ export default function CreateChildPage() {
             </div>
           </form>
         </div>
-      </div>
-    </div>
+    </>
   );
 }

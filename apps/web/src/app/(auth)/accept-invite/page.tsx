@@ -77,18 +77,18 @@ export default function AcceptInvitePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base-300 px-4">
+      <>
         <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 max-w-md w-full text-center">
           <span className="loading loading-ball loading-lg text-primary"></span>
           <p className="mt-6 text-base-content/60">Behandler invitation...</p>
         </div>
-      </div>
+      </>
     );
   }
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base-300 px-4">
+      <>
         <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 max-w-md w-full">
           <div className="text-center space-y-6">
             <CheckCircle className="w-16 h-16 mx-auto text-success" strokeWidth={2} />
@@ -106,13 +106,13 @@ export default function AcceptInvitePage() {
             </p>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base-300 px-4">
+      <>
         <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 max-w-md w-full">
           <div className="text-center space-y-6">
             <XCircle className="w-16 h-16 mx-auto text-error" strokeWidth={2} />
@@ -132,13 +132,13 @@ export default function AcceptInvitePage() {
             </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
   // Not authenticated
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-300 px-4">
+    <>
       <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 max-w-md w-full">
         <div className="text-center space-y-6">
           <Mail className="w-16 h-16 mx-auto text-primary" strokeWidth={2} />
@@ -172,7 +172,6 @@ export default function AcceptInvitePage() {
             </p>
           </div>
         </div>
-      </div>
-    </div>
+      </>
   );
 }

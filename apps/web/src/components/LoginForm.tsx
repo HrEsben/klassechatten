@@ -119,14 +119,11 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-base-300 flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-lg">
-        {/* Modern Berlin Edgy Login Card */}
-        <div className="relative">
-          {/* Accent border effect */}
-          <div className="absolute -inset-0.5 bg-linear-to-r from-primary to-secondary opacity-20 blur-sm"></div>
-          
-          <div className="relative bg-base-100 shadow-xl">
+    <div className="relative">
+      {/* Accent border effect */}
+      <div className="absolute -inset-0.5 bg-linear-to-r from-primary to-secondary opacity-20 blur-sm"></div>
+      
+      <div className="relative bg-base-100 shadow-xl">
             {/* Header with strong typography */}
             <div className="border-b-2 border-primary/20 px-10 py-8">
               <h1 className="text-4xl font-black tracking-tight text-base-content uppercase">
@@ -240,7 +237,5 @@ export default function LoginForm() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
   );
 }

@@ -47,20 +47,19 @@ export default function ClaimChildPage() {
   // Show loading state while checking auth
   if (!user) {
     return (
-      <div className="min-h-screen bg-base-300 flex items-center justify-center">
+      <>
         <div className="flex flex-col items-center gap-4">
           <span className="loading loading-ball loading-lg text-primary"></span>
           <p className="text-base-content/60 font-medium">Indlæser...</p>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-base-300 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
-        {/* Header */}
-        <div className="text-center mb-8">
+    <>
+      {/* Header */}
+      <div className="text-center mb-8">
           <button
             onClick={() => router.push('/')}
             className="btn btn-ghost btn-sm mb-4"
@@ -221,7 +220,6 @@ export default function ClaimChildPage() {
             Opret Barn Konto
           </button>
         </div>
-      </div>
-    </div>
+    </>
   );
 }

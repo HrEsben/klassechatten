@@ -201,8 +201,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-base-300 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
+    <>
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-black uppercase tracking-tight text-base-content mb-2">
@@ -683,7 +682,6 @@ export default function OnboardingPage() {
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </>
   );
 }

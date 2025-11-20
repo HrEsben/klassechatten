@@ -2,8 +2,7 @@
 
 export default function StudentSignupPage() {
   return (
-    <div className="min-h-screen bg-base-300 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
+    <>
         <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
           <div className="p-6 border-b-2 border-base-content/10">
             <h1 className="text-3xl font-black uppercase tracking-tight text-base-content mb-2">
@@ -93,7 +92,6 @@ export default function StudentSignupPage() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+    </>
   );
 }

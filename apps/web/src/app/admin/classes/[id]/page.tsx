@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/AdminLayout';
 import { useClassDetails } from '@/hooks/useClassDetails';
 import Avatar from '@/components/Avatar';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { da } from 'date-fns/locale';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Hash, Eye, MessageSquare, X } from 'lucide-react';
 
 export default function ClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -27,6 +29,11 @@ function ClassDetailContent({ classId }: { classId: string }) {
   const [addError, setAddError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [copied, setCopied] = useState(false);
+  
+  // Channel view state
+  const [selectedRoom, setSelectedRoom] = useState<any | null>(null);
+  const [roomMessages, setRoomMessages] = useState<any[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
 
   const handleCopyInviteCode = async () => {
     if (classData?.invite_code) {
@@ -79,6 +86,37 @@ function ClassDetailContent({ classId }: { classId: string }) {
       setAddError(null);
     } else {
       setAddError(result.error || 'Kunne ikke tilføje medlem');
+    }
+  };
+
+  // Load messages for a room in stealth mode
+  const handleViewRoom = async (room: any) => {
+    setSelectedRoom(room);
+    setLoadingMessages(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select(`
+          *,
+          profiles (
+            display_name,
+            avatar_url,
+            avatar_color
+          )
+        `)
+        .eq('room_id', room.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      if (error) throw error;
+      
+      // Reverse to show oldest first
+      setRoomMessages((data || []).reverse());
+    } catch (err) {
+      console.error('Error loading messages:', err);
+    } finally {
+      setLoadingMessages(false);
     }
   };
 
@@ -250,6 +288,57 @@ function ClassDetailContent({ classId }: { classId: string }) {
             Rum
           </div>
           <div className="stat-value text-accent">{rooms.length}</div>
+        </div>
+      </div>
+
+      {/* Channels Section */}
+      <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
+        <div className="p-6 border-b-2 border-base-content/10">
+          <h2 className="text-xl font-black uppercase tracking-tight text-base-content">
+            Kanaler
+          </h2>
+        </div>
+
+        <div className="p-6 space-y-2">
+          {rooms.length === 0 ? (
+            <div className="p-12 text-center">
+              <Hash className="w-16 h-16 stroke-current text-base-content/30 mx-auto mb-4" strokeWidth={2} />
+              <h2 className="text-2xl font-black uppercase tracking-tight text-base-content mb-2">
+                Ingen kanaler
+              </h2>
+              <p className="text-base-content/60">Denne klasse har ingen chatrum endnu</p>
+            </div>
+          ) : (
+            rooms.map((room: any) => (
+              <button
+                key={room.id}
+                onClick={() => handleViewRoom(room)}
+                className="w-full text-left bg-base-100 border-2 border-base-content/10 hover:border-primary/50 transition-all duration-200 p-4"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Hash className="w-5 h-5 stroke-current text-primary" strokeWidth={2} />
+                    <div>
+                      <div className="text-sm font-bold text-base-content">
+                        {room.name}
+                      </div>
+                      {room.description && (
+                        <div className="text-xs text-base-content/60">
+                          {room.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4 stroke-current text-base-content/40" strokeWidth={2} />
+                    <span className="text-xs font-bold uppercase tracking-wider text-base-content/50">
+                      Se beskeder
+                    </span>
+                  </div>
+                </div>
+              </button>
+            ))
+          )}
         </div>
       </div>
 
@@ -549,6 +638,155 @@ function ClassDetailContent({ classId }: { classId: string }) {
             </div>
           </div>
           <div className="modal-backdrop bg-base-content/50" onClick={() => setShowAddModal(false)}></div>
+        </div>
+      )}
+
+      {/* Room Messages Modal (Stealth Mode) */}
+      {selectedRoom && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-4xl h-[80vh] max-h-[800px] bg-base-100 border-2 border-base-content/10 flex flex-col p-0">
+            {/* Modal Header */}
+            <div className="p-6 border-b-2 border-base-content/10 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <Hash className="w-6 h-6 stroke-current text-primary" strokeWidth={2} />
+                <div>
+                  <h3 className="text-xl font-black uppercase tracking-tight text-base-content">
+                    {selectedRoom.name}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Eye className="w-4 h-4 stroke-current text-warning" strokeWidth={2} />
+                    <span className="text-xs font-bold uppercase tracking-wider text-warning">
+                      Stealth Mode
+                    </span>
+                    <span className="text-xs text-base-content/60">
+                      · Kun læsning
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedRoom(null);
+                  setRoomMessages([]);
+                }}
+                className="btn btn-ghost btn-square btn-sm"
+              >
+                <X className="w-5 h-5" strokeWidth={2} />
+              </button>
+            </div>
+
+            {/* Messages Container */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {loadingMessages ? (
+                <div className="flex justify-center items-center h-full">
+                  <span className="loading loading-ball loading-lg text-primary"></span>
+                </div>
+              ) : roomMessages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <MessageSquare className="w-16 h-16 stroke-current text-base-content/30 mb-4" strokeWidth={2} />
+                  <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-2">
+                    Ingen beskeder
+                  </h3>
+                  <p className="text-base-content/60">
+                    Der er ingen beskeder i denne kanal endnu
+                  </p>
+                </div>
+              ) : (
+                roomMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className="bg-base-200 border-2 border-base-content/10 p-4"
+                  >
+                    {/* Message Header */}
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="avatar">
+                        <div className="w-8 h-8 rounded-full">
+                          {message.profiles?.avatar_url ? (
+                            <img
+                              src={message.profiles.avatar_url}
+                              alt={message.profiles.display_name}
+                            />
+                          ) : (
+                            <div
+                              className="w-full h-full flex items-center justify-center font-bold text-xs text-white"
+                              style={{
+                                backgroundColor: message.profiles?.avatar_color || '#10B981',
+                              }}
+                            >
+                              {message.profiles?.display_name?.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-base-content">
+                            {message.profiles?.display_name || 'Ukendt bruger'}
+                          </span>
+                          <span className="text-xs text-base-content/40">
+                            {formatDistanceToNow(new Date(message.created_at), {
+                              addSuffix: true,
+                              locale: da,
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Message Content */}
+                    <div className="ml-11">
+                      {message.image_url && (
+                        <img
+                          src={message.image_url}
+                          alt="Uploaded image"
+                          className="max-w-md mb-2 border-2 border-base-content/10"
+                        />
+                      )}
+                      {message.body && (
+                        <p className="text-sm text-base-content whitespace-pre-wrap">
+                          {message.body}
+                        </p>
+                      )}
+                      {message.edited_at && (
+                        <span className="text-xs text-base-content/40 mt-1 block">
+                          (redigeret)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t-2 border-base-content/10 bg-base-200/50 shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-base-content/60">
+                  {roomMessages.length > 0 ? (
+                    <>Viser de seneste {roomMessages.length} beskeder</>
+                  ) : (
+                    <>Ingen beskeder at vise</>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedRoom(null);
+                    setRoomMessages([]);
+                  }}
+                  className="btn btn-ghost btn-sm"
+                >
+                  Luk
+                </button>
+              </div>
+            </div>
+          </div>
+          <div
+            className="modal-backdrop bg-base-content/50"
+            onClick={() => {
+              setSelectedRoom(null);
+              setRoomMessages([]);
+            }}
+          ></div>
         </div>
       )}
       </div>

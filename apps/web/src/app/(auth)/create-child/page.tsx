@@ -239,7 +239,7 @@ export default function CreateChildPage() {
           <span className="loading loading-ball loading-lg text-primary"></span>
           <p className="text-base-content/60 font-medium">Indlæser...</p>
         </div>
-      </>
+      </div>
     );
   }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
@@ -77,18 +77,18 @@ export default function AcceptInvitePage() {
 
   if (loading) {
     return (
-      <>
+      <React.Fragment>
         <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-6 sm:p-12 max-w-md w-full text-center">
           <span className="loading loading-ball loading-lg text-primary"></span>
           <p className="mt-6 text-base-content/60">Behandler invitation...</p>
         </div>
-      </>
+      </React.Fragment>
     );
   }
 
   if (success) {
     return (
-      <>
+      <React.Fragment>
         <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-6 sm:p-12 max-w-md w-full">
           <div className="text-center space-y-6">
             <CheckCircle className="w-16 h-16 mx-auto text-success" strokeWidth={2} />
@@ -106,13 +106,13 @@ export default function AcceptInvitePage() {
             </p>
           </div>
         </div>
-      </>
+      </React.Fragment>
     );
   }
 
   if (error) {
     return (
-      <>
+      <React.Fragment>
         <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-6 sm:p-12 max-w-md w-full">
           <div className="text-center space-y-6">
             <XCircle className="w-16 h-16 mx-auto text-error" strokeWidth={2} />
@@ -132,13 +132,13 @@ export default function AcceptInvitePage() {
             </div>
           </div>
         </div>
-      </>
+      </React.Fragment>
     );
   }
 
   // Not authenticated
   return (
-    <>
+    <React.Fragment>
       <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-6 sm:p-12 max-w-md w-full">
         <div className="text-center space-y-6">
           <Mail className="w-16 h-16 mx-auto text-primary" strokeWidth={2} />
@@ -172,6 +172,7 @@ export default function AcceptInvitePage() {
             </p>
           </div>
         </div>
-      </>
-  );
+      </div>
+      </React.Fragment>
+    );
 }

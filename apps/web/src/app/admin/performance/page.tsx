@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { PerformanceStats, PerformanceMetricType } from '@/lib/performance';
 import { supabase } from '@/lib/supabase';
 import { Pause, Play, Download, Trash2, BarChart3, Target, Database, Timer, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Modal } from '@/components/shared';
 
 interface MetricRow {
   type: PerformanceMetricType;
@@ -14,6 +15,7 @@ interface MetricRow {
 }
 
 export default function PerformanceDashboard() {
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [stats, setStats] = useState<Record<PerformanceMetricType, PerformanceStats | null>>({
     message_send: null,
     message_realtime: null,
@@ -119,11 +121,9 @@ export default function PerformanceDashboard() {
     }
   }, [autoRefresh]);
 
-  const handleClearMetrics = async () => {
-    if (!confirm('Er du sikker på, at du vil rydde alle metrics fra de sidste 7 dage?')) {
-      return;
-    }
-
+  const confirmClearMetrics = async () => {
+    setShowClearConfirm(false);
+    
     try {
       const { error } = await supabase
         .from('performance_metrics')
@@ -238,7 +238,7 @@ export default function PerformanceDashboard() {
             <button className="btn btn-ghost btn-sm" onClick={handleExport}>
               <Download className="w-4 h-4" strokeWidth={2} /> Eksporter
             </button>
-            <button className="btn btn-error btn-ghost btn-sm" onClick={handleClearMetrics}>
+            <button className="btn btn-error btn-ghost btn-sm" onClick={() => setShowClearConfirm(true)}>
               <Trash2 className="w-4 h-4" strokeWidth={2} /> Ryd (7 dage)
             </button>
           </div>
@@ -426,6 +426,38 @@ export default function PerformanceDashboard() {
             </p>
           </div>
         </div>
+      
+        {/* Clear Metrics Confirmation Modal */}
+        <Modal
+          id="clear-metrics-modal"
+          open={showClearConfirm}
+          onClose={() => setShowClearConfirm(false)}
+          title="Ryd Performance Metrics"
+          size="md"
+          actions={
+            <>
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className="btn btn-ghost"
+              >
+                Annuller
+              </button>
+              <button
+                onClick={confirmClearMetrics}
+                className="btn btn-error"
+              >
+                Ryd Metrics
+              </button>
+            </>
+          }
+        >
+          <p className="text-base-content/80">
+            Er du sikker på, at du vil rydde alle metrics fra de sidste 7 dage?
+          </p>
+          <p className="text-base-content/60 text-sm mt-2">
+            Dette vil permanent slette alle performance data. Denne handling kan ikke fortrydes.
+          </p>
+        </Modal>
       </div>
   );
 }

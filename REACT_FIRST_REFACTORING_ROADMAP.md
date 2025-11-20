@@ -165,11 +165,14 @@ Created 4 additional shared components to eliminate more duplication:
 - ✅ admin/users: Replaced user table (~40 lines) with UserCard list layout
 - ✅ UserMenu: Replaced children list (~15 lines) with UserCard compact variant
 - ✅ child/[id]: Replaced window.confirm with Modal for invitation cancellation
-- ✅ Removed ~405 lines of duplicate logic total (17 replacements across 9 files)
+- ✅ admin/classes: Replaced inline delete confirmation with Modal component
+- ✅ admin/classes/[id]: Replaced 3 member removal confirmations with Modal
+- ✅ admin/performance: Replaced clear metrics confirm() with Modal
+- ✅ Removed ~523 lines of duplicate logic total (23 replacements across 11 files)
 
 **Ready for Future Replacements:**
 - [ ] Form input patterns (accept-invite, class settings, profile, my-children) - **10+ inputs remaining**
-- [ ] Modal patterns (admin/performance clear metrics, ChatRoom delete messages) - **2+ locations remaining**
+- [ ] Modal patterns (ChatRoom DEV delete all messages) - **1 location remaining (low priority DEV feature)**
 - [ ] Additional UserCard opportunities (profile page, child pages) - **5+ locations**
 
 **Design Improvements Needed:**
@@ -179,15 +182,17 @@ Created 4 additional shared components to eliminate more duplication:
 
 **Impact:**
 - 700+ lines of new reusable component code
-- ~485 lines of duplicate logic removed (22 replacements across 11 files)
+- ~523 lines of duplicate logic removed (23 replacements across 11 files)
 - Foundation for replacing 10+ additional inline patterns
 - Consistent Berlin Edgy design across all card/form/modal patterns
-- All 42 routes compile successfully (6.6s builds)
-- Major admin pages now use shared components (dashboard, classes, users)
-- Modal component adopted in 3 locations:
+- All 42 routes compile successfully (6.4-6.6s builds)
+- Major admin pages now use shared components (dashboard, classes, users, performance)
+- Modal component adopted in 4 locations:
   - Child profile invitation cancellation
   - Admin classes delete confirmation
-  - Class details member removal (3 patterns replaced)
+  - Class details member removal (3 patterns)
+  - Admin performance clear metrics
+- **All window.confirm and inline confirmation patterns replaced** (except 1 DEV feature)
 
 ### Impact:
 - Consistent loading, empty, and error states throughout entire app

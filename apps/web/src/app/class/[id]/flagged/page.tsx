@@ -778,37 +778,49 @@ export default function ClassFlaggedMessagesPage({
                     )}
 
                     {/* Action Buttons */}
-                    <div className="px-4 pb-4 flex gap-2 flex-wrap">
-                      <button
-                        onClick={() => handleMarkAsViolation(item.event_id)}
-                        disabled={!!(item.reviewed_by && item.reviewed_by !== user?.id)}
-                        className="btn btn-sm btn-ghost gap-2 text-success hover:bg-success/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={item.reviewed_by && item.reviewed_by !== user?.id ? 'Allerede behandlet af anden moderator' : ''}
-                      >
-                        <Check size={16} strokeWidth={2} />
-                        Noteret
-                      </button>
-                      <button
-                        onClick={() => handleRemoveFlag(item.event_id)}
-                        disabled={!!(item.reviewed_by && item.reviewed_by !== user?.id)}
-                        className="btn btn-sm btn-ghost gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={item.reviewed_by && item.reviewed_by !== user?.id ? 'Allerede behandlet af anden moderator' : ''}
-                      >
-                        <X size={16} strokeWidth={2} />
-                        Fjern flag
-                      </button>
-                      <button
-                        onClick={() => handleShowContext(item.message_id, item.room_id)}
-                        className="btn btn-sm btn-ghost gap-2"
-                      >
-                        {expandedContext === item.message_id.toString() ? (
-                          <ChevronUp size={16} strokeWidth={2} />
-                        ) : (
-                          <ChevronDown size={16} strokeWidth={2} />
-                        )}
-                        Se kontekst
-                      </button>
-                    </div>
+                    {!item.reviewed_by || item.reviewed_by === user?.id ? (
+                      <div className="px-4 pb-4 flex gap-2 flex-wrap">
+                        <button
+                          onClick={() => handleMarkAsViolation(item.event_id)}
+                          className="btn btn-sm btn-ghost gap-2 text-success hover:bg-success/10"
+                        >
+                          <Check size={16} strokeWidth={2} />
+                          Noteret
+                        </button>
+                        <button
+                          onClick={() => handleRemoveFlag(item.event_id)}
+                          className="btn btn-sm btn-ghost gap-2"
+                        >
+                          <X size={16} strokeWidth={2} />
+                          Fjern flag
+                        </button>
+                        <button
+                          onClick={() => handleShowContext(item.message_id, item.room_id)}
+                          className="btn btn-sm btn-ghost gap-2"
+                        >
+                          {expandedContext === item.message_id.toString() ? (
+                            <ChevronUp size={16} strokeWidth={2} />
+                          ) : (
+                            <ChevronDown size={16} strokeWidth={2} />
+                          )}
+                          Se kontekst
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="px-4 pb-4">
+                        <button
+                          onClick={() => handleShowContext(item.message_id, item.room_id)}
+                          className="btn btn-sm btn-ghost gap-2"
+                        >
+                          {expandedContext === item.message_id.toString() ? (
+                            <ChevronUp size={16} strokeWidth={2} />
+                          ) : (
+                            <ChevronDown size={16} strokeWidth={2} />
+                          )}
+                          Se kontekst
+                        </button>
+                      </div>
+                    )}
 
                     {/* Context Messages */}
                     {expandedContext === item.message_id.toString() && (

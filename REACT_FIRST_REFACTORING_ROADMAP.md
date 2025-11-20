@@ -167,6 +167,10 @@ Created 4 additional shared components to eliminate more duplication:
 - [ ] Form input patterns (accept-invite, class settings, profile) - **7+ inputs remaining**
 - [ ] Modal patterns (confirmation dialogs, form modals) - **5+ locations identified**
 
+**Design Improvements Needed:**
+- [ ] `/accept-invite` page - Replace Lucide icons with Berlin Edgy SVG icons (square linecaps)
+- See `DESIGN_IMPROVEMENTS_NEEDED.md` for detailed tracking
+
 **Impact:**
 - 700+ lines of new reusable component code
 - ~230 lines of duplicate logic removed (11 replacements across 4 files)

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import Avatar from './Avatar';
+import { UserCard } from './shared';
 
 interface SidebarUser {
   user_id: string;
@@ -55,34 +55,24 @@ export default function UsersSidebar({
     
     return (
       <li key={user.user_id}>
-        <div className={`flex items-center gap-3 py-3 px-3 ${isCurrentUser ? 'bg-primary/5' : ''}`}>
-          <div className="indicator">
-            <Avatar
-              user={{
-                display_name: user.display_name,
-                avatar_url: user.avatar_url,
-                avatar_color: user.avatar_color,
-              }}
-              size="sm"
-            />
-            {isOnline && (
-              <span className="indicator-item badge badge-xs badge-success border-base-200"></span>
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-base-content truncate">
-              {user.display_name}
-              {isCurrentUser && (
-                <span className="ml-2 text-xs text-base-content/50 font-light">(dig)</span>
-              )}
+        <div className="relative">
+          <UserCard
+            user={{
+              display_name: user.display_name,
+              avatar_url: user.avatar_url,
+              avatar_color: user.avatar_color,
+            }}
+            variant="compact"
+            isOnline={isOnline}
+            isCurrent={isCurrentUser}
+            showRole={false}
+          />
+          {/* Typing indicator overlay */}
+          {user.typing && (
+            <div className="absolute bottom-0 left-16 text-xs text-base-content/40 font-mono pb-2">
+              skriver...
             </div>
-            {user.typing && (
-              <div className="text-xs text-base-content/40 font-mono">skriver...</div>
-            )}
-            {!isOnline && (
-              <div className="text-xs text-base-content/30 font-mono">offline</div>
-            )}
-          </div>
+          )}
         </div>
       </li>
     );

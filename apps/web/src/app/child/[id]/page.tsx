@@ -4,9 +4,9 @@ import { use, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import Link from 'next/link';
-import { ArrowLeft, Mail, Users, Calendar, Shield, Send } from 'lucide-react';
+import { Mail, Users, Calendar, Shield, Send } from 'lucide-react';
 import { LoadingSpinner, ErrorState, Modal } from '@/components/shared';
+import AppLayout from '@/components/AppLayout';
 
 interface ChildProfile {
   id: string;
@@ -264,45 +264,35 @@ export default function ChildProfilePage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-base-300 p-4">
-        <div className="w-full max-w-2xl mx-auto py-8">
-          <LoadingSpinner fullHeight text="Indlæser elevprofil..." />
+      <AppLayout>
+        <div className="h-full overflow-y-auto">
+          <div className="w-full max-w-2xl mx-auto py-8">
+            <LoadingSpinner fullHeight text="Indlæser elevprofil..." />
+          </div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   if (error || !child) {
     return (
-      <div className="min-h-screen bg-base-300 p-4">
-        <div className="w-full max-w-2xl mx-auto py-8">
-          <ErrorState 
-            message={error || 'Eleven blev ikke fundet'} 
-            fullHeight
-          />
-          <Link href="/" className="btn btn-ghost mt-4">
-            <ArrowLeft className="w-5 h-5" strokeWidth={2} />
-            Tilbage til Dashboard
-          </Link>
+      <AppLayout>
+        <div className="h-full overflow-y-auto">
+          <div className="w-full max-w-2xl mx-auto py-8">
+            <ErrorState 
+              message={error || 'Eleven blev ikke fundet'} 
+              fullHeight
+            />
+          </div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-base-300 p-4">
-      <div className="w-full max-w-4xl mx-auto py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Link href="/" className="btn btn-ghost btn-sm mb-4">
-            <ArrowLeft className="w-5 h-5" strokeWidth={2} />
-            Tilbage til Dashboard
-          </Link>
-          <h1 className="text-3xl font-black uppercase tracking-tight text-base-content mb-2">
-            Barn Profil
-          </h1>
-          <div className="h-1 w-24 bg-primary mb-4"></div>
-        </div>
+    <AppLayout>
+      <div className="h-full overflow-y-auto">
+        <div className="w-full max-w-4xl mx-auto py-8">
 
         {/* Success message */}
         {inviteSent && (
@@ -548,6 +538,7 @@ export default function ChildProfilePage({
           Er du sikker på, at du vil annullere denne invitation?
         </p>
       </Modal>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

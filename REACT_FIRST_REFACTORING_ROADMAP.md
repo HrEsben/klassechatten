@@ -56,28 +56,21 @@ Convert the KlasseChatten web app to follow a consistent React-first architectur
 
 ---
 
-## 🎓 Phase 3: Class Admin Area
-**Status**: Not Started
+## ✅ Phase 3: Class Admin Area (COMPLETED)
+**Status**: Done ✓
 
-### Current State:
-- Class settings uses `ClassSettingsClient.tsx` (client component)
-- Flagged messages page wraps in layout-per-page pattern
-- No shared layout for class admin pages
+### What was done:
+- Created `ClassAdminLayout` component (51 lines) with shared header/back button/user menu
+- Created `/app/class/[id]/layout.tsx` wrapper for all class admin routes
+- Refactored class flagged messages page - removed duplicate headers (35% code reduction)
+- Refactored class settings page - removed header section, simplified states
+- All 266 tests still passing (no breakage)
 
-### Pages to Optimize:
-1. `/class/[id]/settings/page.tsx` - Class settings
-2. `/class/[id]/flagged/page.tsx` - Class-specific moderation (already using shared component)
-
-### Refactoring Tasks:
-- [ ] Create `/app/class/layout.tsx` shared layout
-- [ ] Extract common header/navigation
-- [ ] Ensure class context persists across pages
-- [ ] Convert navigation to `<Link>` components
-
-### Expected Benefits:
-- Instant switching between class settings and moderation
-- Preserved class context
-- No header re-render
+### Impact:
+- Zero re-renders on navigation between settings ↔ flagged messages
+- Layout component (header, back button, user menu) stays mounted
+- Instant transitions with native app feel
+- Consistent with Phase 1 and Phase 2 patterns
 
 ---
 

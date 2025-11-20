@@ -123,10 +123,15 @@ export default function FlaggedMessagesPage() {
   // Action handlers
   const handleMarkAsViolation = async (eventId: string) => {
     try {
+      console.log('[Mark as Violation] Starting for event:', eventId);
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
-      if (!session) return;
+      if (!session) {
+        console.error('[Mark as Violation] No session found');
+        return;
+      }
 
+      console.log('[Mark as Violation] Sending PATCH request...');
       const res = await fetch(`/api/moderation/flagged-messages/${eventId}`, {
         method: 'PATCH',
         headers: {
@@ -136,24 +141,34 @@ export default function FlaggedMessagesPage() {
         body: JSON.stringify({ status: 'confirmed' }),
       });
 
+      console.log('[Mark as Violation] Response status:', res.status);
       if (res.ok) {
+        const data = await res.json();
+        console.log('[Mark as Violation] Success response:', data);
         setFlaggedMessages(prev => prev.filter(m => m.event_id !== eventId));
         setConfirmedCount(prev => prev + 1);
       } else {
         const errorData = await res.json();
-        console.error('Failed to mark as violation:', res.status, errorData);
+        console.error('[Mark as Violation] Failed:', res.status, errorData);
+        alert(`Kunne ikke markere som overtrædelse: ${errorData.error || 'Ukendt fejl'}`);
       }
     } catch (err) {
-      console.error('Error marking as violation:', err);
+      console.error('[Mark as Violation] Exception:', err);
+      alert('Der opstod en fejl ved markering af overtrædelse');
     }
   };
 
   const handleRemoveFlag = async (eventId: string) => {
     try {
+      console.log('[Remove Flag] Starting for event:', eventId);
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
-      if (!session) return;
+      if (!session) {
+        console.error('[Remove Flag] No session found');
+        return;
+      }
 
+      console.log('[Remove Flag] Sending PATCH request...');
       const res = await fetch(`/api/moderation/flagged-messages/${eventId}`, {
         method: 'PATCH',
         headers: {
@@ -163,15 +178,20 @@ export default function FlaggedMessagesPage() {
         body: JSON.stringify({ status: 'dismissed' }),
       });
 
+      console.log('[Remove Flag] Response status:', res.status);
       if (res.ok) {
+        const data = await res.json();
+        console.log('[Remove Flag] Success response:', data);
         setFlaggedMessages(prev => prev.filter(m => m.event_id !== eventId));
         setDismissedCount(prev => prev + 1);
       } else {
         const errorData = await res.json();
-        console.error('Failed to remove flag:', res.status, errorData);
+        console.error('[Remove Flag] Failed:', res.status, errorData);
+        alert(`Kunne ikke fjerne flag: ${errorData.error || 'Ukendt fejl'}`);
       }
     } catch (err) {
-      console.error('Error removing flag:', err);
+      console.error('[Remove Flag] Exception:', err);
+      alert('Der opstod en fejl ved fjernelse af flag');
     }
   };
 

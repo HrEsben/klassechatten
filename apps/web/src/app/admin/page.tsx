@@ -3,7 +3,7 @@ import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserClasses } from '@/hooks/useUserClasses';
-import { School, Users, MessageSquare, TriangleAlert, TrendingUp, Activity, Hash } from 'lucide-react';
+import { School, Users, MessageSquare, TriangleAlert, TrendingUp, Activity, Hash, LayoutList } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 

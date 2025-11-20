@@ -538,6 +538,8 @@ export default function FlaggedMessagesPage() {
         }
 
         const data = await response.json();
+        console.log('[Flagged Messages] API returned:', data.flagged_messages?.length, 'messages');
+        console.log('[Flagged Messages] First 3 messages reviewed_by:', data.flagged_messages?.slice(0, 3).map((m: any) => ({ id: m.event_id, reviewed_by: m.reviewed_by, reviewed_at: m.reviewed_at })));
         setFlaggedMessages(data.flagged_messages || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');

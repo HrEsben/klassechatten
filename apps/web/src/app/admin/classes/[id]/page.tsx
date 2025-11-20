@@ -9,6 +9,7 @@ import { da } from 'date-fns/locale';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Hash, Eye, MessageSquare, X } from 'lucide-react';
+import { UserCard } from '@/components/shared';
 
 export default function ClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -435,55 +436,47 @@ function ClassDetailContent({ classId }: { classId: string }) {
                           Forældre
                         </div>
                         {member.guardians.map((guardian) => (
-                          <div key={guardian.user_id} className="flex items-center justify-between bg-base-200 p-3 border-2 border-base-content/10">
-                            <div className="flex items-center gap-3">
-                              <Avatar
-                                user={{
-                                  display_name: guardian.display_name,
-                                  avatar_url: guardian.avatar_url,
-                                  avatar_color: guardian.avatar_color,
-                                }}
-                                size="sm"
-                              />
-                              <div>
-                                <div className="font-medium text-base-content">
-                                  {guardian.display_name}
-                                </div>
-                                <div className="text-xs text-base-content/60">
-                                  {guardian.role_in_class === 'child' ? (guardian.username || guardian.email) : guardian.email}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`badge ${getRoleBadgeColor(guardian.role_in_class)} badge-sm font-bold uppercase`}>
-                                {getRoleLabel(guardian.role_in_class)}
-                              </span>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRemove(guardian.user_id, guardian.display_name);
-                                }}
-                                disabled={removing}
-                                className={`btn btn-xs ${
-                                  removeConfirm === guardian.user_id
-                                    ? 'btn-error'
-                                    : 'btn-ghost'
-                                }`}
-                              >
-                                {removeConfirm === guardian.user_id ? 'Bekræft?' : 'Fjern'}
-                              </button>
-                              {removeConfirm === guardian.user_id && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setRemoveConfirm(null);
-                                  }}
-                                  className="btn btn-xs btn-ghost"
-                                >
-                                  Annuller
-                                </button>
+                          <div key={guardian.user_id} className="bg-base-200 border-2 border-base-content/10">
+                            <UserCard
+                              user={{
+                                display_name: guardian.display_name,
+                                avatar_url: guardian.avatar_url,
+                                avatar_color: guardian.avatar_color,
+                                email: guardian.role_in_class === 'child' ? (guardian.username || guardian.email) : guardian.email,
+                              }}
+                              showRole
+                              roleLabel={getRoleLabel(guardian.role_in_class)}
+                              roleBadgeColor={getRoleBadgeColor(guardian.role_in_class)}
+                              actions={(
+                                <>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRemove(guardian.user_id, guardian.display_name);
+                                    }}
+                                    disabled={removing}
+                                    className={`btn btn-xs ${
+                                      removeConfirm === guardian.user_id
+                                        ? 'btn-error'
+                                        : 'btn-ghost'
+                                    }`}
+                                  >
+                                    {removeConfirm === guardian.user_id ? 'Bekræft?' : 'Fjern'}
+                                  </button>
+                                  {removeConfirm === guardian.user_id && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setRemoveConfirm(null);
+                                      }}
+                                      className="btn btn-xs btn-ghost"
+                                    >
+                                      Annuller
+                                    </button>
+                                  )}
+                                </>
                               )}
-                            </div>
+                            />
                           </div>
                         ))}
                       </div>
@@ -494,49 +487,41 @@ function ClassDetailContent({ classId }: { classId: string }) {
               
               // Student without guardians or teacher
               return (
-                <div key={member.user_id} className="flex items-center justify-between bg-base-100 border-2 border-base-content/10 p-4">
-                  <div className="flex items-center gap-3">
-                    <Avatar
-                      user={{
-                        display_name: member.display_name,
-                        avatar_url: member.avatar_url,
-                        avatar_color: member.avatar_color,
-                      }}
-                      size="sm"
-                    />
-                    <div>
-                      <div className="font-bold text-base-content">
-                        {member.display_name}
-                      </div>
-                      <div className="text-xs text-base-content/60">
-                        {member.email}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`badge ${getRoleBadgeColor(member.role_in_class)} badge-sm font-bold uppercase`}>
-                      {getRoleLabel(member.role_in_class)}
-                    </span>
-                    <button
-                      onClick={() => handleRemove(member.user_id, member.display_name)}
-                      disabled={removing}
-                      className={`btn btn-xs ${
-                        removeConfirm === member.user_id
-                          ? 'btn-error'
-                          : 'btn-ghost'
-                      }`}
-                    >
-                      {removeConfirm === member.user_id ? 'Bekræft?' : 'Fjern'}
-                    </button>
-                    {removeConfirm === member.user_id && (
-                      <button
-                        onClick={() => setRemoveConfirm(null)}
-                        className="btn btn-xs btn-ghost"
-                      >
-                        Annuller
-                      </button>
+                <div key={member.user_id} className="bg-base-100 border-2 border-base-content/10">
+                  <UserCard
+                    user={{
+                      display_name: member.display_name,
+                      avatar_url: member.avatar_url,
+                      avatar_color: member.avatar_color,
+                      email: member.email,
+                    }}
+                    showRole
+                    roleLabel={getRoleLabel(member.role_in_class)}
+                    roleBadgeColor={getRoleBadgeColor(member.role_in_class)}
+                    actions={(
+                      <>
+                        <button
+                          onClick={() => handleRemove(member.user_id, member.display_name)}
+                          disabled={removing}
+                          className={`btn btn-xs ${
+                            removeConfirm === member.user_id
+                              ? 'btn-error'
+                              : 'btn-ghost'
+                          }`}
+                        >
+                          {removeConfirm === member.user_id ? 'Bekræft?' : 'Fjern'}
+                        </button>
+                        {removeConfirm === member.user_id && (
+                          <button
+                            onClick={() => setRemoveConfirm(null)}
+                            className="btn btn-xs btn-ghost"
+                          >
+                            Annuller
+                          </button>
+                        )}
+                      </>
                     )}
-                  </div>
+                  />
                 </div>
               );
             })

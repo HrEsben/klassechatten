@@ -2,7 +2,6 @@
 
 import { use } from 'react';
 import { useRouter } from 'next/navigation';
-import AdminLayout from '@/components/AdminLayout';
 import { useClassDetails } from '@/hooks/useClassDetails';
 import Avatar from '@/components/Avatar';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -140,30 +139,26 @@ function ClassDetailContent({ classId }: { classId: string }) {
 
   if (loading) {
     return (
-      <AdminLayout classId={classId}>
-        <div className="flex justify-center items-center min-h-[60vh]">
-          <div className="flex flex-col items-center gap-4">
-            <span className="loading loading-ball loading-lg text-primary"></span>
-            <p className="text-base-content/60 font-medium">Indlæser klassedetaljer...</p>
-          </div>
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-4">
+          <span className="loading loading-ball loading-lg text-primary"></span>
+          <p className="text-base-content/60 font-medium">Indlæser klassedetaljer...</p>
         </div>
-      </AdminLayout>
+      </div>
     );
   }
 
   if (error || !classData) {
     return (
-      <AdminLayout classId={classId}>
-        <div className="flex justify-center items-center min-h-[60vh]">
-          <div className="text-center space-y-4">
-            <p className="text-error font-medium">Fejl ved indlæsning af klasse</p>
-            <p className="text-base-content/60 text-sm">{error}</p>
-            <button onClick={() => router.back()} className="btn btn-ghost">
-              Gå tilbage
-            </button>
-          </div>
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="text-center space-y-4">
+          <p className="text-error font-medium">Fejl ved indlæsning af klasse</p>
+          <p className="text-base-content/60 text-sm">{error}</p>
+          <button onClick={() => router.back()} className="btn btn-ghost">
+            Gå tilbage
+          </button>
         </div>
-      </AdminLayout>
+      </div>
     );
   }
 
@@ -181,11 +176,7 @@ function ClassDetailContent({ classId }: { classId: string }) {
   );
 
   return (
-    <AdminLayout 
-      classId={classId} 
-      classData={{ name: classData.label, school_name: classData.school_name }}
-    >
-      <div className="space-y-8">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center gap-4">
         <button
@@ -799,6 +790,5 @@ function ClassDetailContent({ classId }: { classId: string }) {
         </div>
       )}
       </div>
-    </AdminLayout>
   );
 }

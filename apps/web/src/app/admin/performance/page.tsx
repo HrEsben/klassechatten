@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { PerformanceStats, PerformanceMetricType } from '@/lib/performance';
 import { supabase } from '@/lib/supabase';
-import AdminLayout from '@/components/AdminLayout';
 import { Pause, Play, Download, Trash2, BarChart3, Target, Database, Timer, AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface MetricRow {
@@ -202,8 +201,7 @@ export default function PerformanceDashboard() {
   };
 
   return (
-    <AdminLayout>
-      <div className="w-full max-w-7xl mx-auto px-12 py-8 space-y-8">
+    <div className="w-full max-w-7xl mx-auto px-12 py-8 space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -429,6 +427,5 @@ export default function PerformanceDashboard() {
           </div>
         </div>
       </div>
-    </AdminLayout>
   );
 }

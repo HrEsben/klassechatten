@@ -5,7 +5,6 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserClasses } from '@/hooks/useUserClasses';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import AdminLayout from '@/components/AdminLayout';
 import FlaggedMessagesList from '@/components/FlaggedMessagesList';
 import { Flag, AlertCircle } from 'lucide-react';
 
@@ -26,16 +25,14 @@ export default function FlaggedMessagesPage() {
   // Show loading
   if (profileLoading || classesLoading) {
     return (
-      <AdminLayout>
-        <div className="w-full max-w-7xl mx-auto px-12 py-8">
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="flex flex-col items-center gap-4">
-              <span className="loading loading-ball loading-lg text-primary"></span>
-              <p className="text-base-content/60 font-medium">Indlæser flaggede beskeder...</p>
-            </div>
+      <div className="w-full max-w-7xl mx-auto px-12 py-8">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="flex flex-col items-center gap-4">
+            <span className="loading loading-ball loading-lg text-primary"></span>
+            <p className="text-base-content/60 font-medium">Indlæser flaggede beskeder...</p>
           </div>
         </div>
-      </AdminLayout>
+      </div>
     );
   }
 
@@ -48,8 +45,7 @@ export default function FlaggedMessagesPage() {
     // Teacher or class admin without classId: show class picker
     if ((isTeacher || isClassAdmin) && !classId) {
       return (
-        <AdminLayout>
-          <div className="w-full max-w-7xl mx-auto px-12 py-8">
+        <div className="w-full max-w-7xl mx-auto px-12 py-8">
             <div className="mb-8">
               <h1 className="text-3xl font-black uppercase tracking-tight text-base-content">Vælg klasse</h1>
               <div className="h-1 w-24 bg-primary mt-2"></div>
@@ -71,15 +67,13 @@ export default function FlaggedMessagesPage() {
               ))}
             </div>
           </div>
-        </AdminLayout>
       );
     }
 
     // User has class admin in any class, let them pick
     if (hasAnyClassAdmin) {
       return (
-        <AdminLayout>
-          <div className="w-full max-w-7xl mx-auto px-12 py-8">
+        <div className="w-full max-w-7xl mx-auto px-12 py-8">
             <div className="mb-8">
               <h1 className="text-3xl font-black uppercase tracking-tight text-base-content">Vælg klasse</h1>
               <div className="h-1 w-24 bg-primary mt-2"></div>
@@ -101,14 +95,12 @@ export default function FlaggedMessagesPage() {
               ))}
             </div>
           </div>
-        </AdminLayout>
       );
     }
 
     // No access
     return (
-      <AdminLayout>
-        <div className="w-full max-w-7xl mx-auto px-12 py-8">
+      <div className="w-full max-w-7xl mx-auto px-12 py-8">
           <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 text-center space-y-4">
             <AlertCircle className="w-16 h-16 stroke-current text-error mx-auto" strokeWidth={2} />
             <h2 className="text-2xl font-black uppercase tracking-tight text-base-content">
@@ -117,13 +109,11 @@ export default function FlaggedMessagesPage() {
             <p className="text-base-content/60">Du har ikke adgang til at se flaggede beskeder. Kontakt en administrator.</p>
           </div>
         </div>
-      </AdminLayout>
     );
   }
 
   return (
-    <AdminLayout>
-      <div className="w-full max-w-7xl mx-auto px-12 py-8">
+    <div className="w-full max-w-7xl mx-auto px-12 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
@@ -142,6 +132,5 @@ export default function FlaggedMessagesPage() {
           showDismissedCount={isAdmin}
         />
       </div>
-    </AdminLayout>
   );
 }

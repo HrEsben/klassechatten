@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import { useAdminUsers } from '@/hooks/useAdminUsers';
 import { formatDistanceToNow } from 'date-fns';
 import { da } from 'date-fns/locale';
-import AdminLayout from '@/components/AdminLayout';
 
 function AdminUsersContent() {
   const router = useRouter();
@@ -184,9 +183,5 @@ function AdminUsersContent() {
 }
 
 export default function AdminUsersPage() {
-  return (
-    <AdminLayout>
-      <AdminUsersContent />
-    </AdminLayout>
-  );
+  return <AdminUsersContent />;
 }

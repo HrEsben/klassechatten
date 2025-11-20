@@ -1,7 +1,6 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import AdminLayout from '@/components/AdminLayout';
 
 function AdminSettingsContent() {
   const router = useRouter();
@@ -42,9 +41,5 @@ function AdminSettingsContent() {
 }
 
 export default function AdminSettingsPage() {
-  return (
-    <AdminLayout>
-      <AdminSettingsContent />
-    </AdminLayout>
-  );
+  return <AdminSettingsContent />;
 }

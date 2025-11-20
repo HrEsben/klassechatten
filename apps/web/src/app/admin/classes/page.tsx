@@ -1,7 +1,6 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import AdminLayout from '@/components/AdminLayout';
 import { useAdminClasses } from '@/hooks/useAdminClasses';
 import { format } from 'date-fns';
 import { da } from 'date-fns/locale';
@@ -225,9 +224,5 @@ function AdminClassesContent() {
 }
 
 export default function AdminClassesPage() {
-  return (
-    <AdminLayout>
-      <AdminClassesContent />
-    </AdminLayout>
-  );
+  return <AdminClassesContent />;
 }

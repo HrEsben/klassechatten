@@ -1,6 +1,5 @@
 "use client";
 import Link from 'next/link';
-import AdminLayout from '@/components/AdminLayout';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserClasses } from '@/hooks/useUserClasses';
 import { School, Users, MessageSquare, TriangleAlert, TrendingUp, Activity, Hash, LayoutList } from 'lucide-react';
@@ -219,22 +218,19 @@ export default function AdminHomePage() {
   // Show loading state while hooks are initializing
   if (profileLoading || classesLoading) {
     return (
-      <AdminLayout>
-        <div className="w-full max-w-7xl mx-auto px-12 py-8">
-          <div className="flex justify-center items-center min-h-[60vh]">
-            <div className="flex flex-col items-center gap-4">
-              <span className="loading loading-ball loading-lg text-primary"></span>
-              <p className="text-base-content/60 font-medium">Indlæser...</p>
-            </div>
+      <div className="w-full max-w-7xl mx-auto px-12 py-8">
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <div className="flex flex-col items-center gap-4">
+            <span className="loading loading-ball loading-lg text-primary"></span>
+            <p className="text-base-content/60 font-medium">Indlæser...</p>
           </div>
         </div>
-      </AdminLayout>
+      </div>
     );
   }
 
   return (
-    <AdminLayout>
-      <div className="w-full max-w-7xl mx-auto px-12 py-8 space-y-8">
+    <div className="w-full max-w-7xl mx-auto px-12 py-8 space-y-8">
         <div>
           <h1 className="text-3xl font-black uppercase tracking-tight text-base-content">
             {isGlobalAdmin ? 'Dashboard' : 'Mine Klasser'}
@@ -395,6 +391,5 @@ export default function AdminHomePage() {
           </div>
         )}
       </div>
-    </AdminLayout>
   );
 }

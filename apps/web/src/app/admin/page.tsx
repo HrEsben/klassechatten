@@ -6,7 +6,7 @@ import { useUserClasses } from '@/hooks/useUserClasses';
 import { School, Users, MessageSquare, TriangleAlert, TrendingUp, Activity, Hash, LayoutList } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { LoadingSpinner, EmptyState } from '@/components/shared';
+import { LoadingSpinner, EmptyState, ClassCard } from '@/components/shared';
 
 interface DashboardStats {
   totalClasses: number;
@@ -26,6 +26,7 @@ interface ClassStats {
 }
 
 function ClassStatsCard({ classData }: { classData: any }) {
+  const router = useRouter();
   const [stats, setStats] = useState<ClassStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -69,81 +70,32 @@ function ClassStatsCard({ classData }: { classData: any }) {
     }
   };
 
-  return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-2xl font-black uppercase tracking-tight text-base-content">
-          {classData.nickname || classData.label}
-        </h2>
-        <p className="text-xs font-mono uppercase tracking-wider text-base-content/50 mt-1">
-          {classData.school_name} • {classData.grade_level}. klasse
-        </p>
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12">
+        <LoadingSpinner size="lg" />
       </div>
+    );
+  }
 
-      {loading ? (
-        <div className="flex justify-center py-8">
-          <LoadingSpinner size="md" />
-        </div>
-      ) : stats ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-3">
-                <Users className="w-6 h-6 stroke-current text-primary" strokeWidth={2} />
-                <span className="text-xl font-black text-base-content">{stats.memberCount}</span>
-              </div>
-              <h3 className="text-xs font-black uppercase tracking-tight text-base-content">
-                Medlemmer
-              </h3>
-            </div>
-          </div>
-
-          <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-3">
-                <Hash className="w-6 h-6 stroke-current text-accent" strokeWidth={2} />
-                <span className="text-xl font-black text-base-content">{stats.roomCount}</span>
-              </div>
-              <h3 className="text-xs font-black uppercase tracking-tight text-base-content">
-                Kanaler
-              </h3>
-            </div>
-          </div>
-
-          <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-3">
-                <MessageSquare className="w-6 h-6 stroke-current text-info" strokeWidth={2} />
-                <span className="text-xl font-black text-base-content">{stats.messageCount.toLocaleString()}</span>
-              </div>
-              <h3 className="text-xs font-black uppercase tracking-tight text-base-content">
-                Beskeder
-              </h3>
-            </div>
-          </div>
-
-          <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-3">
-                <TriangleAlert className="w-6 h-6 stroke-current text-warning" strokeWidth={2} />
-                <span className="text-xl font-black text-base-content">{stats.flaggedCount}</span>
-              </div>
-              <h3 className="text-xs font-black uppercase tracking-tight text-base-content">
-                Aktive Flag
-              </h3>
-              {stats.flaggedCount > 0 && (
-                <Link 
-                  href={`/admin/flagged-messages?class_id=${classData.id}`} 
-                  className="btn btn-xs btn-warning mt-3"
-                >
-                  Se Flag
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </div>
+  return (
+    <ClassCard
+      classData={classData}
+      showStats={!!stats}
+      stats={stats || undefined}
+      onClick={() => router.push(`/admin/classes/${classData.id}`)}
+      actions={
+        stats && stats.flaggedCount > 0 ? (
+          <Link 
+            href={`/admin/flagged-messages?class_id=${classData.id}`} 
+            className="btn btn-xs btn-warning"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {stats.flaggedCount} Flag
+          </Link>
+        ) : undefined
+      }
+    />
   );
 }
 

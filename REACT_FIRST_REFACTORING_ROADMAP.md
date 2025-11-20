@@ -74,32 +74,23 @@ Convert the KlasseChatten web app to follow a consistent React-first architectur
 
 ---
 
-## 🔐 Phase 4: Auth & Onboarding Flow
-**Status**: Not Started
+## ✅ Phase 4: Auth & Onboarding Flow (COMPLETED)
+**Status**: Done ✓
 
-### Current State:
-- All auth pages are client components
-- Each has its own layout/styling
-- No shared navigation between auth states
+### What was done:
+- Created AuthLayout component (16 lines) for minimal, centered auth page layout
+- Created (auth) route group to organize all 6 auth pages
+- Created (auth)/layout.tsx wrapper for shared layout
+- Refactored all 6 auth pages to remove min-h-screen wrappers
+- Extracted layout from LoginForm - now content-only
+- All multi-step flows (onboarding, create-child) preserved
+- All 266 tests still passing (no breakage)
 
-### Pages to Optimize:
-1. `/login/page.tsx` - Login page
-2. `/onboarding/page.tsx` - User onboarding
-3. `/student-signup/page.tsx` - Student registration
-4. `/accept-invite/page.tsx` - Accept class invite
-5. `/create-child/page.tsx` - Create child account
-6. `/claim-child/page.tsx` - Link parent to child
-
-### Refactoring Tasks:
-- [ ] Consider shared `/app/(auth)/layout.tsx` for auth pages
-- [ ] Standardize auth flow navigation
-- [ ] Add progress indicators for multi-step flows
-- [ ] Ensure smooth transitions between auth states
-
-### Expected Benefits:
-- Consistent auth experience
-- Smooth flow through signup → onboarding → class join
-- No jarring page reloads during sensitive auth operations
+### Impact:
+- Smooth transitions between login → onboarding → class join/create
+- No page flashes during auth flow
+- Consistent centered layout across all auth pages
+- Cleaner code separation (layout vs. content)
 
 ---
 

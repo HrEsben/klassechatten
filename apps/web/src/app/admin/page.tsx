@@ -147,21 +147,23 @@ function ClassStatsCard({ classData }: { classData: any }) {
 }
 
 export default function AdminHomePage() {
-  const { profile } = useUserProfile();
-  const { classes } = useUserClasses();
+  const { profile, loading: profileLoading } = useUserProfile();
+  const { classes, loading: classesLoading } = useUserClasses();
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
   
   const isGlobalAdmin = profile?.role === 'admin';
   const adminClasses = classes.filter(c => c.is_class_admin);
 
   useEffect(() => {
+    if (profileLoading) return;
+    
     if (isGlobalAdmin) {
       fetchDashboardStats();
     } else {
-      setLoading(false);
+      setStatsLoading(false);
     }
-  }, [isGlobalAdmin]);
+  }, [isGlobalAdmin, profileLoading]);
 
   const fetchDashboardStats = async () => {
     try {
@@ -210,9 +212,25 @@ export default function AdminHomePage() {
     } catch (err) {
       console.error('Failed to fetch dashboard stats:', err);
     } finally {
-      setLoading(false);
+      setStatsLoading(false);
     }
   };
+
+  // Show loading state while hooks are initializing
+  if (profileLoading || classesLoading) {
+    return (
+      <AdminLayout>
+        <div className="w-full max-w-7xl mx-auto px-12 py-8">
+          <div className="flex justify-center items-center min-h-[60vh]">
+            <div className="flex flex-col items-center gap-4">
+              <span className="loading loading-ball loading-lg text-primary"></span>
+              <p className="text-base-content/60 font-medium">Indlæser...</p>
+            </div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -232,7 +250,7 @@ export default function AdminHomePage() {
         {/* Global Admin View */}
         {isGlobalAdmin && (
           <>
-            {loading ? (
+            {statsLoading ? (
               <div className="flex justify-center items-center py-12">
                 <span className="loading loading-ball loading-lg text-primary"></span>
               </div>

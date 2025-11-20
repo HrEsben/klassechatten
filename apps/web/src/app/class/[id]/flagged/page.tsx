@@ -23,7 +23,7 @@ export default function ClassFlaggedMessagesPage({ params }: { params: Promise<{
               <ArrowLeft size={20} strokeWidth={2} />
               Tilbage
             </Link>
-            <UserMenu />
+            <UserMenu userName={profile?.display_name || user?.email} userRole={profile?.role || 'loading'} avatarUrl={profile?.avatar_url} />
           </div>
         </div>
         <div className="w-full max-w-7xl mx-auto px-12 py-8">
@@ -56,7 +56,7 @@ export default function ClassFlaggedMessagesPage({ params }: { params: Promise<{
               <ArrowLeft size={20} strokeWidth={2} />
               Tilbage
             </Link>
-            <UserMenu />
+            <UserMenu userName={profile?.display_name || user?.email} userRole={profile?.role || 'user'} avatarUrl={profile?.avatar_url} />
           </div>
         </div>
         <div className="w-full max-w-7xl mx-auto px-12 py-8">
@@ -80,7 +80,7 @@ export default function ClassFlaggedMessagesPage({ params }: { params: Promise<{
             <ArrowLeft size={20} strokeWidth={2} />
             Tilbage
           </Link>
-          <UserMenu />
+          <UserMenu userName={profile?.display_name || user?.email} userRole={profile?.role || 'user'} avatarUrl={profile?.avatar_url} />
         </div>
       </div>
       <div className="w-full max-w-7xl mx-auto px-12 py-8">

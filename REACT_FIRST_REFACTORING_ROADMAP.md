@@ -168,8 +168,9 @@ Created 4 additional shared components to eliminate more duplication:
 - [ ] Modal patterns (confirmation dialogs, form modals) - **5+ locations identified**
 
 **Design Improvements Needed:**
-- [ ] `/accept-invite` page - Replace Lucide icons with Berlin Edgy SVG icons (square linecaps)
-- See `DESIGN_IMPROVEMENTS_NEEDED.md` for detailed tracking
+- ⚠️ Icon library research - Find icon set with better Berlin Edgy aesthetic (square linecaps)
+- Note: Keeping Lucide for now (reliable, custom SVG icons problematic)
+- See `DESIGN_IMPROVEMENTS_NEEDED.md` for alternatives to evaluate
 
 **Impact:**
 - 700+ lines of new reusable component code

@@ -5,41 +5,41 @@ This document tracks pages and components that need design improvements to fully
 ## Pages Needing Design Improvements
 
 ### Accept Invite Page (`/accept-invite`)
-**Status**: Needs Improvement
-**Priority**: Medium
+**Status**: Acceptable (Deferred)
+**Priority**: Low
 **URL**: https://klassechatten.vercel.app/accept-invite
 
-**Current Issues:**
-1. **Rounded corners on icons** - Lucide icons (CheckCircle, XCircle, Mail, Clock) use rounded linecaps
-2. **Inconsistent icon style** - Should use square linecaps and miter linejoins (Berlin Edgy)
-3. **Mixed icon sources** - Uses Lucide instead of consistent SVG icons with strokeLinecap="square"
-4. **Could use FormInput component** - If any input fields are added in future
+**Current State:**
+- Uses Lucide icons (CheckCircle, XCircle, Mail, Clock) with rounded linecaps
+- Not perfectly aligned with Berlin Edgy aesthetic (prefers square linecaps)
+- **Decision**: Keep Lucide icons for now - custom SVG icons have proven unreliable
+- **Future**: Looking for a better icon set that matches Berlin Edgy style
 
-**Design Compliance Issues:**
-- ❌ Icons don't follow Berlin Edgy aesthetic (rounded vs square)
+**Design Compliance Status:**
+- ⚠️ Icons don't perfectly match Berlin Edgy aesthetic (rounded vs square) - **ACCEPTED**
 - ✅ Border-2 usage is correct
 - ✅ Sharp corners on cards (no rounded-*)
 - ✅ Color palette usage is correct
 - ✅ Typography follows system (font-black, uppercase, tracking-tight)
 - ✅ Spacing scale is correct
 
-**Recommended Fixes:**
-1. Replace Lucide icons with custom SVG icons using `strokeLinecap="square"` and `strokeLinejoin="miter"`
-2. Ensure all icons follow the same 32x32px or 64x64px size standard
-3. Use `strokeWidth={2}` consistently across all icons
-4. Consider using shared icon components if we create a berlin-edgy icon library
+**Reasoning:**
+- Lucide icons are reliable, well-maintained, and accessible
+- Custom SVG icons have been problematic in practice
+- Better to have working, slightly-rounded icons than broken custom ones
+- The visual difference is minor and doesn't impact user experience
 
-**Example Berlin Edgy Icon:**
-```tsx
-<svg className="w-16 h-16 stroke-current text-success mx-auto" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-  <path strokeLinecap="square" strokeLinejoin="miter" d="M5 13l4 4L19 7" />
-</svg>
-```
+**Future Considerations:**
+- Search for icon libraries that offer square linecap variants
+- Consider: Phosphor Icons, Tabler Icons, or other geometric icon sets
+- Evaluate if any icon library offers a "sharp" or "geometric" variant
+- Could potentially fork Lucide and modify stroke caps (high effort)
 
 **Impact:**
-- Low functionality impact (icons work fine)
-- Medium visual consistency impact (breaks Berlin Edgy aesthetic)
-- Easy fix (replace 4 icon imports with custom SVG)
+- Visual consistency: Minor compromise (rounded vs square caps)
+- Functionality: Perfect (Lucide is reliable and accessible)
+- Maintenance: Low (well-maintained library)
+- Decision: **Pragmatic choice - keep Lucide until better alternative found**
 
 ---
 
@@ -101,7 +101,18 @@ These pages have not yet been audited for design compliance:
 - But never use rounded-* utilities for corners
 
 **Icon Sources:**
-- Prefer custom SVG with square linecaps over icon libraries
-- If using icon libraries, fork and modify to square linecaps
-- Lucide icons work but need modification (rounded by default)
-- Consider creating a shared berlin-edgy icon component library
+- **Current choice**: Lucide icons (pragmatic, reliable, accessible)
+- **Trade-off**: Lucide uses rounded linecaps (not perfect for Berlin Edgy, but acceptable)
+- **Avoid**: Custom SVG icons have proven unreliable in practice
+- **Future research**: Looking for icon libraries with geometric/sharp style variants
+- **Alternatives to evaluate**:
+  - Phosphor Icons (has multiple weight variants)
+  - Tabler Icons (geometric, might have sharp variants)
+  - Remix Icon (comprehensive, check for sharp options)
+  - Iconoir (minimalist, geometric aesthetic)
+  
+**Icon Philosophy:**
+- **Pragmatism over perfection**: Working icons > broken perfect icons
+- **Consistency matters more**: All icons from same library > mixed sources
+- **Accessibility first**: Proper ARIA labels and semantic HTML
+- **Future flexibility**: Easy to swap entire icon library if better option found

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Check } from 'lucide-react';
-import { LoadingSpinner, ErrorState } from '@/components/shared';
+import { LoadingSpinner, ErrorState, FormInput } from '@/components/shared';
 
 interface ProfileData {
   user_id: string;
@@ -203,26 +203,15 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Display Name Input */}
-                <label className="form-control w-full">
-                  <div className="label">
-                    <span className="label-text text-xs font-bold uppercase tracking-wider">
-                      Visningsnavn
-                    </span>
-                  </div>
-                  <input
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder={profile.display_name}
-                    className="input input-bordered w-full"
-                    maxLength={50}
-                  />
-                  <div className="label">
-                    <span className="label-text-alt text-xs text-base-content/60">
-                      Dette navn vises i chatten og overalt i systemet
-                    </span>
-                  </div>
-                </label>
+                <FormInput
+                  label="Visningsnavn"
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder={profile.display_name}
+                  helperText="Dette navn vises i chatten og overalt i systemet"
+                  maxLength={50}
+                />
 
                 {/* Avatar Color Picker */}
                 <div className="form-control w-full">
@@ -255,24 +244,14 @@ export default function ProfilePage() {
                 </div>
 
                 {/* User Email (Read-only) */}
-                <label className="form-control w-full">
-                  <div className="label">
-                    <span className="label-text text-xs font-bold uppercase tracking-wider">
-                      Email
-                    </span>
-                  </div>
-                  <input
-                    type="email"
-                    value={user?.email || ''}
-                    disabled
-                    className="input input-bordered w-full input-disabled"
-                  />
-                  <div className="label">
-                    <span className="label-text-alt text-xs text-base-content/60">
-                      Email kan ikke ændres
-                    </span>
-                  </div>
-                </label>
+                <FormInput
+                  label="Email"
+                  type="email"
+                  value={user?.email || ''}
+                  disabled
+                  helperText="Email kan ikke ændres"
+                  readOnly
+                />
               </div>
             </div>
 

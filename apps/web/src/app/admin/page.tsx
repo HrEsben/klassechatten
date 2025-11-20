@@ -5,6 +5,7 @@ import { useUserClasses } from '@/hooks/useUserClasses';
 import { School, Users, MessageSquare, TriangleAlert, TrendingUp, Activity, Hash, LayoutList } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { LoadingSpinner } from '@/components/shared';
 
 interface DashboardStats {
   totalClasses: number;
@@ -80,7 +81,7 @@ function ClassStatsCard({ classData }: { classData: any }) {
 
       {loading ? (
         <div className="flex justify-center py-8">
-          <span className="loading loading-ball loading-md text-primary"></span>
+          <LoadingSpinner size="md" />
         </div>
       ) : stats ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -219,12 +220,7 @@ export default function AdminHomePage() {
   if (profileLoading || classesLoading) {
     return (
       <div className="w-full max-w-7xl mx-auto px-12 py-8">
-        <div className="flex justify-center items-center min-h-[60vh]">
-          <div className="flex flex-col items-center gap-4">
-            <span className="loading loading-ball loading-lg text-primary"></span>
-            <p className="text-base-content/60 font-medium">Indlæser...</p>
-          </div>
-        </div>
+        <LoadingSpinner fullHeight />
       </div>
     );
   }
@@ -248,7 +244,7 @@ export default function AdminHomePage() {
           <>
             {statsLoading ? (
               <div className="flex justify-center items-center py-12">
-                <span className="loading loading-ball loading-lg text-primary"></span>
+                <LoadingSpinner size="lg" />
               </div>
             ) : stats ? (
               <div className="space-y-8">

@@ -5,6 +5,7 @@ import { useAdminClasses } from '@/hooks/useAdminClasses';
 import { format } from 'date-fns';
 import { da } from 'date-fns/locale';
 import { useState } from 'react';
+import { LoadingSpinner, ErrorState } from '@/components/shared';
 
 function AdminClassesContent() {
   const router = useRouter();
@@ -29,25 +30,11 @@ function AdminClassesContent() {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-4">
-          <span className="loading loading-ball loading-lg text-primary"></span>
-          <p className="text-base-content/60 font-medium">Indlæser klasser...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner fullHeight text="Indlæser klasser..." />;
   }
 
   if (error) {
-    return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="text-center space-y-4">
-          <p className="text-error font-medium">Fejl ved indlæsning af klasser</p>
-          <p className="text-base-content/60 text-sm">{error}</p>
-        </div>
-      </div>
-    );
+    return <ErrorState message={error} title="Fejl ved indlæsning af klasser" fullHeight />;
   }
 
   return (

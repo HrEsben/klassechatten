@@ -121,18 +121,25 @@ Convert the KlasseChatten web app to follow a consistent React-first architectur
 ---
 
 ## 🧩 Phase 6: Component Consolidation
-**Status**: Ongoing
+**Status**: In Progress
 
-### Already Done:
+### Completed:
 - ✅ `FlaggedMessagesList` - Shared between admin and class admin pages
+- ✅ `LoadingSpinner` - Unified loading states with size variants (xs/sm/md/lg/xl)
+- ✅ `EmptyState` - Consistent empty states with icon, title, description, action
+- ✅ `ErrorState` - Unified error displays with retry capability
+- ✅ `UserAvatar` - Square avatars with initials fallback, color support, sizes
 
-### Opportunities for Consolidation:
+### In Progress:
+- [ ] Replace inline loading states across codebase with `LoadingSpinner`
+- [ ] Replace inline empty states with `EmptyState` component
+- [ ] Replace inline error displays with `ErrorState` component
+- [ ] Replace avatar implementations with `UserAvatar` component
+
+### Future Consolidation:
 - [ ] User cards/lists (appears in multiple places)
 - [ ] Class cards (admin classes, user classes)
 - [ ] Room/channel lists
-- [ ] Loading states (standardize spinner pattern)
-- [ ] Error states (consistent error display)
-- [ ] Empty states (consistent "no data" messages)
 - [ ] Form inputs (standardize input styling)
 - [ ] Modal patterns (consistent modal behavior)
 

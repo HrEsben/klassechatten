@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Check } from 'lucide-react';
+import { LoadingSpinner, ErrorState } from '@/components/shared';
 
 interface ProfileData {
   user_id: string;
@@ -136,24 +137,11 @@ export default function ProfilePage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-base-300">
-        <div className="flex flex-col items-center gap-6">
-          <span className="loading loading-ball loading-lg text-primary"></span>
-          <p className="text-base-content/60 font-medium">Indlæser...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen />;
   }
 
   if (!profile) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-base-300">
-        <div className="bg-error/10 border-2 border-error/20 px-6 py-4 font-mono text-error text-sm">
-          Profil ikke fundet
-        </div>
-      </div>
-    );
+    return <ErrorState message="Profil ikke fundet" fullScreen />;
   }
 
   return (

@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { ArrowLeft, Mail, Users, Calendar, Shield, Send } from 'lucide-react';
+import { LoadingSpinner, ErrorState } from '@/components/shared';
 
 interface ChildProfile {
   id: string;
@@ -266,10 +267,9 @@ export default function ChildProfilePage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-base-300 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <span className="loading loading-ball loading-lg text-primary"></span>
-          <p className="text-base-content/60 font-medium">Indlæser...</p>
+      <div className="min-h-screen bg-base-300 p-4">
+        <div className="w-full max-w-2xl mx-auto py-8">
+          <LoadingSpinner fullHeight text="Indlæser elevprofil..." />
         </div>
       </div>
     );
@@ -279,11 +279,10 @@ export default function ChildProfilePage({
     return (
       <div className="min-h-screen bg-base-300 p-4">
         <div className="w-full max-w-2xl mx-auto py-8">
-          <div className="alert alert-error alert-outline">
-            <span className="text-xs font-mono uppercase tracking-wider">
-              {error || 'Eleven blev ikke fundet'}
-            </span>
-          </div>
+          <ErrorState 
+            message={error || 'Eleven blev ikke fundet'} 
+            fullHeight
+          />
           <Link href="/" className="btn btn-ghost mt-4">
             <ArrowLeft className="w-5 h-5" strokeWidth={2} />
             Tilbage til Dashboard

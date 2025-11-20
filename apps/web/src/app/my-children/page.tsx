@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { ArrowLeft, Users, UserPlus, TriangleAlert, ChevronRight, Check } from 'lucide-react';
+import { LoadingSpinner } from '@/components/shared';
 
 interface Child {
   child_id: string;
@@ -48,14 +49,7 @@ export default function MyChildrenPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-base-300 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <span className="loading loading-ball loading-lg text-primary"></span>
-          <p className="text-base-content/60 font-medium">Indlæser...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen />;
   }
 
   return (

@@ -6,6 +6,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import ClassRoomBrowser from '@/components/ClassRoomBrowser';
 import AppLayout from '@/components/AppLayout';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { LoadingSpinner } from '@/components/shared';
 
 function HomePage() {
   const router = useRouter();
@@ -27,28 +28,14 @@ function HomePage() {
     <AppLayout>
       {isInChatRoom ? (
         <div className="h-full w-full">
-          <Suspense fallback={
-            <div className="flex justify-center items-center min-h-[60vh]">
-              <div className="flex flex-col items-center gap-4">
-                <span className="loading loading-ball loading-lg text-primary"></span>
-                <p className="text-base-content/60 font-medium">Indlæser...</p>
-              </div>
-            </div>
-          }>
+          <Suspense fallback={<LoadingSpinner fullHeight />}>
             <ClassRoomBrowser />
           </Suspense>
         </div>
       ) : (
         <div className="h-full overflow-y-auto">
           <div className="w-full max-w-7xl mx-auto px-12 py-8">
-            <Suspense fallback={
-              <div className="flex justify-center items-center min-h-[60vh]">
-                <div className="flex flex-col items-center gap-4">
-                  <span className="loading loading-ball loading-lg text-primary"></span>
-                  <p className="text-base-content/60 font-medium">Indlæser...</p>
-                </div>
-              </div>
-            }>
+            <Suspense fallback={<LoadingSpinner fullHeight />}>
               <ClassRoomBrowser />
             </Suspense>
           </div>

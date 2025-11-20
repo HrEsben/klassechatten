@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import FlaggedMessagesList from '@/components/FlaggedMessagesList';
 import { Flag, AlertCircle } from 'lucide-react';
+import { LoadingSpinner } from '@/components/shared';
 
 export default function FlaggedMessagesPage() {
   const router = useRouter();
@@ -26,12 +27,7 @@ export default function FlaggedMessagesPage() {
   if (profileLoading || classesLoading) {
     return (
       <div className="w-full max-w-7xl mx-auto px-12 py-8">
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="flex flex-col items-center gap-4">
-            <span className="loading loading-ball loading-lg text-primary"></span>
-            <p className="text-base-content/60 font-medium">Indlæser flaggede beskeder...</p>
-          </div>
-        </div>
+        <LoadingSpinner fullHeight text="Indlæser flaggede beskeder..." />
       </div>
     );
   }

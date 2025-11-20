@@ -22,6 +22,7 @@ interface FlaggedMessage {
   score: number;
   labels: string[];
   severity: string;
+  status: string;
   reviewed_by?: string;
   reviewed_at?: string;
   created_at: string;
@@ -751,12 +752,38 @@ export default function ClassFlaggedMessagesPage({
                       </div>
                     </div>
 
+                    {/* Reviewed Status */}
+                    {item.reviewed_by && item.reviewed_at && (
+                      <div className="px-4 py-3 bg-base-200 border-t-2 border-base-content/10">
+                        <div className="flex items-center gap-2">
+                          {item.status === 'confirmed' ? (
+                            <Check className="w-4 h-4 text-success" strokeWidth={2} />
+                          ) : (
+                            <X className="w-4 h-4 text-base-content/60" strokeWidth={2} />
+                          )}
+                          <p className="text-xs text-base-content/60">
+                            <span className="font-bold">
+                              {item.status === 'confirmed' ? 'Noteret' : 'Flag fjernet'}
+                            </span>
+                            {' '}
+                            {item.reviewed_by === user?.id ? 'af dig' : 'af anden moderator'}
+                            {' • '}
+                            {formatDistanceToNow(new Date(item.reviewed_at), { 
+                              addSuffix: true, 
+                              locale: da 
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Action Buttons */}
                     <div className="px-4 pb-4 flex gap-2 flex-wrap">
                       <button
                         onClick={() => handleMarkAsViolation(item.event_id)}
                         disabled={!!(item.reviewed_by && item.reviewed_by !== user?.id)}
                         className="btn btn-sm btn-ghost gap-2 text-success hover:bg-success/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={item.reviewed_by && item.reviewed_by !== user?.id ? 'Allerede behandlet af anden moderator' : ''}
                       >
                         <Check size={16} strokeWidth={2} />
                         Noteret
@@ -765,6 +792,7 @@ export default function ClassFlaggedMessagesPage({
                         onClick={() => handleRemoveFlag(item.event_id)}
                         disabled={!!(item.reviewed_by && item.reviewed_by !== user?.id)}
                         className="btn btn-sm btn-ghost gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={item.reviewed_by && item.reviewed_by !== user?.id ? 'Allerede behandlet af anden moderator' : ''}
                       >
                         <X size={16} strokeWidth={2} />
                         Fjern flag

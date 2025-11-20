@@ -249,6 +249,7 @@ export async function GET(request: NextRequest) {
         score: event.score,
         labels: event.labels,
         severity: event.severity,
+        status: event.status,
         reviewed_by: event.reviewed_by,
         reviewed_at: event.reviewed_at,
         created_at: event.created_at,

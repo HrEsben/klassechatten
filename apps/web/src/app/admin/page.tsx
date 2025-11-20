@@ -3,177 +3,369 @@ import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useUserClasses } from '@/hooks/useUserClasses';
-import { Flag, LayoutList, Users, Settings, MessageSquare, UserCheck, BookOpen } from 'lucide-react';
+import { School, Users, MessageSquare, TriangleAlert, TrendingUp, Activity, Hash } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+
+interface DashboardStats {
+  totalClasses: number;
+  totalUsers: number;
+  totalRooms: number;
+  totalMessages: number;
+  messages24h: number;
+  activeFlags: number;
+  avgMessageSendMs: number | null;
+}
+
+interface ClassStats {
+  memberCount: number;
+  roomCount: number;
+  messageCount: number;
+  flaggedCount: number;
+}
+
+function ClassStatsCard({ classData }: { classData: any }) {
+  const [stats, setStats] = useState<ClassStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchClassStats();
+  }, [classData.id]);
+
+  const fetchClassStats = async () => {
+    try {
+      const [members, rooms, messages, flagged] = await Promise.all([
+        supabase
+          .from('class_members')
+          .select('user_id', { count: 'exact', head: true })
+          .eq('class_id', classData.id),
+        supabase
+          .from('rooms')
+          .select('id', { count: 'exact', head: true })
+          .eq('class_id', classData.id),
+        supabase
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('class_id', classData.id),
+        supabase
+          .from('moderation_events')
+          .select('id', { count: 'exact', head: true })
+          .eq('class_id', classData.id)
+          .in('status', ['flagged', 'hidden'])
+          .is('reviewed_at', null)
+      ]);
+
+      setStats({
+        memberCount: members.count || 0,
+        roomCount: rooms.count || 0,
+        messageCount: messages.count || 0,
+        flaggedCount: flagged.count || 0
+      });
+    } catch (err) {
+      console.error('Failed to fetch class stats:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-2xl font-black uppercase tracking-tight text-base-content">
+          {classData.nickname || classData.label}
+        </h2>
+        <p className="text-xs font-mono uppercase tracking-wider text-base-content/50 mt-1">
+          {classData.school_name} • {classData.grade_level}. klasse
+        </p>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <span className="loading loading-ball loading-md text-primary"></span>
+        </div>
+      ) : stats ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-3">
+                <Users className="w-6 h-6 stroke-current text-primary" strokeWidth={2} />
+                <span className="text-xl font-black text-base-content">{stats.memberCount}</span>
+              </div>
+              <h3 className="text-xs font-black uppercase tracking-tight text-base-content">
+                Medlemmer
+              </h3>
+            </div>
+          </div>
+
+          <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-3">
+                <Hash className="w-6 h-6 stroke-current text-accent" strokeWidth={2} />
+                <span className="text-xl font-black text-base-content">{stats.roomCount}</span>
+              </div>
+              <h3 className="text-xs font-black uppercase tracking-tight text-base-content">
+                Kanaler
+              </h3>
+            </div>
+          </div>
+
+          <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-3">
+                <MessageSquare className="w-6 h-6 stroke-current text-info" strokeWidth={2} />
+                <span className="text-xl font-black text-base-content">{stats.messageCount.toLocaleString()}</span>
+              </div>
+              <h3 className="text-xs font-black uppercase tracking-tight text-base-content">
+                Beskeder
+              </h3>
+            </div>
+          </div>
+
+          <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-3">
+                <TriangleAlert className="w-6 h-6 stroke-current text-warning" strokeWidth={2} />
+                <span className="text-xl font-black text-base-content">{stats.flaggedCount}</span>
+              </div>
+              <h3 className="text-xs font-black uppercase tracking-tight text-base-content">
+                Aktive Flag
+              </h3>
+              {stats.flaggedCount > 0 && (
+                <Link 
+                  href={`/admin/flagged-messages?class_id=${classData.id}`} 
+                  className="btn btn-xs btn-warning mt-3"
+                >
+                  Se Flag
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export default function AdminHomePage() {
   const { profile } = useUserProfile();
   const { classes } = useUserClasses();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
   
   const isGlobalAdmin = profile?.role === 'admin';
   const adminClasses = classes.filter(c => c.is_class_admin);
+
+  useEffect(() => {
+    if (isGlobalAdmin) {
+      fetchDashboardStats();
+    } else {
+      setLoading(false);
+    }
+  }, [isGlobalAdmin]);
+
+  const fetchDashboardStats = async () => {
+    try {
+      // Fetch aggregate stats
+      const { data, error } = await supabase.rpc('get_dashboard_stats');
+      
+      if (error) {
+        // Fallback to manual queries if RPC doesn't exist
+        const [classes, users, rooms, messages, messages24h, flags, perf] = await Promise.all([
+          supabase.from('classes').select('id', { count: 'exact', head: true }),
+          supabase.from('profiles').select('user_id', { count: 'exact', head: true }),
+          supabase.from('rooms').select('id', { count: 'exact', head: true }),
+          supabase.from('messages').select('id', { count: 'exact', head: true }),
+          supabase
+            .from('messages')
+            .select('id', { count: 'exact', head: true })
+            .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
+          supabase
+            .from('moderation_events')
+            .select('id', { count: 'exact', head: true })
+            .in('status', ['flagged', 'hidden'])
+            .is('reviewed_at', null),
+          supabase
+            .from('performance_metrics')
+            .select('duration')
+            .eq('type', 'message_send')
+            .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        ]);
+
+        const avgDuration = perf.data && perf.data.length > 0
+          ? Math.round(perf.data.reduce((sum, m) => sum + m.duration, 0) / perf.data.length)
+          : null;
+
+        setStats({
+          totalClasses: classes.count || 0,
+          totalUsers: users.count || 0,
+          totalRooms: rooms.count || 0,
+          totalMessages: messages.count || 0,
+          messages24h: messages24h.count || 0,
+          activeFlags: flags.count || 0,
+          avgMessageSendMs: avgDuration
+        });
+      } else {
+        setStats(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch dashboard stats:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <AdminLayout>
       <div className="w-full max-w-7xl mx-auto px-12 py-8 space-y-8">
         <div>
           <h1 className="text-3xl font-black uppercase tracking-tight text-base-content">
-            {isGlobalAdmin ? 'System Oversigt' : 'Mine Klasser'}
+            {isGlobalAdmin ? 'Dashboard' : 'Mine Klasser'}
           </h1>
           <div className="h-1 w-24 bg-primary mt-2"></div>
           <p className="text-sm text-base-content/60 mt-3">
             {isGlobalAdmin 
-              ? 'Hurtige genveje til system administration og moderation.'
+              ? 'System oversigt og nøgletal.'
               : 'Administrer dine klasser og se flaggede beskeder.'}
           </p>
         </div>
 
         {/* Global Admin View */}
         {isGlobalAdmin && (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Link
-              href="/admin/flagged-messages"
-              className="relative group text-left bg-base-100 border-2 border-base-content/10 hover:border-primary/50 transition-all duration-200 overflow-hidden"
-            >
-              <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
-              <div className="px-8 py-6 pl-10">
-                <div className="flex items-start justify-between mb-3">
-                  <Flag className="w-8 h-8 stroke-current text-primary" strokeWidth={2} />
-                </div>
-                <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
-                  Alle Flaggede Beskeder
-                </h3>
-                <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
-                  Se og håndter AI-flagning og lærermarkeringer fra hele systemet
-                </p>
+          <>
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <span className="loading loading-ball loading-lg text-primary"></span>
               </div>
-            </Link>
+            ) : stats ? (
+              <div className="space-y-8">
+                {/* System Statistics */}
+                <div>
+                  <h2 className="text-xl font-black uppercase tracking-tight text-base-content mb-4">
+                    System Statistik
+                  </h2>
+                  <div className="stats stats-vertical lg:stats-horizontal shadow-lg w-full bg-base-100 border-2 border-base-content/10">
+                    <div className="stat">
+                      <div className="stat-figure text-primary">
+                        <School className="w-8 h-8 stroke-current" strokeWidth={2} />
+                      </div>
+                      <div className="stat-title text-xs font-bold uppercase tracking-widest">Klasser</div>
+                      <div className="stat-value text-primary">{stats.totalClasses}</div>
+                      <div className="stat-desc text-xs font-mono uppercase tracking-wider">Total antal klasser</div>
+                    </div>
 
-            <Link
-              href="/admin/classes"
-              className="relative group text-left bg-base-100 border-2 border-base-content/10 hover:border-primary/50 transition-all duration-200 overflow-hidden"
-            >
-              <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
-              <div className="px-8 py-6 pl-10">
-                <div className="flex items-start justify-between mb-3">
-                  <LayoutList className="w-8 h-8 stroke-current text-secondary" strokeWidth={2} />
-                </div>
-                <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
-                  Alle Klasser
-                </h3>
-                <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
-                  Gennemse og administrer alle klasser i systemet
-                </p>
-              </div>
-            </Link>
+                    <div className="stat">
+                      <div className="stat-figure text-secondary">
+                        <Users className="w-8 h-8 stroke-current" strokeWidth={2} />
+                      </div>
+                      <div className="stat-title text-xs font-bold uppercase tracking-widest">Brugere</div>
+                      <div className="stat-value text-secondary">{stats.totalUsers}</div>
+                      <div className="stat-desc text-xs font-mono uppercase tracking-wider">Total antal brugere</div>
+                    </div>
 
-            <Link
-              href="/admin/users"
-              className="relative group text-left bg-base-100 border-2 border-base-content/10 hover:border-primary/50 transition-all duration-200 overflow-hidden"
-            >
-              <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
-              <div className="px-8 py-6 pl-10">
-                <div className="flex items-start justify-between mb-3">
-                  <Users className="w-8 h-8 stroke-current text-accent" strokeWidth={2} />
+                    <div className="stat">
+                      <div className="stat-figure text-accent">
+                        <MessageSquare className="w-8 h-8 stroke-current" strokeWidth={2} />
+                      </div>
+                      <div className="stat-title text-xs font-bold uppercase tracking-widest">Kanaler</div>
+                      <div className="stat-value text-accent">{stats.totalRooms}</div>
+                      <div className="stat-desc text-xs font-mono uppercase tracking-wider">Aktive chat-kanaler</div>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
-                  Alle Brugere
-                </h3>
-                <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
-                  Find og administrer alle brugere i systemet
-                </p>
-              </div>
-            </Link>
 
-            <Link
-              href="/admin/settings"
-              className="relative group text-left bg-base-100 border-2 border-base-content/10 hover:border-primary/50 transition-all duration-200 overflow-hidden"
-            >
-              <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
-              <div className="px-8 py-6 pl-10">
-                <div className="flex items-start justify-between mb-3">
-                  <Settings className="w-8 h-8 stroke-current text-info" strokeWidth={2} />
+                {/* Activity & Moderation */}
+                <div>
+                  <h2 className="text-xl font-black uppercase tracking-tight text-base-content mb-4">
+                    Aktivitet & Moderation
+                  </h2>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
+                      <div className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <MessageSquare className="w-8 h-8 stroke-current text-info" strokeWidth={2} />
+                          <span className="text-2xl font-black text-base-content">{stats.totalMessages.toLocaleString()}</span>
+                        </div>
+                        <h3 className="text-sm font-black uppercase tracking-tight text-base-content mb-1">
+                          Total Beskeder
+                        </h3>
+                        <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
+                          Alle beskeder i systemet
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
+                      <div className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <TrendingUp className="w-8 h-8 stroke-current text-success" strokeWidth={2} />
+                          <span className="text-2xl font-black text-base-content">{stats.messages24h.toLocaleString()}</span>
+                        </div>
+                        <h3 className="text-sm font-black uppercase tracking-tight text-base-content mb-1">
+                          Sidste 24 Timer
+                        </h3>
+                        <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
+                          Nye beskeder i dag
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
+                      <div className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <TriangleAlert className="w-8 h-8 stroke-current text-warning" strokeWidth={2} />
+                          <span className="text-2xl font-black text-base-content">{stats.activeFlags}</span>
+                        </div>
+                        <h3 className="text-sm font-black uppercase tracking-tight text-base-content mb-1">
+                          Aktive Flag
+                        </h3>
+                        <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
+                          Venter på review
+                        </p>
+                        {stats.activeFlags > 0 && (
+                          <Link href="/admin/flagged-messages" className="btn btn-sm btn-warning mt-4">
+                            Se Flaggede Beskeder
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
-                  Systemindstillinger
-                </h3>
-                <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
-                  Konfigurer globale indstillinger og funktioner
-                </p>
+
+                {/* Performance Metrics */}
+                {stats.avgMessageSendMs !== null && (
+                  <div>
+                    <h2 className="text-xl font-black uppercase tracking-tight text-base-content mb-4">
+                      Performance
+                    </h2>
+                    <div className="bg-base-100 border-2 border-base-content/10 shadow-lg">
+                      <div className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <Activity className="w-8 h-8 stroke-current text-info" strokeWidth={2} />
+                          <span className="text-2xl font-black text-base-content">{stats.avgMessageSendMs}ms</span>
+                        </div>
+                        <h3 className="text-sm font-black uppercase tracking-tight text-base-content mb-1">
+                          Gennemsnitlig Besked Send Tid
+                        </h3>
+                        <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
+                          Sidste 24 timer
+                        </p>
+                        <Link href="/admin/performance" className="btn btn-sm btn-ghost mt-4">
+                          Se Detaljeret Performance
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            </Link>
-          </div>
+            ) : null}
+          </>
         )}
 
         {/* Class Admin View */}
         {!isGlobalAdmin && adminClasses.length > 0 && (
           <div className="space-y-8">
             {adminClasses.map((cls) => (
-              <div key={cls.id} className="space-y-4">
-                <div>
-                  <h2 className="text-2xl font-black uppercase tracking-tight text-base-content">
-                    {cls.nickname || cls.label}
-                  </h2>
-                  <p className="text-xs font-mono uppercase tracking-wider text-base-content/50 mt-1">
-                    {cls.school_name} • {cls.grade_level}
-                  </p>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  <Link
-                    href={`/?class=${cls.id}`}
-                    className="relative group text-left bg-base-100 border-2 border-base-content/10 hover:border-primary/50 transition-all duration-200 overflow-hidden"
-                  >
-                    <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
-                    <div className="px-8 py-6 pl-10">
-                      <div className="flex items-start justify-between mb-3">
-                        <MessageSquare className="w-8 h-8 stroke-current text-primary" strokeWidth={2} />
-                      </div>
-                      <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
-                        Klassekanaler
-                      </h3>
-                      <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
-                        Se og deltag i klassens chat-kanaler
-                      </p>
-                    </div>
-                  </Link>
-
-                  <Link
-                    href={`/class/${cls.id}/flagged`}
-                    className="relative group text-left bg-base-100 border-2 border-base-content/10 hover:border-primary/50 transition-all duration-200 overflow-hidden"
-                  >
-                    <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
-                    <div className="px-8 py-6 pl-10">
-                      <div className="flex items-start justify-between mb-3">
-                        <Flag className="w-8 h-8 stroke-current text-warning" strokeWidth={2} />
-                      </div>
-                      <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
-                        Flaggede Beskeder
-                      </h3>
-                      <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
-                        Se og håndter AI-flagning for denne klasse
-                      </p>
-                    </div>
-                  </Link>
-
-                  <Link
-                    href={`/class/${cls.id}/settings`}
-                    className="relative group text-left bg-base-100 border-2 border-base-content/10 hover:border-primary/50 transition-all duration-200 overflow-hidden"
-                  >
-                    <div className="absolute left-0 top-0 w-1 h-full bg-primary/30 group-hover:bg-primary group-hover:w-2 transition-all duration-200"></div>
-                    <div className="px-8 py-6 pl-10">
-                      <div className="flex items-start justify-between mb-3">
-                        <Settings className="w-8 h-8 stroke-current text-secondary" strokeWidth={2} />
-                      </div>
-                      <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
-                        Indstillinger
-                      </h3>
-                      <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
-                        Moderationsniveau og klasse-specifikke indstillinger
-                      </p>
-                    </div>
-                  </Link>
-                </div>
-              </div>
+              <ClassStatsCard key={cls.id} classData={cls} />
             ))}
           </div>
         )}

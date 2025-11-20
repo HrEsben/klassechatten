@@ -124,13 +124,6 @@ export default function AdminLayout({
                 <Activity className="w-5 h-5 stroke-current" strokeWidth={2} />
                 Performance
               </a>
-              <a
-                href="/admin/settings"
-                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-base-content hover:bg-primary/10 hover:border-l-2 hover:border-primary border-l-2 border-transparent transition-all"
-              >
-                <Settings className="w-5 h-5 stroke-current" strokeWidth={2} />
-                Systemindstillinger
-              </a>
             </div>
           )}
 
@@ -203,11 +196,10 @@ export default function AdminLayout({
             <>
               <li className="menu-title"><span>System Administration</span></li>
               <li><a href="/admin">Dashboard</a></li>
-              <li><a href="/admin/classes">Alle Klasser</a></li>
-              <li><a href="/admin/users">Alle Brugere</a></li>
-              <li><a href="/admin/flagged-messages">Alle Flaggede Beskeder</a></li>
+              <li><a href="/admin/classes">Klasser</a></li>
+              <li><a href="/admin/users">Brugere</a></li>
+              <li><a href="/admin/flagged-messages">Moderation</a></li>
               <li><a href="/admin/performance">Performance</a></li>
-              <li><a href="/admin/settings">Systemindstillinger</a></li>
               <li className="menu-title"><span>Hurtige Genveje</span></li>
               <li><a href="/">Mine Beskeder</a></li>
             </>

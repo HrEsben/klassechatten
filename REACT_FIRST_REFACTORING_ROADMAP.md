@@ -160,10 +160,11 @@ Created 4 additional shared components to eliminate more duplication:
 - ✅ LoginForm: Replaced 3 form inputs (~40 lines) with FormInput component
 - ✅ Onboarding: Replaced 4 form inputs (~40 lines) with FormInput component
 - ✅ Create-child: Replaced 4 form inputs (~30 lines) with FormInput component
-- ✅ Removed ~230 lines of duplicate logic total (11 replacements)
+- ✅ UsersSidebar: Replaced inline user rendering (~30 lines) with UserCard component
+- ✅ Removed ~255 lines of duplicate logic total (12 replacements across 5 files)
 
 **Ready for Future Replacements:**
-- [ ] User list patterns (admin/users, admin/classes/[id], UsersSidebar, UserMenu) - **8+ locations identified**
+- [ ] User list patterns (admin/users, admin/classes/[id], UserMenu) - **7+ locations identified**
 - [ ] Form input patterns (accept-invite, class settings, profile) - **7+ inputs remaining**
 - [ ] Modal patterns (confirmation dialogs, form modals) - **5+ locations identified**
 
@@ -174,8 +175,8 @@ Created 4 additional shared components to eliminate more duplication:
 
 **Impact:**
 - 700+ lines of new reusable component code
-- ~230 lines of duplicate logic removed (11 replacements across 4 files)
-- Foundation for replacing 40+ additional inline patterns
+- ~255 lines of duplicate logic removed (12 replacements across 5 files)
+- Foundation for replacing 35+ additional inline patterns
 - Consistent Berlin Edgy design across all card/form/modal patterns
 - All 42 routes compile successfully
 

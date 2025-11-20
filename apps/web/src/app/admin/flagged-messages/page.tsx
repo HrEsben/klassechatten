@@ -93,6 +93,7 @@ export default function FlaggedMessagesPage() {
   const [view, setView] = useState<'active' | 'archive'>('active');
   const [severity, setSeverity] = useState<'all' | 'high_severity' | 'moderate_severity'>('all');
   const [confirmedCount, setConfirmedCount] = useState<number>(0);
+  const [dismissedCount, setDismissedCount] = useState<number>(0);
   
   // Filter states
   const [filterClass, setFilterClass] = useState<string>('all');
@@ -164,6 +165,7 @@ export default function FlaggedMessagesPage() {
 
       if (res.ok) {
         setFlaggedMessages(prev => prev.filter(m => m.event_id !== eventId));
+        setDismissedCount(prev => prev + 1);
       } else {
         const errorData = await res.json();
         console.error('Failed to remove flag:', res.status, errorData);
@@ -338,29 +340,40 @@ export default function FlaggedMessagesPage() {
     fetchAllClasses();
   }, []);
 
-  // Fetch confirmed count
+  // Fetch confirmed and dismissed counts
   useEffect(() => {
-    async function fetchConfirmedCount() {
+    async function fetchCounts() {
       if (!canAccess) return;
       
       try {
-        const query = supabase
+        const confirmedQuery = supabase
           .from('moderation_events')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'confirmed');
         
+        const dismissedQuery = supabase
+          .from('moderation_events')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'dismissed');
+        
         if (classId) {
-          query.eq('class_id', classId);
+          confirmedQuery.eq('class_id', classId);
+          dismissedQuery.eq('class_id', classId);
         }
         
-        const { count } = await query;
-        setConfirmedCount(count || 0);
+        const [confirmedResult, dismissedResult] = await Promise.all([
+          confirmedQuery,
+          dismissedQuery
+        ]);
+        
+        setConfirmedCount(confirmedResult.count || 0);
+        setDismissedCount(dismissedResult.count || 0);
       } catch (err) {
-        console.error('Error fetching confirmed count:', err);
+        console.error('Error fetching counts:', err);
       }
     }
     
-    fetchConfirmedCount();
+    fetchCounts();
   }, [canAccess, classId]);
 
   // Fetch archived messages
@@ -667,7 +680,7 @@ export default function FlaggedMessagesPage() {
                 <span className={`text-xs font-bold uppercase tracking-wider ${
                   view === 'archive' ? 'text-secondary' : 'text-base-content'
                 }`}>
-                  Arkiverede beskeder
+                  Bekræftede overtrædelser
                 </span>
                 <span className={`badge badge-xs font-bold ${
                   view === 'archive' ? 'badge-secondary' : 'badge-ghost'
@@ -676,6 +689,20 @@ export default function FlaggedMessagesPage() {
                 </span>
               </div>
             </button>
+            
+            {/* Dismissed Count - Read-only indicator */}
+            {isAdmin && (
+              <div className="bg-base-100 border-2 border-base-content/10">
+                <div className="px-4 py-2 flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-base-content/60">
+                    AI fejldetektioner
+                  </span>
+                  <span className="badge badge-xs badge-ghost font-bold">
+                    {dismissedCount}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Additional Filters (for Admin and Archive view) */}

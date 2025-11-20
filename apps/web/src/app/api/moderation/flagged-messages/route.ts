@@ -109,7 +109,8 @@ export async function GET(request: NextRequest) {
       query = query.eq('status', statusFilter);
     } else if (!showAll) {
       // Default: only show 'flagged' (not reviewed/dismissed)
-      query = query.eq('status', 'flagged');
+      // Match dashboard logic: status IN ('flagged', 'hidden') AND reviewed_at IS NULL
+      query = query.in('status', ['flagged', 'hidden']).is('reviewed_at', null);
     }
     // If showAll=true, no status filter applied
 

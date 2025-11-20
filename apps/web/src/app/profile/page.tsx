@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { LoadingSpinner, ErrorState, FormInput } from '@/components/shared';
+import AppLayout from '@/components/AppLayout';
 
 interface ProfileData {
   user_id: string;
@@ -145,32 +146,9 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-base-300 flex flex-col">
-      {/* Header */}
-      <header className="bg-base-100 border-b-2 border-base-content/10">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-12 py-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={handleBack}
-              className="btn btn-ghost btn-square"
-              aria-label="Tilbage"
-            >
-              <ArrowLeft size={24} strokeWidth={2} />
-            </button>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-base-content">
-                Min Profil
-              </h1>
-              <p className="text-xs font-mono uppercase tracking-wider text-base-content/50 mt-1">
-                Rediger dine oplysninger
-              </p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 py-8 bg-base-300">
+    <AppLayout>
+      <div className="h-full overflow-y-auto">
+        <div className="py-8">
         <div className="w-full max-w-2xl mx-auto px-4 sm:px-12">
           <div className="space-y-8">
             {/* Profile Card */}
@@ -283,7 +261,8 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-      </main>
+        </div>
+      </div>
 
       {/* Toast Notification */}
       {successMessage && (
@@ -296,6 +275,6 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
-    </div>
+    </AppLayout>
   );
 }

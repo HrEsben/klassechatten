@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { supabase } from '@/lib/supabase';
-import UserMenu from '@/components/UserMenu';
-import { ArrowLeft } from 'lucide-react';
 
 interface ClassData {
   id: string;
@@ -195,7 +193,7 @@ export function ClassSettingsClient({ classId }: { classId: string }) {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-base-300">
+      <div className="flex justify-center items-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-6">
           <span className="loading loading-ball loading-lg text-primary"></span>
           <p className="text-base-content/60 font-medium">Indlæser...</p>
@@ -206,7 +204,7 @@ export function ClassSettingsClient({ classId }: { classId: string }) {
 
   if (!classData) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-base-300">
+      <div className="flex justify-center items-center min-h-[60vh]">
         <div className="bg-error/10 border-2 border-error/20 px-6 py-4 font-mono text-error text-sm">
           Klasse ikke fundet
         </div>
@@ -215,39 +213,17 @@ export function ClassSettingsClient({ classId }: { classId: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-base-300 flex flex-col">
-      {/* Consistent Header with Back Button and UserMenu */}
-      <header className="bg-base-100 border-b-2 border-base-content/10">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-12 py-4">
-          <div className="flex items-center justify-between gap-4">
-            {/* Back Button + Page Title */}
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleBack}
-                className="btn btn-ghost btn-square"
-                aria-label="Tilbage til klasse"
-              >
-                <ArrowLeft size={24} strokeWidth={2} />
-              </button>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-base-content">
-                  Indstillinger
-                </h1>
-                <p className="text-xs font-mono uppercase tracking-wider text-base-content/50 mt-1">
-                  {classData.label}
-                </p>
-              </div>
-            </div>
-
-            {/* User Menu */}
-            <UserMenu 
-              userName={profile?.display_name || user?.user_metadata?.display_name || user?.email}
-              userRole={(profile?.role === 'child' ? 'Elev' : profile?.role === 'guardian' ? 'Forælder' : 'Voksen') + (isClassAdmin ? ' ⊕' : '')}
-              avatarUrl={profile?.avatar_url}
-            />
-          </div>
-        </div>
-      </header>
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-12 py-8">
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-black uppercase tracking-tight text-base-content">
+          Indstillinger
+        </h1>
+        <div className="h-1 w-24 bg-primary mt-2"></div>
+        <p className="text-sm text-base-content/60 mt-3">
+          {classData.label}
+        </p>
+      </div>
 
       {/* Main Content Area */}
       <main className="flex-1 py-8 bg-base-300">

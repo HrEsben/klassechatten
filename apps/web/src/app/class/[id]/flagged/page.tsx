@@ -22,6 +22,8 @@ interface FlaggedMessage {
   score: number;
   labels: string[];
   severity: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
   created_at: string;
   message: {
     id: number;
@@ -753,14 +755,16 @@ export default function ClassFlaggedMessagesPage({
                     <div className="px-4 pb-4 flex gap-2 flex-wrap">
                       <button
                         onClick={() => handleMarkAsViolation(item.event_id)}
-                        className="btn btn-sm btn-ghost gap-2 text-success hover:bg-success/10"
+                        disabled={!!(item.reviewed_by && item.reviewed_by !== user?.id)}
+                        className="btn btn-sm btn-ghost gap-2 text-success hover:bg-success/10 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Check size={16} strokeWidth={2} />
                         Noteret
                       </button>
                       <button
                         onClick={() => handleRemoveFlag(item.event_id)}
-                        className="btn btn-sm btn-ghost gap-2"
+                        disabled={!!(item.reviewed_by && item.reviewed_by !== user?.id)}
+                        className="btn btn-sm btn-ghost gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <X size={16} strokeWidth={2} />
                         Fjern flag

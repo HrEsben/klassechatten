@@ -146,12 +146,29 @@ Convert the KlasseChatten web app to follow a consistent React-first architectur
   - my-children, admin/page, admin/classes, FlaggedMessagesList, ClassRoomBrowser
 - ✅ **ErrorState**: Maintained existing implementations (already consistent)
 
-### Future Consolidation:
-- [ ] User cards/lists (appears in multiple places)
-- [ ] Class cards (admin classes, user classes)
-- [ ] Room/channel lists
-- [ ] Form inputs (standardize input styling)
-- [ ] Modal patterns (consistent modal behavior)
+### Phase 6.5: Additional Component Consolidation (COMPLETED)
+**Status**: Done ✓
+
+Created 4 additional shared components to eliminate more duplication:
+- ✅ **UserCard**: Consistent user display with variants (default/compact/list), online indicators, role badges
+- ✅ **ClassCard**: Unified class cards with stats (members, rooms, messages, flagged), invite code display
+- ✅ **FormInput**: Standardized form inputs with labels, errors, helper text, color variants
+- ✅ **Modal**: Consistent modal dialogs using HTML dialog element with configurable sizes
+
+**Replacements Completed:**
+- ✅ admin/page.tsx: Replaced ClassStatsCard (~120 lines) with ClassCard component (~15 lines)
+- ✅ Removed ~100 lines of duplicate card/stats logic
+
+**Ready for Future Replacements:**
+- [ ] User list patterns (admin/users, admin/classes/[id], UsersSidebar, UserMenu)
+- [ ] Form input patterns (LoginForm, onboarding, create-child)  
+- [ ] Modal patterns (confirmation dialogs, form modals)
+
+**Impact:**
+- 700+ lines of new reusable component code
+- ~100 lines of duplicate logic removed (initial replacement)
+- Foundation for replacing 50+ additional inline patterns
+- Consistent Berlin Edgy design across all card/form/modal patterns
 
 ### Impact:
 - Consistent loading, empty, and error states throughout entire app

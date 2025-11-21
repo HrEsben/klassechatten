@@ -152,8 +152,7 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
       {/* Dropdown Menu */}
       <div
         tabIndex={-1}
-        className="dropdown-content bg-base-100 border-2 border-base-content/10 z-50 shadow-lg mt-3 p-0"
-        style={{ width: '600px' }}
+        className="dropdown-content bg-base-100 border-2 border-base-content/10 z-50 shadow-lg mt-3 p-0 w-[calc(100vw-2rem)] sm:w-[500px] lg:w-[600px] max-w-[600px]"
       >
         {/* User Info Header - Full Width */}
         <button
@@ -161,7 +160,7 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
             router.push('/profile');
             (document.activeElement as HTMLElement)?.blur();
           }}
-          className="w-full border-b-2 border-base-content/10 px-6 py-4 hover:bg-base-200 transition-colors text-left"
+          className="w-full border-b-2 border-base-content/10 px-4 sm:px-6 py-4 hover:bg-base-200 transition-colors text-left"
         >
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-1">
@@ -178,14 +177,14 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
           </div>
         </button>
 
-        {/* Two Column Layout */}
-        <div className="grid grid-cols-2 divide-x-2 divide-base-content/10">
+        {/* Two Column Layout - Single column on mobile */}
+        <div className="grid grid-cols-1 md:grid-cols-2 md:divide-x-2 divide-base-content/10">
           
           {/* Left Column - Notifications */}
-          <div className="flex flex-col" style={{ maxHeight: '28rem' }}>
+          <div className="flex flex-col max-h-80 md:max-h-112">
             {notifications.length > 0 ? (
               <>
-                <div className="border-b-2 border-base-content/10 px-4 py-3 flex items-center justify-between">
+                <div className="border-b-2 border-base-content/10 px-3 sm:px-4 py-3 flex items-center justify-between">
                   <span className="text-xs font-black uppercase tracking-tight text-base-content">
                     Notifikationer
                   </span>
@@ -208,7 +207,7 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
                     <button
                       key={notification.id}
                       onClick={() => handleNotificationClick(notification)}
-                      className={`relative w-full px-4 py-3 text-left hover:bg-base-200 border-b border-base-content/5 ${
+                      className={`relative w-full px-3 sm:px-4 py-3 text-left hover:bg-base-200 border-b border-base-content/5 ${
                         !notification.read ? 'bg-primary/5' : ''
                       }`}
                     >
@@ -217,7 +216,7 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
                         <div className="absolute left-0 top-0 w-1 h-full bg-primary"></div>
                       )}
 
-                      <div className="flex gap-3 pl-2">
+                      <div className="flex gap-2 sm:gap-3 pl-2">
                         {/* Icon */}
                         <div className={`shrink-0 ${
                           notification.type === 'new_message' ? 'text-primary' :
@@ -231,7 +230,7 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-base-content mb-1 truncate">
+                          <p className="text-xs sm:text-sm font-bold text-base-content mb-1 truncate">
                             {notification.title}
                           </p>
                           <p className="text-xs text-base-content/60 mb-2 line-clamp-2">
@@ -250,18 +249,18 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
                 </div>
               </>
             ) : (
-              <div className="px-4 py-8 text-center">
+              <div className="px-3 sm:px-4 py-8 text-center">
                 <p className="text-xs text-base-content/60">Ingen notifikationer</p>
               </div>
             )}
           </div>
 
           {/* Right Column - Guardian Navigation + Logout */}
-          <div className="flex flex-col" style={{ maxHeight: '28rem' }}>
+          <div className="flex flex-col max-h-80 md:max-h-112 md:border-t-0 border-t-2 border-base-content/10">
             {profile?.role === 'guardian' && (
               <>
                 {/* Children List Section */}
-                <div className="border-b-2 border-base-content/10 px-4 py-3">
+                <div className="border-b-2 border-base-content/10 px-3 sm:px-4 py-3">
                   <span className="text-xs font-black uppercase tracking-tight text-base-content">
                     Mine Børn
                   </span>
@@ -269,7 +268,7 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
                 
                 <div className="flex flex-col flex-1 overflow-y-auto">
                   {loadingChildren ? (
-                    <div className="px-4 py-8 text-center">
+                    <div className="px-3 sm:px-4 py-8 text-center">
                       <span className="loading loading-ball loading-sm text-primary"></span>
                     </div>
                   ) : children.length > 0 ? (
@@ -288,7 +287,7 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
                           router.push(`/child/${child.child_id}`);
                           (document.activeElement as HTMLElement)?.blur();
                         }}
-                        className="px-4 py-3 hover:bg-primary/10 text-left flex items-center justify-between border-b border-base-content/5 group"
+                        className="px-3 sm:px-4 py-3 hover:bg-primary/10 text-left flex items-center justify-between border-b border-base-content/5 group"
                       >
                         <UserCard
                           user={{
@@ -302,7 +301,7 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
                       </button>
                     ))
                   ) : (
-                    <div className="px-4 py-8 text-center">
+                    <div className="px-3 sm:px-4 py-8 text-center">
                       <p className="text-xs text-base-content/60">Ingen børn endnu</p>
                     </div>
                   )}
@@ -311,11 +310,11 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
                   <div className="mt-auto border-t-2 border-base-content/10">
                     <button
                       onClick={() => setShowAddMenu(!showAddMenu)}
-                      className="w-full px-4 py-3 hover:bg-accent/10 text-left flex items-center justify-between"
+                      className="w-full px-3 sm:px-4 py-3 hover:bg-accent/10 text-left flex items-center justify-between"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3">
                         <Plus className="w-5 h-5 text-accent" strokeWidth={2} />
-                        <span className="text-sm font-medium text-accent">Tilføj Barn</span>
+                        <span className="text-xs sm:text-sm font-medium text-accent">Tilføj Barn</span>
                       </div>
                       <ChevronRight 
                         className={`w-4 h-4 text-accent transition-transform ${showAddMenu ? 'rotate-90' : ''}`} 
@@ -330,10 +329,10 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
                             router.push('/create-child');
                             (document.activeElement as HTMLElement)?.blur();
                           }}
-                          className="w-full px-4 py-2 pl-12 hover:bg-primary/10 text-left flex items-center gap-3 border-b border-base-content/5"
+                          className="w-full px-3 sm:px-4 py-2 pl-8 sm:pl-12 hover:bg-primary/10 text-left flex items-center gap-2 sm:gap-3 border-b border-base-content/5"
                         >
                           <UserPlus className="w-4 h-4" strokeWidth={2} />
-                          <span className="text-sm">Opret Barn-konto</span>
+                          <span className="text-xs sm:text-sm">Opret Barn-konto</span>
                         </button>
 
                         <button
@@ -341,10 +340,10 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
                             router.push('/claim-child');
                             (document.activeElement as HTMLElement)?.blur();
                           }}
-                          className="w-full px-4 py-2 pl-12 hover:bg-accent/10 text-left flex items-center gap-3"
+                          className="w-full px-3 sm:px-4 py-2 pl-8 sm:pl-12 hover:bg-accent/10 text-left flex items-center gap-2 sm:gap-3"
                         >
                           <UserCheck className="w-4 h-4" strokeWidth={2} />
-                          <span className="text-sm">Brug Forældre-kode</span>
+                          <span className="text-xs sm:text-sm">Brug Forældre-kode</span>
                         </button>
                       </div>
                     )}
@@ -356,10 +355,10 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
             {/* Logout - Always at bottom */}
             <button
               onClick={handleSignOut}
-              className="mt-auto px-4 py-3 hover:bg-error/10 hover:text-error font-medium text-left flex items-center gap-3 border-t-2 border-base-content/10"
+              className="mt-auto px-3 sm:px-4 py-3 hover:bg-error/10 hover:text-error font-medium text-left flex items-center gap-2 sm:gap-3 border-t-2 border-base-content/10"
             >
               <LogOut className="w-5 h-5" strokeWidth={2} />
-              <span className="text-sm">Log Ud</span>
+              <span className="text-xs sm:text-sm">Log Ud</span>
             </button>
           </div>
 

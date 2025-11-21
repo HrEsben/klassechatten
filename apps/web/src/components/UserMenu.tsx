@@ -33,6 +33,7 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
   const [children, setChildren] = useState<Child[]>([]);
   const [loadingChildren, setLoadingChildren] = useState(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [activeTab, setActiveTab] = useState<'menu' | 'notifications'>('menu');
   
   const isGlobalAdmin = profile?.role === 'admin';
   const selectedClass = classes.find(c => c.id === classParam);
@@ -152,15 +153,15 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
       {/* Dropdown Menu */}
       <div
         tabIndex={-1}
-        className="dropdown-content bg-base-100 border-2 border-base-content/10 z-50 shadow-lg mt-3 p-0 w-[calc(100vw-2rem)] sm:w-[500px] lg:w-[600px] max-w-[600px]"
+        className="dropdown-content bg-base-100 border-2 border-base-content/10 z-50 shadow-lg mt-3 p-0 w-[calc(100vw-2rem)] sm:w-[400px] max-w-[400px]"
       >
-        {/* User Info Header - Full Width */}
+        {/* User Info Header */}
         <button
           onClick={() => {
             router.push('/profile');
             (document.activeElement as HTMLElement)?.blur();
           }}
-          className="w-full border-b-2 border-base-content/10 px-4 sm:px-6 py-4 hover:bg-base-200 transition-colors text-left"
+          className="w-full border-b-2 border-base-content/10 px-4 py-4 hover:bg-base-200 transition-colors text-left"
         >
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-1">
@@ -177,33 +178,169 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
           </div>
         </button>
 
-        {/* Two Column Layout - Single column on mobile */}
-        <div className="grid grid-cols-1 md:grid-cols-2 md:divide-x-2 divide-base-content/10">
+        {/* Tab Navigation */}
+        <div className="flex border-b-2 border-base-content/10">
+          <button
+            onClick={() => setActiveTab('menu')}
+            className={`flex-1 px-4 py-3 text-xs font-black uppercase tracking-tight transition-colors ${
+              activeTab === 'menu'
+                ? 'bg-primary/10 text-primary border-b-2 border-primary -mb-0.5'
+                : 'text-base-content/60 hover:text-base-content'
+            }`}
+          >
+            Menu
+          </button>
+          <button
+            onClick={() => setActiveTab('notifications')}
+            className={`flex-1 px-4 py-3 text-xs font-black uppercase tracking-tight transition-colors relative ${
+              activeTab === 'notifications'
+                ? 'bg-primary/10 text-primary border-b-2 border-primary -mb-0.5'
+                : 'text-base-content/60 hover:text-base-content'
+            }`}
+          >
+            Notifikationer
+            {unreadCount > 0 && (
+              <span className="ml-2 badge badge-primary badge-xs font-bold">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        <div className="max-h-96 overflow-y-auto">
           
-          {/* Left Column - Notifications */}
-          <div className="flex flex-col max-h-80 md:max-h-112">
-            {notifications.length > 0 ? (
-              <>
-                <div className="border-b-2 border-base-content/10 px-3 sm:px-4 py-3 flex items-center justify-between">
-                  <span className="text-xs font-black uppercase tracking-tight text-base-content">
-                    Notifikationer
-                  </span>
+          {/* Menu Tab */}
+          {activeTab === 'menu' && (
+            <div className="flex flex-col">
+              {/* Guardian Children Section */}
+              {profile?.role === 'guardian' && (
+                <>
+                  <div className="border-b-2 border-base-content/10 px-4 py-3">
+                    <span className="text-xs font-black uppercase tracking-tight text-base-content">
+                      Mine Børn
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-col">
+                    {loadingChildren ? (
+                      <div className="px-4 py-8 text-center">
+                        <span className="loading loading-ball loading-sm text-primary"></span>
+                      </div>
+                    ) : children.length > 0 ? (
+                      children.map((child) => (
+                        <button
+                          key={child.child_id}
+                          onClick={() => {
+                            // Validate UUID before navigation
+                            if (!child.child_id || child.child_id.includes('%%') || child.child_id.includes('drp:')) {
+                              console.error('[UserMenu] Invalid child_id detected:', child.child_id);
+                              console.log('[UserMenu] Full child object:', child);
+                              alert('Fejl: Ugyldig barn-ID. Prøv at genindlæse siden.');
+                              return;
+                            }
+                            
+                            router.push(`/child/${child.child_id}`);
+                            (document.activeElement as HTMLElement)?.blur();
+                          }}
+                          className="px-4 py-3 hover:bg-primary/10 text-left flex items-center justify-between border-b border-base-content/5 group"
+                        >
+                          <UserCard
+                            user={{
+                              display_name: child.child_name || child.child_username || 'Barn',
+                              username: child.child_username,
+                              avatar_color: '#ff3fa4',
+                            }}
+                            variant="compact"
+                          />
+                          <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary transition-colors" strokeWidth={2} />
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-8 text-center">
+                        <p className="text-xs text-base-content/60">Ingen børn endnu</p>
+                      </div>
+                    )}
+
+                    {/* Add Child Section */}
+                    <div className="border-t-2 border-base-content/10">
+                      <button
+                        onClick={() => setShowAddMenu(!showAddMenu)}
+                        className="w-full px-4 py-3 hover:bg-accent/10 text-left flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Plus className="w-5 h-5 text-accent" strokeWidth={2} />
+                          <span className="text-sm font-medium text-accent">Tilføj Barn</span>
+                        </div>
+                        <ChevronRight 
+                          className={`w-4 h-4 text-accent transition-transform ${showAddMenu ? 'rotate-90' : ''}`} 
+                          strokeWidth={2} 
+                        />
+                      </button>
+                      
+                      {showAddMenu && (
+                        <div className="bg-base-200/50">
+                          <button
+                            onClick={() => {
+                              router.push('/create-child');
+                              (document.activeElement as HTMLElement)?.blur();
+                            }}
+                            className="w-full px-4 py-2 pl-12 hover:bg-primary/10 text-left flex items-center gap-3 border-b border-base-content/5"
+                          >
+                            <UserPlus className="w-4 h-4" strokeWidth={2} />
+                            <span className="text-sm">Opret Barn-konto</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              router.push('/claim-child');
+                              (document.activeElement as HTMLElement)?.blur();
+                            }}
+                            className="w-full px-4 py-2 pl-12 hover:bg-accent/10 text-left flex items-center gap-3"
+                          >
+                            <UserCheck className="w-4 h-4" strokeWidth={2} />
+                            <span className="text-sm">Brug Forældre-kode</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              {/* Logout Button */}
+              <button
+                onClick={handleSignOut}
+                className="px-4 py-3 hover:bg-error/10 hover:text-error font-medium text-left flex items-center gap-3 border-t-2 border-base-content/10"
+              >
+                <LogOut className="w-5 h-5" strokeWidth={2} />
+                <span className="text-sm">Log Ud</span>
+              </button>
+            </div>
+          )}
+
+          {/* Notifications Tab */}
+          {activeTab === 'notifications' && (
+            <div className="flex flex-col">
+              {notifications.length > 0 ? (
+                <>
                   {unreadCount > 0 && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        markAllAsRead();
-                      }}
-                      className="text-xs font-bold uppercase tracking-widest text-primary hover:text-primary-focus"
-                    >
-                      Markér alle
-                    </button>
+                    <div className="border-b-2 border-base-content/10 px-4 py-3 flex items-center justify-end">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          markAllAsRead();
+                        }}
+                        className="text-xs font-bold uppercase tracking-widest text-primary hover:text-primary-focus"
+                      >
+                        Markér alle som læst
+                      </button>
+                    </div>
                   )}
-                </div>
-                
-                {/* Notifications List - Scrollable */}
-                <div className="overflow-y-auto flex-1">
-                  {notifications.slice(0, 5).map((notification) => (
+                  
+                  {/* Notifications List */}
+                  <div>
+                    {notifications.map((notification) => (
                     <button
                       key={notification.id}
                       onClick={() => handleNotificationClick(notification)}
@@ -254,114 +391,8 @@ export default function UserMenu({ userName, userRole, avatarUrl }: UserMenuProp
               </div>
             )}
           </div>
-
-          {/* Right Column - Guardian Navigation + Logout */}
-          <div className="flex flex-col max-h-80 md:max-h-112 md:border-t-0 border-t-2 border-base-content/10">
-            {profile?.role === 'guardian' && (
-              <>
-                {/* Children List Section */}
-                <div className="border-b-2 border-base-content/10 px-3 sm:px-4 py-3">
-                  <span className="text-xs font-black uppercase tracking-tight text-base-content">
-                    Mine Børn
-                  </span>
-                </div>
-                
-                <div className="flex flex-col flex-1 overflow-y-auto">
-                  {loadingChildren ? (
-                    <div className="px-3 sm:px-4 py-8 text-center">
-                      <span className="loading loading-ball loading-sm text-primary"></span>
-                    </div>
-                  ) : children.length > 0 ? (
-                    children.map((child) => (
-                      <button
-                        key={child.child_id}
-                        onClick={() => {
-                          // Validate UUID before navigation
-                          if (!child.child_id || child.child_id.includes('%%') || child.child_id.includes('drp:')) {
-                            console.error('[UserMenu] Invalid child_id detected:', child.child_id);
-                            console.log('[UserMenu] Full child object:', child);
-                            alert('Fejl: Ugyldig barn-ID. Prøv at genindlæse siden.');
-                            return;
-                          }
-                          
-                          router.push(`/child/${child.child_id}`);
-                          (document.activeElement as HTMLElement)?.blur();
-                        }}
-                        className="px-3 sm:px-4 py-3 hover:bg-primary/10 text-left flex items-center justify-between border-b border-base-content/5 group"
-                      >
-                        <UserCard
-                          user={{
-                            display_name: child.child_name || child.child_username || 'Barn',
-                            username: child.child_username,
-                            avatar_color: '#ff3fa4',
-                          }}
-                          variant="compact"
-                        />
-                        <ChevronRight className="w-4 h-4 text-base-content/40 group-hover:text-primary transition-colors" strokeWidth={2} />
-                      </button>
-                    ))
-                  ) : (
-                    <div className="px-3 sm:px-4 py-8 text-center">
-                      <p className="text-xs text-base-content/60">Ingen børn endnu</p>
-                    </div>
-                  )}
-
-                  {/* Add Child Section */}
-                  <div className="mt-auto border-t-2 border-base-content/10">
-                    <button
-                      onClick={() => setShowAddMenu(!showAddMenu)}
-                      className="w-full px-3 sm:px-4 py-3 hover:bg-accent/10 text-left flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <Plus className="w-5 h-5 text-accent" strokeWidth={2} />
-                        <span className="text-xs sm:text-sm font-medium text-accent">Tilføj Barn</span>
-                      </div>
-                      <ChevronRight 
-                        className={`w-4 h-4 text-accent transition-transform ${showAddMenu ? 'rotate-90' : ''}`} 
-                        strokeWidth={2} 
-                      />
-                    </button>
-                    
-                    {showAddMenu && (
-                      <div className="bg-base-200/50">
-                        <button
-                          onClick={() => {
-                            router.push('/create-child');
-                            (document.activeElement as HTMLElement)?.blur();
-                          }}
-                          className="w-full px-3 sm:px-4 py-2 pl-8 sm:pl-12 hover:bg-primary/10 text-left flex items-center gap-2 sm:gap-3 border-b border-base-content/5"
-                        >
-                          <UserPlus className="w-4 h-4" strokeWidth={2} />
-                          <span className="text-xs sm:text-sm">Opret Barn-konto</span>
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            router.push('/claim-child');
-                            (document.activeElement as HTMLElement)?.blur();
-                          }}
-                          className="w-full px-3 sm:px-4 py-2 pl-8 sm:pl-12 hover:bg-accent/10 text-left flex items-center gap-2 sm:gap-3"
-                        >
-                          <UserCheck className="w-4 h-4" strokeWidth={2} />
-                          <span className="text-xs sm:text-sm">Brug Forældre-kode</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
-            
-            {/* Logout - Always at bottom */}
-            <button
-              onClick={handleSignOut}
-              className="mt-auto px-3 sm:px-4 py-3 hover:bg-error/10 hover:text-error font-medium text-left flex items-center gap-2 sm:gap-3 border-t-2 border-base-content/10"
-            >
-              <LogOut className="w-5 h-5" strokeWidth={2} />
-              <span className="text-xs sm:text-sm">Log Ud</span>
-            </button>
-          </div>
-
+          )}
+          
         </div>
       </div>
     </div>

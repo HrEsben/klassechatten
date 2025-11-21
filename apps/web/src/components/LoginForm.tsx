@@ -127,6 +127,12 @@ export default function LoginForm() {
       <div className="relative bg-base-100 shadow-xl">
             {/* Header with strong typography */}
             <div className="border-b-2 border-primary/20 px-6 sm:px-10 py-6 sm:py-8">
+              <a
+                href="/welcome"
+                className="btn btn-ghost btn-sm mb-4 text-xs font-bold uppercase tracking-widest"
+              >
+                ← TILBAGE
+              </a>
               <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-base-content uppercase">
                 {isSignUp ? 'Opret Konto' : 'Log Ind'}
               </h1>

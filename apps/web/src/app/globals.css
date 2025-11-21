@@ -225,12 +225,37 @@ a {
     border-radius: 0 !important;
   }
 
-  /* Menus - sharp corners */
+  /* Menus - sharp corners and Berlin Edgy active states */
   .menu,
   .menu li > *,
   .menu :where(li > *):not(ul):not(.menu-title):not(details):active,
   .menu :where(li > *):not(ul):not(.menu-title):not(details).active {
     border-radius: 0 !important;
+  }
+
+  /* Menu active state - primary color with left border accent */
+  .menu :where(li > *):not(ul):not(.menu-title):not(details).active {
+    background-color: oklch(from var(--p) l c h / 0.2);
+    color: var(--p);
+    font-weight: 700;
+    border-left: 2px solid var(--p);
+    padding-left: calc(1rem - 2px); /* Compensate for border */
+  }
+
+  /* Menu hover state - subtle primary tint */
+  .menu :where(li > *):not(ul):not(.menu-title):not(details):hover:not(.active) {
+    background-color: oklch(from var(--p) l c h / 0.1);
+    border-left: 2px solid transparent;
+    padding-left: calc(1rem - 2px); /* Maintain consistent alignment */
+  }
+
+  /* Menu title - uppercase Berlin Edgy style */
+  .menu-title {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 0.5rem 1rem;
   }
 
   /* Tabs - sharp corners */

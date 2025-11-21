@@ -14,7 +14,10 @@ interface MetricRow {
   created_at: string;
 }
 
+type TabType = 'overview' | 'vitals' | 'navigation' | 'backend';
+
 export default function PerformanceDashboard() {
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [stats, setStats] = useState<Record<PerformanceMetricType, PerformanceStats | null>>({
     message_send: null,
@@ -319,71 +322,112 @@ export default function PerformanceDashboard() {
           </div>
         </div>
 
-        {/* Stats Grid */}
-        {loading ? (
-          <div className="flex justify-center items-center min-h-[400px]">
-            <div className="flex flex-col items-center gap-4">
-              <span className="loading loading-ball loading-lg text-primary"></span>
-              <p className="text-base-content/60 font-medium">Indlæser metrics...</p>
-            </div>
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {(Object.entries(stats) as [PerformanceMetricType, PerformanceStats | null][]).map(
-              ([type, stat]) => (
-                <div
-                  key={type}
-                  className="bg-base-100 border-2 border-base-content/10 shadow-lg p-6"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-xl font-black uppercase tracking-tight text-base-content">
-                      {metricLabels[type]}
-                    </h3>
-                    {stat && (
-                      <span className={`badge ${getStatusColor(type, stat.p95)} font-bold`}>
-                        {stat.count}
-                      </span>
+        {/* Tabs Navigation */}
+        <div role="tablist" className="tabs tabs-box">
+          <button
+            role="tab"
+            className={`tab ${activeTab === 'overview' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('overview')}
+          >
+            <BarChart3 className="w-4 h-4 mr-2" strokeWidth={2} />
+            Oversigt
+          </button>
+          <button
+            role="tab"
+            className={`tab ${activeTab === 'vitals' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('vitals')}
+          >
+            <Target className="w-4 h-4 mr-2" strokeWidth={2} />
+            Web Vitals
+          </button>
+          <button
+            role="tab"
+            className={`tab ${activeTab === 'navigation' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('navigation')}
+          >
+            <Timer className="w-4 h-4 mr-2" strokeWidth={2} />
+            Navigation
+          </button>
+          <button
+            role="tab"
+            className={`tab ${activeTab === 'backend' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('backend')}
+          >
+            <Database className="w-4 h-4 mr-2" strokeWidth={2} />
+            Backend
+          </button>
+        </div>
+
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <>
+                {/* Stats Grid */}
+            {loading ? (
+              <div className="flex justify-center items-center min-h-[400px]">
+                <div className="flex flex-col items-center gap-4">
+                  <span className="loading loading-ball loading-lg text-primary"></span>
+                  <p className="text-base-content/60 font-medium">Indlæser metrics...</p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {(Object.entries(stats) as [PerformanceMetricType, PerformanceStats | null][]).map(
+                  ([type, stat]) => (
+                    <div
+                      key={type}
+                      className="bg-base-100 border-2 border-base-content/10 shadow-lg p-6"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <h3 className="text-xl font-black uppercase tracking-tight text-base-content">
+                          {metricLabels[type]}
+                        </h3>
+                        {stat && (
+                          <span className={`badge ${getStatusColor(type, stat.p95)} font-bold`}>
+                            {stat.count}
+                          </span>
+                        )}
+                      </div>
+
+                    {stat ? (
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-base-content/60">Gennemsnit:</span>
+                          <span className="font-mono font-bold">
+                            {formatDuration(stat.avg)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-base-content/60">Median (p50):</span>
+                          <span className="font-mono font-bold">
+                            {formatDuration(stat.p50)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-base-content/60">95% percentil:</span>
+                          <span className={`font-mono font-bold badge ${getStatusColor(type, stat.p95)}`}>
+                            {formatDuration(stat.p95)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-base-content/60">Min / Max:</span>
+                          <span className="font-mono text-xs text-base-content/80">
+                            {formatDuration(stat.min)} / {formatDuration(stat.max)}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-base-content/50">Ingen data tilgængelig</p>
                     )}
                   </div>
-
-                {stat ? (
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-base-content/60">Gennemsnit:</span>
-                      <span className="font-mono font-bold">
-                        {formatDuration(stat.avg)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-base-content/60">Median (p50):</span>
-                      <span className="font-mono font-bold">
-                        {formatDuration(stat.p50)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-base-content/60">95% percentil:</span>
-                      <span className={`font-mono font-bold badge ${getStatusColor(type, stat.p95)}`}>
-                        {formatDuration(stat.p95)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-base-content/60">Min / Max:</span>
-                      <span className="font-mono text-xs text-base-content/80">
-                        {formatDuration(stat.min)} / {formatDuration(stat.max)}
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-base-content/50">Ingen data tilgængelig</p>
-                )}
+                )
+              )}
               </div>
-            )
-          )}
-          </div>
+            )}
+          </>
         )}
 
-        {/* Performance Over Time Charts */}
-        {!loading && Object.keys(timeSeriesData).length > 0 && (
+        {/* Web Vitals Tab */}
+        {activeTab === 'vitals' && !loading && (
           <div className="space-y-6">
             <h2 className="text-2xl font-black uppercase tracking-tight text-base-content">
               Performance Over Tid

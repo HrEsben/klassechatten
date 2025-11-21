@@ -120,6 +120,14 @@ export default function LoginForm() {
           <View style={styles.card}>
             {/* Header section with border and accent */}
             <View style={styles.header}>
+              <View style={styles.backButtonContainer}>
+                <Button
+                  label="← TILBAGE"
+                  onPress={() => router.back()}
+                  variant="ghost"
+                  size="sm"
+                />
+              </View>
               <Text style={styles.title}>
                 {isSignUp ? 'OPRET KONTO' : 'LOG IND'}
               </Text>
@@ -256,6 +264,10 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl,
     paddingBottom: spacing.lg,
     backgroundColor: colors.base100,
+  },
+  backButtonContainer: {
+    alignSelf: 'flex-start',
+    marginBottom: spacing.md,
   },
   title: {
     fontSize: typography.sizes.xxl,

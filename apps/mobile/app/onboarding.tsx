@@ -17,7 +17,7 @@ import { supabase } from '../utils/supabase';
 import { colors, spacing, typography, borders, shadows } from '../constants/theme';
 import { LoadingSpinner, Input, Button } from '../components/shared';
 
-type OnboardingStep = 'choice' | 'create' | 'join' | 'success';
+type OnboardingStep = 'choice' | 'create' | 'join' | 'success' | 'add-child';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -36,6 +36,11 @@ export default function OnboardingPage() {
   // Join class form state
   const [inviteCode, setInviteCode] = useState('');
 
+  // Child account form state
+  const [childUsername, setChildUsername] = useState('');
+  const [childDisplayName, setChildDisplayName] = useState('');
+  const [childPassword, setChildPassword] = useState('');
+
   const handleCreateClass = async () => {
     setError('');
     setLoading(true);
@@ -49,30 +54,53 @@ export default function OnboardingPage() {
         return;
       }
 
-      // Get the API URL from environment
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://klassechatten.vercel.app';
-      
-      const response = await fetch(`${apiUrl}/api/classes/create`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          schoolName,
-          gradeLevel: parseInt(gradeLevel),
-          classLetter,
-          studentCount: parseInt(studentCount),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Kunne ikke oprette klasse');
+      // Validate inputs
+      if (!schoolName.trim()) {
+        setError('Indtast skolenavn');
+        setLoading(false);
+        return;
       }
 
-      setCreatedClass(data.class);
+      const grade = parseInt(gradeLevel);
+      if (isNaN(grade) || grade < 0 || grade > 10) {
+        setError('Klassetrin skal være mellem 0 og 10');
+        setLoading(false);
+        return;
+      }
+
+      if (!classLetter.trim()) {
+        setError('Indtast klassesbogstav');
+        setLoading(false);
+        return;
+      }
+
+      const count = parseInt(studentCount);
+      if (isNaN(count) || count < 1 || count > 50) {
+        setError('Antal elever skal være mellem 1 og 50');
+        setLoading(false);
+        return;
+      }
+
+      // Call Supabase RPC function directly
+      const { data, error } = await supabase.rpc('create_class_with_students', {
+        p_school_name: schoolName.trim(),
+        p_grade_level: grade,
+        p_class_letter: classLetter.trim().toUpperCase(),
+        p_nickname: null,
+        p_student_count: count,
+        p_creator_id: user?.id || session.user.id,
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Kunne ikke oprette klasse');
+      }
+
+      setCreatedClass(data);
+      // Auto-suggest child username based on class
+      if (classLetter && schoolName) {
+        const suggestion = `barn_${classLetter.toLowerCase()}`;
+        setChildUsername(suggestion);
+      }
       setStep('success');
     } catch (err: any) {
       setError(err.message);
@@ -94,23 +122,69 @@ export default function OnboardingPage() {
         return;
       }
 
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://klassechatten.vercel.app';
-      
-      const response = await fetch(`${apiUrl}/api/classes/join`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ inviteCode: inviteCode.toUpperCase() }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Kunne ikke tilmelde klasse');
+      // Validate input
+      if (!inviteCode.trim() || inviteCode.trim().length !== 8) {
+        setError('Indtast en gyldig 8-cifret invitationskode');
+        setLoading(false);
+        return;
       }
 
+      const normalizedCode = inviteCode.trim().toUpperCase();
+
+      // Find class by invite code
+      const { data: classData, error: classError } = await supabase
+        .from('classes')
+        .select('id, label, nickname, school_id, schools(name)')
+        .eq('invite_code', normalizedCode)
+        .single();
+
+      if (classError || !classData) {
+        setError('Ugyldig invitationskode');
+        setLoading(false);
+        return;
+      }
+
+      // Check if user is already a member
+      const { data: existingMember } = await supabase
+        .from('class_members')
+        .select('user_id')
+        .eq('class_id', classData.id)
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (existingMember) {
+        setError('Du er allerede medlem af denne klasse');
+        setLoading(false);
+        return;
+      }
+
+      // Get user profile to determine role
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (!profile) {
+        setError('Profil ikke fundet');
+        setLoading(false);
+        return;
+      }
+
+      // Add user to class with appropriate role
+      const { error: memberError } = await supabase
+        .from('class_members')
+        .insert({
+          class_id: classData.id,
+          user_id: session.user.id,
+          role_in_class: profile.role,
+        });
+
+      if (memberError) {
+        throw new Error('Kunne ikke tilmelde klasse');
+      }
+
+      // Success - reload to show new class
       router.replace('/');
     } catch (err: any) {
       setError(err.message);

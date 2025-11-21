@@ -65,7 +65,7 @@ export default function AdminLayout({
           </div>
           
           {/* User Controls for large screens - in second grid column */}
-          <div className="hidden lg:flex items-center justify-end gap-6 py-4 px-12">
+          <div className="hidden lg:flex items-center justify-end gap-6 py-4 px-4 sm:px-12">
             {/* User Info */}
             <div className="flex flex-col items-end">
               <span className="text-xs font-bold uppercase tracking-widest text-base-content/50">
@@ -266,7 +266,7 @@ export default function AdminLayout({
 
       {/* Main Content Area */}
       <main className="flex-1 py-8 bg-base-300 lg:col-span-1">
-        <div className="w-full max-w-7xl mx-auto px-12">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
           {/* Breadcrumb Navigation - Only show if classData exists */}
           {classData && (
             <div className="mb-6">
@@ -280,7 +280,7 @@ export default function AdminLayout({
 
       {/* Footer with geometric pattern */}
       <footer className="bg-base-100 border-t-2 border-base-content/10 lg:col-span-2 relative z-50">
-        <div className="w-full px-12 py-4 lg:grid lg:grid-cols-[256px_1fr] lg:px-0">
+        <div className="w-full px-4 sm:px-12 py-4 lg:grid lg:grid-cols-[256px_1fr] lg:px-0">
           <div className="flex justify-between items-center lg:flex-col lg:items-end">
             <div className="text-xs font-mono text-base-content/40 uppercase tracking-wider">
               © 2025 KlasseChatten
@@ -314,7 +314,7 @@ export default function AdminLayout({
           </div>
           
           {/* Geometric pattern and theme switcher for large screens - in second grid column */}
-          <div className="hidden lg:flex gap-6 items-center justify-between px-12">
+          <div className="hidden lg:flex gap-6 items-center justify-between px-4 sm:px-12">
             <div className="flex gap-2">
               <div className="w-2 h-2 bg-primary"></div>
               <div className="w-2 h-2 bg-secondary"></div>

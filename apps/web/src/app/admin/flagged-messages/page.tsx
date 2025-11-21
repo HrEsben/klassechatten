@@ -26,7 +26,7 @@ export default function FlaggedMessagesPage() {
   // Show loading
   if (profileLoading || classesLoading) {
     return (
-      <div className="w-full max-w-7xl mx-auto px-12 py-8">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8">
         <LoadingSpinner fullHeight text="Indlæser flaggede beskeder..." />
       </div>
     );
@@ -41,7 +41,7 @@ export default function FlaggedMessagesPage() {
     // Teacher or class admin without classId: show class picker
     if ((isTeacher || isClassAdmin) && !classId) {
       return (
-        <div className="w-full max-w-7xl mx-auto px-12 py-8">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8">
             <div className="mb-8">
               <h1 className="text-3xl font-black uppercase tracking-tight text-base-content">Vælg klasse</h1>
               <div className="h-1 w-24 bg-primary mt-2"></div>
@@ -69,7 +69,7 @@ export default function FlaggedMessagesPage() {
     // User has class admin in any class, let them pick
     if (hasAnyClassAdmin) {
       return (
-        <div className="w-full max-w-7xl mx-auto px-12 py-8">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8">
             <div className="mb-8">
               <h1 className="text-3xl font-black uppercase tracking-tight text-base-content">Vælg klasse</h1>
               <div className="h-1 w-24 bg-primary mt-2"></div>
@@ -96,7 +96,7 @@ export default function FlaggedMessagesPage() {
 
     // No access
     return (
-      <div className="w-full max-w-7xl mx-auto px-12 py-8">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8">
           <div className="bg-base-100 border-2 border-base-content/10 shadow-lg p-12 text-center space-y-4">
             <AlertCircle className="w-16 h-16 stroke-current text-error mx-auto" strokeWidth={2} />
             <h2 className="text-2xl font-black uppercase tracking-tight text-base-content">
@@ -109,7 +109,7 @@ export default function FlaggedMessagesPage() {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-12 py-8">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">

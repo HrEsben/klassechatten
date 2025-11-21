@@ -110,7 +110,7 @@ export default function AppHeader() {
         </div>
         
         {/* User Controls for large screens - in second grid column */}
-        <div className="hidden lg:flex items-center justify-end gap-6 py-4 px-12">
+        <div className="hidden lg:flex items-center justify-end gap-6 py-4 px-4 sm:px-12">
           {/* Class Selector/Display */}
           {selectedClass && (
             <>

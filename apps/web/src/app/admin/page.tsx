@@ -173,14 +173,14 @@ export default function AdminHomePage() {
   // Show loading state while hooks are initializing
   if (profileLoading || classesLoading) {
     return (
-      <div className="w-full max-w-7xl mx-auto px-12 py-8">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8">
         <LoadingSpinner fullHeight />
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-12 py-8 space-y-8">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8 space-y-8">
         <div>
           <h1 className="text-3xl font-black uppercase tracking-tight text-base-content">
             {isGlobalAdmin ? 'Dashboard' : 'Mine Klasser'}

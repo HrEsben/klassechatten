@@ -55,7 +55,7 @@ export default function MyChildrenPage() {
   return (
     <AppLayout>
       <div className="h-full overflow-y-auto">
-        <div className="w-full max-w-7xl mx-auto px-12 py-8">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8">
 
         {error && (
           <div className="alert alert-error alert-outline mb-6">

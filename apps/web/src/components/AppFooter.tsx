@@ -13,7 +13,7 @@ export default function AppFooter() {
 
   return (
     <footer className="hidden md:flex md:flex-none bg-base-100 border-t-2 border-base-content/10 z-50">
-      <div className="w-full px-12 py-4 lg:grid lg:grid-cols-[256px_1fr] lg:px-0">
+      <div className="w-full px-4 sm:px-12 py-4 lg:grid lg:grid-cols-[256px_1fr] lg:px-0">
         <div className="flex justify-between items-center lg:flex-col lg:items-end">
           <div className="text-xs font-mono text-base-content/40 uppercase tracking-wider">
             © 2025 KlasseChatten
@@ -31,7 +31,7 @@ export default function AppFooter() {
         </div>
         
         {/* Geometric pattern and theme switcher for large screens - in second grid column */}
-        <div className="hidden lg:flex gap-6 items-center justify-between px-12">
+        <div className="hidden lg:flex gap-6 items-center justify-between px-4 sm:px-12">
           <div className="flex gap-2">
             <div className="w-2 h-2 bg-primary"></div>
             <div className="w-2 h-2 bg-secondary"></div>

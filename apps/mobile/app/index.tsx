@@ -1,11 +1,11 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 
 // Imports for the real app
 import { useAuth } from '../contexts/AuthContext';
-import ProtectedRoute from '../components/ProtectedRoute';
 import ClassRoomBrowser from '../components/ClassRoomBrowser';
 
 // Debug mode - simple screen without auth
@@ -75,18 +75,40 @@ function HomeScreen() {
 }
 
 export default function Index() {
-  console.log('Index component rendering...');
-  
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        // Not authenticated - go to welcome
+        router.replace('/welcome');
+      }
+      // If authenticated, stay on this page (shows HomeScreen)
+    }
+  }, [user, loading, router]);
+
   if (DEBUG_MODE) {
     return <DebugScreen />;
   }
 
-  // Original protected route (enabled for real app)
-  return (
-    <ProtectedRoute>
-      <HomeScreen />
-    </ProtectedRoute>
-  );
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#ff3fa4" />
+        <Text style={styles.loadingText}>Indlæser...</Text>
+      </View>
+    );
+  }
+
+  // Show nothing while redirecting
+  if (!user) {
+    return null;
+  }
+
+  // Authenticated - show home screen
+  return <HomeScreen />;
 }
 
 const styles = StyleSheet.create({
@@ -144,5 +166,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 14,
+    color: '#666',
   },
 });

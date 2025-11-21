@@ -123,7 +123,7 @@ export default function LoginForm() {
               <View style={styles.backButtonContainer}>
                 <Button
                   label="← TILBAGE"
-                  onPress={() => router.back()}
+                  onPress={() => router.push('/welcome')}
                   variant="ghost"
                   size="sm"
                 />

@@ -8,12 +8,14 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useUserClasses } from '../hooks/useUserClasses';
 import ChatRoom from './ChatRoom';
 import { colors, spacing, typography, borders, shadows } from '../constants/theme';
 import { LoadingSpinner, EmptyState, ErrorState } from './shared';
 
 export default function ClassRoomBrowser() {
+  const router = useRouter();
   const { classes, loading, error } = useUserClasses();
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [selectedRoomName, setSelectedRoomName] = useState<string>('');
@@ -42,10 +44,7 @@ export default function ClassRoomBrowser() {
           {/* Join with Code Card */}
           <TouchableOpacity
             style={styles.actionCard}
-            onPress={() => {
-              // TODO: Navigate to invitation code flow
-              console.log('Navigate to join with code');
-            }}
+            onPress={() => router.push('/onboarding')}
           >
             <View style={styles.actionCardAccent} />
             <View style={styles.actionCardContent}>
@@ -62,10 +61,7 @@ export default function ClassRoomBrowser() {
           {/* Create Class Card */}
           <TouchableOpacity
             style={styles.actionCard}
-            onPress={() => {
-              // TODO: Navigate to class creation flow
-              console.log('Navigate to create class');
-            }}
+            onPress={() => router.push('/onboarding')}
           >
             <View style={styles.actionCardAccent} />
             <View style={styles.actionCardContent}>

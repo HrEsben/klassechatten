@@ -167,7 +167,6 @@ export default function LoginForm() {
                   required
                   placeholder="Indtast adgangskode"
                   minLength={6}
-                  helperText="MIN. 6 TEGN"
                 />
 
                 {error && (

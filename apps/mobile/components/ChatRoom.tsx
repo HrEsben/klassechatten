@@ -14,6 +14,8 @@ import {
   Keyboard,
   KeyboardAvoidingView,
 } from 'react-native';
+import { LoadingSpinner, ErrorState } from './shared';
+import { ChatHeader, TypingIndicator, JumpToBottomButton, ImageViewer } from './chat';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Path, Line } from 'react-native-svg';
 import { useRoomMessages } from '../hooks/useRoomMessages';
@@ -470,20 +472,11 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
   }, [user?.id, getReactionsForMessage, toggleReaction, handleImagePress, handleErrorRetry, handleReactionPickerOpen]);
 
   if (loading) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" />
-        <Text style={styles.loadingText}>Indlæser beskeder...</Text>
-      </View>
-    );
+    return <LoadingSpinner size="lg" text="Indlæser beskeder..." fullScreen />;
   }
 
   if (error) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Fejl: {error}</Text>
-      </View>
-    );
+    return <ErrorState message={error} />;
   }
 
   return (
@@ -496,34 +489,13 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
         <View style={styles.container}>
           {/* Header */}
           {showHeader && (
-            <View style={styles.header}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.headerTitle}>{roomName}</Text>
-                {onlineCount > 0 && (
-                  <Text style={styles.onlineCount}>{onlineCount} online</Text>
-                )}
-              </View>
-              <TouchableOpacity 
-                onPress={() => setUsersListVisible(true)}
-                style={styles.usersButton}
-              >
-                <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.baseContent} strokeWidth={2}>
-                  <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" strokeLinecap="square" strokeLinejoin="miter" />
-                  <Path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" strokeLinecap="square" strokeLinejoin="miter" />
-                  <Path d="M23 21v-2a4 4 0 0 0-3-3.87" strokeLinecap="square" strokeLinejoin="miter" />
-                  <Path d="M16 3.13a4 4 0 0 1 0 7.75" strokeLinecap="square" strokeLinejoin="miter" />
-                </Svg>
-                {allRoomUsers.length > 0 && (
-                  <View style={styles.usersBadge}>
-                    <Text style={styles.usersBadgeText}>{allRoomUsers.length}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-              <View style={[
-                styles.statusIndicator,
-                { backgroundColor: isConnected ? '#28a745' : '#ffc107' }
-              ]} />
-            </View>
+            <ChatHeader
+              roomName={roomName}
+              onlineCount={onlineCount}
+              totalUsers={allRoomUsers.length}
+              isConnected={isConnected}
+              onUsersPress={() => setUsersListVisible(true)}
+            />
           )}
 
           {/* Messages List */}
@@ -582,17 +554,7 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
           />
 
           {/* Typing Indicator */}
-          {typingUsers.length > 0 && (
-            <View style={styles.typingContainer}>
-              <Text style={styles.typingText}>
-                {typingUsers.length === 1
-                  ? `${typingUsers[0]?.display_name || 'Nogen'} skriver...`
-                  : typingUsers.length === 2
-                  ? `${typingUsers[0]?.display_name || 'Nogen'} og ${typingUsers[1]?.display_name || 'nogen'} skriver...`
-                  : `${typingUsers.length} personer skriver...`}
-              </Text>
-            </View>
-          )}
+          <TypingIndicator typingUsers={typingUsers} />
 
           {/* Input Area */}
           <View style={styles.inputContainer}>
@@ -692,45 +654,18 @@ export default function ChatRoom({ roomId, showHeader = true }: ChatRoomProps) {
       </Modal>
 
       {/* Jump to Bottom Button */}
-      {showJumpToBottom && (
-        <TouchableOpacity 
-          style={styles.jumpToBottomButton} 
-          onPress={jumpToBottom}
-        >
-          <Text style={styles.jumpToBottomText}>↓</Text>
-          {unreadCount > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadText}>
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      )}
+      <JumpToBottomButton
+        visible={showJumpToBottom}
+        unreadCount={unreadCount}
+        onPress={jumpToBottom}
+      />
 
       {/* Enlarged Image Modal */}
-      <Modal
+      <ImageViewer
+        imageUri={enlargedImageUri}
         visible={!!enlargedImageUri}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setEnlargedImageUri(null)}
-      >
-        <TouchableOpacity 
-          style={styles.imageModalOverlay}
-          activeOpacity={1}
-          onPress={() => setEnlargedImageUri(null)}
-        >
-          <View style={styles.imageModalContent}>
-            {enlargedImageUri && (
-              <Image 
-                source={{ uri: enlargedImageUri }}
-                style={styles.enlargedImage}
-                resizeMode="contain"
-              />
-            )}
-          </View>
-        </TouchableOpacity>
-      </Modal>
+        onClose={() => setEnlargedImageUri(null)}
+      />
 
       {/* Reaction Picker Modal */}
       {reactionPickerMessageId && (

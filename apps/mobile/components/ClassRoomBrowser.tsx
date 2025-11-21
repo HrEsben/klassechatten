@@ -5,13 +5,13 @@ import {
   TouchableOpacity,
   FlatList,
   StyleSheet,
-  ActivityIndicator,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUserClasses } from '../hooks/useUserClasses';
 import ChatRoom from './ChatRoom';
 import { colors, spacing, typography, borders, shadows } from '../constants/theme';
+import { LoadingSpinner, EmptyState, ErrorState } from './shared';
 
 export default function ClassRoomBrowser() {
   const { classes, loading, error } = useUserClasses();
@@ -20,29 +20,65 @@ export default function ClassRoomBrowser() {
   const [expandedClassId, setExpandedClassId] = useState<string | null>(null);
 
   if (loading) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Indlæser klasser...</Text>
-      </View>
-    );
+    return <LoadingSpinner size="lg" text="Indlæser klasser..." fullScreen />;
   }
 
   if (error) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Fejl: {error}</Text>
-      </View>
-    );
+    return <ErrorState message={error} />;
   }
 
   if (classes.length === 0) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.emptyTitle}>Ingen klasser endnu</Text>
-        <Text style={styles.emptySubtitle}>
-          Du er ikke medlem af nogen klasser. Bed din lærer om en invitationskode.
-        </Text>
+      <View style={styles.emptyContainer}>
+        <View style={styles.emptyHeader}>
+          <Text style={styles.emptyTitle}>VELKOMMEN</Text>
+          <View style={styles.accentBar} />
+          <Text style={styles.emptySubtitle}>
+            Vælg hvordan du vil komme i gang
+          </Text>
+        </View>
+        
+        <View style={styles.actionCardsContainer}>
+          {/* Join with Code Card */}
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => {
+              // TODO: Navigate to invitation code flow
+              console.log('Navigate to join with code');
+            }}
+          >
+            <View style={styles.actionCardAccent} />
+            <View style={styles.actionCardContent}>
+              <View style={styles.actionCardIcon}>
+                <Text style={styles.actionCardIconText}>#</Text>
+              </View>
+              <Text style={styles.actionCardTitle}>BRUG KODE</Text>
+              <Text style={styles.actionCardDescription}>
+                Deltag i en eksisterende klassechat med en invitationskode
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Create Class Card */}
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => {
+              // TODO: Navigate to class creation flow
+              console.log('Navigate to create class');
+            }}
+          >
+            <View style={styles.actionCardAccent} />
+            <View style={styles.actionCardContent}>
+              <View style={styles.actionCardIcon}>
+                <Text style={styles.actionCardIconText}>+</Text>
+              </View>
+              <Text style={styles.actionCardTitle}>OPRET KLASSECHAT</Text>
+              <Text style={styles.actionCardDescription}>
+                Tilmeld en klasse til KlasseChatten
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -144,40 +180,6 @@ const styles = StyleSheet.create({
   chatContainer: {
     flex: 1,
     backgroundColor: colors.base100,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.base100,
-    padding: spacing.xl,
-  },
-  loadingText: {
-    marginTop: spacing.lg,
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
-    color: colors.opacity[60],
-  },
-  errorText: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
-    color: colors.error,
-    textAlign: 'center',
-  },
-  emptyTitle: {
-    fontSize: typography.sizes.xxl,
-    fontWeight: typography.weights.black,
-    textTransform: 'uppercase',
-    letterSpacing: typography.letterSpacing.tight,
-    color: colors.baseContent,
-    marginBottom: spacing.lg,
-  },
-  emptySubtitle: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.medium,
-    color: colors.opacity[60],
-    textAlign: 'center',
-    marginTop: spacing.lg,
   },
   title: {
     fontSize: typography.sizes.xxl,
@@ -295,5 +297,91 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: typography.letterSpacing.tight,
     color: colors.baseContent,
+  },
+  emptyContainer: {
+    flex: 1,
+    backgroundColor: colors.base300,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
+  },
+  emptyHeader: {
+    marginBottom: spacing.xl,
+  },
+  emptyTitle: {
+    fontSize: typography.sizes.xxl,
+    fontWeight: typography.weights.black,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.tight,
+    color: colors.baseContent,
+  },
+  accentBar: {
+    height: 4,
+    width: 64,
+    backgroundColor: colors.primary,
+    marginTop: spacing.md,
+  },
+  emptySubtitle: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wider,
+    color: colors.opacity[60],
+    marginTop: spacing.lg,
+  },
+  actionCardsContainer: {
+    gap: spacing.lg,
+  },
+  actionCard: {
+    backgroundColor: colors.base100,
+    borderWidth: borders.width.standard,
+    borderColor: borders.color.default,
+    borderRadius: borders.radius.none,
+    overflow: 'hidden',
+    position: 'relative',
+    ...shadows.card,
+  },
+  actionCardAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    width: 4,
+    height: '100%',
+    backgroundColor: colors.primaryOpacity[30],
+  },
+  actionCardContent: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xl,
+    paddingLeft: spacing.xl + spacing.md,
+  },
+  actionCardIcon: {
+    width: 64,
+    height: 64,
+    backgroundColor: colors.primaryOpacity[20],
+    borderWidth: borders.width.standard,
+    borderColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  actionCardIconText: {
+    fontSize: 32,
+    fontWeight: typography.weights.black,
+    color: colors.primary,
+  },
+  actionCardTitle: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.black,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.tight,
+    color: colors.baseContent,
+    marginBottom: spacing.xs,
+  },
+  actionCardDescription: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    textTransform: 'uppercase',
+    letterSpacing: typography.letterSpacing.wider,
+    color: colors.opacity[50],
+    lineHeight: 18,
   },
 });

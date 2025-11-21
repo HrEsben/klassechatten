@@ -712,14 +712,181 @@ import { Button, Input, LoadingSpinner, EmptyState, ErrorState } from '../compon
 
 ## 🎯 Next Steps
 
-1. **Refactor ClassRoomBrowser**: Replace loading/empty/error states with shared components
-2. **Break down ChatRoom**: Create MessageList, MessageInput, ImagePicker sub-components
+1. ✅ **Refactor ClassRoomBrowser**: Replace loading/empty/error states with shared components
+2. 🔄 **Break down ChatRoom**: Create MessageList, MessageInput, ChatHeader sub-components (IN PROGRESS)
 3. **Test on device**: Verify design looks correct on iOS/Android
 4. **Create example screens**: Build showcase of all shared components
 5. **Performance testing**: Measure render times, optimize if needed
 
 ---
 
+## 🔧 ChatRoom Refactoring Plan (Task 2)
+
+### Current State
+- **File**: `/apps/mobile/components/ChatRoom.tsx`
+- **Size**: 1196 lines
+- **Complexity**: High - handles messages, typing, presence, reactions, images, drafts, scrolling
+- **Issues**: Monolithic component, difficult to test, hard to maintain
+
+### Refactoring Strategy
+
+#### Phase 1: Use Shared Components ✅
+Replace inline loading/error states with shared components:
+- ✅ Loading state → `<LoadingSpinner size="lg" text="Indlæser beskeder..." fullScreen />`
+- ✅ Error state → `<ErrorState message={error} />`
+
+#### Phase 2: Extract Sub-Components 🔄
+Break down ChatRoom into focused components:
+
+**1. ChatHeader Component** (NEW)
+- **Responsibility**: Display room name, online count, users button, connection status
+- **Props**: roomName, onlineCount, onUsersPress, isConnected
+- **Size**: ~80 lines
+- **Benefits**: Isolated header logic, reusable pattern
+
+**2. MessageInput Component** (NEW)
+- **Responsibility**: Text input, image picker, send button, draft management
+- **Props**: roomId, onSend, onImagePick, sending, uploading
+- **State**: messageText, selectedImageUri, showSuggestion
+- **Size**: ~200 lines
+- **Benefits**: Isolated input logic, easier testing
+
+**3. TypingIndicator Component** (NEW)
+- **Responsibility**: Show who's typing
+- **Props**: typingUsers[]
+- **Size**: ~30 lines
+- **Benefits**: Simple, reusable
+
+**4. JumpToBottomButton Component** (NEW)
+- **Responsibility**: Floating button to scroll to latest messages
+- **Props**: visible, unreadCount, onPress
+- **Size**: ~50 lines
+- **Benefits**: Isolated scroll logic
+
+**5. ImageViewer Component** (NEW)
+- **Responsibility**: Full-screen image modal
+- **Props**: imageUri, visible, onClose
+- **Size**: ~60 lines
+- **Benefits**: Reusable across app
+
+**6. MessageList Component** (Refactored)
+- **Responsibility**: FlatList of messages with infinite scroll
+- **Props**: messages, loading, hasMore, onLoadMore, onScroll, currentUserId
+- **Size**: ~150 lines
+- **Benefits**: Isolated list logic
+
+#### Phase 3: Simplify Main Component
+After extraction, ChatRoom.tsx becomes:
+- Container for all sub-components
+- Data fetching (hooks)
+- Coordination logic
+- **Target size**: ~300-400 lines (70% reduction)
+
+### Implementation Plan
+
+```typescript
+// NEW: /apps/mobile/components/chat/ChatHeader.tsx
+interface ChatHeaderProps {
+  roomName: string;
+  onlineCount: number;
+  totalUsers: number;
+  isConnected: boolean;
+  onUsersPress: () => void;
+}
+
+// NEW: /apps/mobile/components/chat/MessageInput.tsx
+interface MessageInputProps {
+  roomId: string;
+  onSend: (text: string, imageUri?: string) => Promise<void>;
+  sending: boolean;
+  uploading: boolean;
+  onImagePick: () => void;
+}
+
+// NEW: /apps/mobile/components/chat/TypingIndicator.tsx
+interface TypingIndicatorProps {
+  typingUsers: Array<{ display_name: string }>;
+}
+
+// NEW: /apps/mobile/components/chat/JumpToBottomButton.tsx
+interface JumpToBottomButtonProps {
+  visible: boolean;
+  unreadCount: number;
+  onPress: () => void;
+}
+
+// NEW: /apps/mobile/components/chat/ImageViewer.tsx
+interface ImageViewerProps {
+  imageUri: string | null;
+  visible: boolean;
+  onClose: () => void;
+}
+
+// REFACTORED: /apps/mobile/components/ChatRoom.tsx
+export default function ChatRoom({ roomId, showHeader }: ChatRoomProps) {
+  // Hooks for data
+  const { messages, loading, error, ... } = useRoomMessages({ roomId });
+  const { sendMessage, ... } = useSendMessage();
+  
+  // Render sub-components
+  return (
+    <View>
+      {loading && <LoadingSpinner ... />}
+      {error && <ErrorState message={error} />}
+      {showHeader && <ChatHeader ... />}
+      <MessageList messages={messages} ... />
+      <TypingIndicator typingUsers={typingUsers} />
+      <MessageInput roomId={roomId} onSend={handleSend} ... />
+      <JumpToBottomButton ... />
+      <ImageViewer ... />
+    </View>
+  );
+}
+```
+
+### Benefits of Refactoring
+
+1. **Maintainability**: Each component has single responsibility
+2. **Testability**: Smaller components easier to unit test
+3. **Reusability**: Components can be used in other contexts
+4. **Performance**: Memoization easier with smaller components
+5. **Readability**: Clear separation of concerns
+6. **Developer Experience**: Easier onboarding, faster debugging
+
+### File Structure After Refactoring
+
+```
+/apps/mobile/components/
+  /chat/
+    ChatHeader.tsx          (~80 lines)
+    MessageInput.tsx        (~200 lines)
+    MessageList.tsx         (~150 lines)
+    TypingIndicator.tsx     (~30 lines)
+    JumpToBottomButton.tsx  (~50 lines)
+    ImageViewer.tsx         (~60 lines)
+    index.ts                (exports)
+  ChatRoom.tsx              (~350 lines, down from 1196)
+  MessageItem.tsx           (existing, no changes)
+  Avatar.tsx                (existing, no changes)
+  ReactionPickerWithHook.tsx (existing, no changes)
+```
+
+### Timeline Estimate
+
+- **Phase 1**: 30 minutes (use shared components) ✅
+- **Phase 2**: 2-3 hours (extract sub-components)
+- **Phase 3**: 1 hour (refactor main component, testing)
+- **Total**: 3.5-4.5 hours
+
+### Testing Strategy
+
+1. **Unit tests**: Each sub-component tested independently
+2. **Integration tests**: ChatRoom with all sub-components
+3. **Manual testing**: iOS/Android devices, verify all functionality
+4. **Regression testing**: Ensure no broken features
+
+---
+
 **Last Updated**: November 21, 2025  
 **Maintainer**: Development Team  
-**Status**: Foundation complete, ongoing refactoring
+**Status**: Task 2 Phase 1 complete (shared components), Phase 2 in progress

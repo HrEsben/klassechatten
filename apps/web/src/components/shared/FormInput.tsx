@@ -84,9 +84,9 @@ export function FormInput(props: FormInputProps | FormTextareaProps) {
 
   return (
     <div className={`space-y-2 ${className}`}>
-      {/* Label */}
+      {/* Label - shown above on small screens, hidden on md+ */}
       {label && (
-        <label className="label">
+        <label className="label md:hidden">
           <span className="text-xs font-black uppercase tracking-widest text-base-content/70">
             {label}
           </span>
@@ -95,8 +95,9 @@ export function FormInput(props: FormInputProps | FormTextareaProps) {
 
       {/* Input/Textarea Container */}
       <label className={multiline ? 'textarea w-full' : inputClass}>
+        {/* Label inside input - hidden on small screens, shown on md+ */}
         {label && multiline && (
-          <span className="text-xs font-black uppercase tracking-widest text-base-content/50">
+          <span className="hidden md:inline text-xs font-black uppercase tracking-widest text-base-content/50">
             {label}
           </span>
         )}
@@ -109,7 +110,7 @@ export function FormInput(props: FormInputProps | FormTextareaProps) {
         ) : (
           <>
             {label && (
-              <span className="text-xs font-black uppercase tracking-widest text-base-content/50">
+              <span className="hidden md:inline text-xs font-black uppercase tracking-widest text-base-content/50">
                 {label}
               </span>
             )}

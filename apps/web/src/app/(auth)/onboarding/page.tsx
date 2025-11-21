@@ -225,11 +225,11 @@ export default function OnboardingPage() {
                 </div>
                 
                 <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
-                  Opret Klasse
+                  Opret Klassechat
                 </h3>
                 
                 <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
-                  Opret en ny klasse og inviter elever
+                  Tilmeld en klasse til KlasseChatten
                 </p>
               </div>
             </button>
@@ -249,38 +249,15 @@ export default function OnboardingPage() {
                 </div>
                 
                 <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
-                  Brug Invitation
+                  Brug Kode
                 </h3>
                 
                 <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
-                  Brug en invitationskode til at tilmelde dig
+                  Deltag i en eksisterende klassechat med en invitationskode
                 </p>
               </div>
             </button>
 
-            {/* Claim Child Card */}
-            <button
-              onClick={() => setStep('claim-child')}
-              className="relative group text-left bg-base-100 border-2 border-base-content/10 hover:border-accent transition-all duration-200 overflow-hidden"
-            >
-              <div className="absolute left-0 top-0 w-1 h-full bg-accent/30 group-hover:bg-accent group-hover:w-2 transition-all duration-200"></div>
-              
-              <div className="px-8 py-6 pl-10">
-                <div className="flex items-start justify-between mb-3">
-                  <svg className="w-8 h-8 stroke-current text-accent" strokeWidth={2} fill="none" viewBox="0 0 24 24">
-                    <path strokeLinecap="square" strokeLinejoin="miter" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                </div>
-                
-                <h3 className="text-xl font-black uppercase tracking-tight text-base-content mb-1">
-                  Forældre-Kode
-                </h3>
-                
-                <p className="text-xs font-mono uppercase tracking-wider text-base-content/50">
-                  Har du modtaget en forældre-kode?
-                </p>
-              </div>
-            </button>
           </div>
         )}
 

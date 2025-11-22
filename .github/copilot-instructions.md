@@ -439,18 +439,42 @@ gap-6            // Large gap (24px) - header sections
 
 #### Button System
 
-**Primary Button:**
+**IMPORTANT: All buttons must have clear contrast and follow these exact patterns.**
+
+**Primary Button (Solid Black):**
 ```tsx
-<button className="btn bg-base-content text-base-100 hover:bg-primary hover:text-primary-content">
+<button className="btn btn-neutral">
   Button Text
 </button>
+// Result: Black background, white text
+// Hover: Pink background, white text (btn-neutral has hover:bg-primary built-in)
 ```
 
-**Secondary Button (Ghost):**
+**Secondary Button (Outline):**
+```tsx
+<button className="btn btn-outline">
+  Button Text
+</button>
+// Result: Transparent background, black border and text
+// Hover: Black background, white text
+```
+
+**Accent Button (Pink):**
+```tsx
+<button className="btn btn-primary">
+  Button Text
+</button>
+// Result: Pink background, white text
+// Hover: Darker pink
+```
+
+**Ghost Button (Transparent):**
 ```tsx
 <button className="btn btn-ghost">
   Button Text
 </button>
+// Result: Transparent, text color matches context
+// Hover: Subtle background
 ```
 
 **Icon Button (Square):**
@@ -463,8 +487,13 @@ gap-6            // Large gap (24px) - header sections
 **Button Sizes:**
 - `btn-xs` → Extra small
 - `btn-sm` → Small
-- `btn` → Default
+- `btn` → Default (md)
 - `btn-lg` → Large
+
+**Never:**
+- Don't use `bg-base-content text-base-100` directly (use `btn-neutral` instead)
+- Don't mix utility classes with btn variants (causes conflicts)
+- Always use DaisyUI button variants for consistency
 
 #### Icon Guidelines
 
